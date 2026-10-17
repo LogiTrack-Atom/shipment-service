@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: shipment-service
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/shipment_db}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
