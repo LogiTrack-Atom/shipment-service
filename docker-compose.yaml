@@ -1,0 +1,49 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: shipment-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      TZ: ${TZ:-UTC}
+    ports:
+      - "${MYSQL_HOST_PORT:-3307}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - logitrack-net
+
+  shipment-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: shipment-service
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USERNAME: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      JPA_DDL_AUTO: ${JPA_DDL_AUTO:-update}
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    networks:
+      - logitrack-net
+
+volumes:
+  mysql_data:
+
+networks:
+  logitrack-net:
