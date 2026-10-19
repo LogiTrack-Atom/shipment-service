@@ -1,2 +1,93 @@
 # shipment-service
 Microservicio de gestión y seguimiento de envíos de LogiTrack Atom - Sprint 01 (DAAS).
+
+## Base de datos y esquema inicial
+
+Requisitos: Docker con Compose. Para ejecutar Maven fuera de Docker, Java 25.
+
+```sh
+cp .env.example .env
+# Completar las contraseñas en .env antes de iniciar.
+docker compose up --build -d
+docker compose logs -f shipment-service
+```
+
+La API queda en `http://localhost:8080` y MySQL en `localhost:3307`, salvo cambios
+en `APP_PORT` y `MYSQL_HOST_PORT`. La aplicación usa el usuario `MYSQL_USER`.
+Las credenciales de `.env` son locales y no se suben a Git.
+
+`docker/mysql/init/001-schema.sql` es el esquema inicial del Sprint 01. Compose
+lo monta en `/docker-entrypoint-initdb.d`, y la imagen MySQL lo ejecuta sobre la
+base indicada por `MYSQL_DATABASE` **solo cuando inicializa almacenamiento nuevo**.
+No contiene `CREATE DATABASE`, usuarios ni credenciales; tampoco borra tablas.
+
+Hibernate usa `ddl-auto=validate` tanto dentro como fuera de Compose: verifica
+el mapeo sin crear ni modificar tablas. Si tu `.env` anterior tiene
+`JPA_DDL_AUTO=update`, cambiarlo a `JPA_DDL_AUTO=validate`. No usar `update`,
+`create` o `create-drop` para verificar este SQL, porque podrían alterar el
+esquema y ocultar diferencias. Para cambios posteriores se necesita una
+migración SQL explícita y coordinada con los cambios en JPA.
+
+### Contrato del esquema
+
+- Cuatro tablas InnoDB: `clientes`, `repartidores`, `envios` e `historial_estados_envio`.
+- UUID como `BINARY(16)` en PK y FK; generados por JPA.
+- Auditoría `created_at`, `updated_at` y `fecha_cambio` como `DATETIME(6)`;
+  escrita por la aplicación, con conexión en UTC.
+- Cadenas `VARCHAR(255)` y estados `ENUM`, acordes al mapeo Hibernate/MySQL.
+- Peso `DECIMAL(10,3)` y dimensiones `DECIMAL(10,2)`, según la validación de #8.
+- Email y código de seguimiento únicos; tres FKs sin borrado en cascada.
+- `telefono`, `repartidor_id` y `estado_anterior` admiten nulos; el resto de
+  las columnas es obligatorio. Las direcciones se guardan en columnas embebidas.
+- Colación `utf8mb4_0900_ai_ci`, igual al esquema generado por Hibernate en
+  MySQL 8.4: las comparaciones de texto, incluida la unicidad, ignoran mayúsculas
+  y acentos.
+
+### Verificación y almacenamiento existente
+
+Para consultar el esquema, ingresar la contraseña de `MYSQL_USER` cuando se solicite:
+
+```sh
+docker compose exec mysql sh -c 'exec mysql -u"$MYSQL_USER" -p "$MYSQL_DATABASE"'
+```
+
+```sql
+SHOW TABLES;
+SHOW CREATE TABLE envios;
+SHOW CREATE TABLE historial_estados_envio;
+```
+
+Para comprobar el primer arranque sin tocar datos del equipo, se puede levantar
+solo una MySQL temporal con puertos y almacenamiento independientes. Desde la
+raíz del repositorio, elegir un nombre que no exista:
+
+```sh
+docker run --detach --name shipment-schema-check --env-file .env  \
+  --publish 127.0.0.1::3306 \
+  --mount type=volume,source=shipment_schema_check_data,target=/var/lib/mysql \
+  --mount "type=bind,source=$(pwd)/docker/mysql/init,target=/docker-entrypoint-initdb.d,readonly" \
+  mysql:8.4
+docker logs -f shipment-schema-check
+# Esperar a que finalice la inicialización y el servidor esté listo.
+docker port shipment-schema-check 3306/tcp
+```
+
+Con el puerto que devuelve Docker y las credenciales de `.env`, ejecutar:
+
+```sh
+DB_URL='jdbc:mysql://127.0.0.1:<puerto>/shipment_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC' \
+DB_USERNAME='<MYSQL_USER>' DB_PASSWORD='<MYSQL_PASSWORD>' JPA_DDL_AUTO=validate \
+sh ./mvnw verify
+```
+
+Si `MYSQL_DATABASE` es distinto de `shipment_db`, ajustar también la URL. Al
+terminar, detener la instancia temporal con `docker stop shipment-schema-check`.
+El contenedor y su volumen de prueba quedan separados de los de Compose.
+
+Con almacenamiento existente, reiniciar MySQL **no vuelve a ejecutar** el SQL.
+Si esa base fue creada mediante `update`, respaldarla y comparar su esquema
+antes de aplicar cambios. Si falta una tabla o existe una diferencia incompatible,
+`validate` debe impedir el arranque; no borrar el volumen del equipo ni activar
+`update` para evitar el error.
+
+Referencia: [inicialización de la imagen oficial de MySQL](https://hub.docker.com/_/mysql).
