@@ -148,3 +148,36 @@ de despliegue completo de Compose se realiza además al preparar la entrega.
 
 Referencias: [MySQL en Testcontainers](https://java.testcontainers.org/modules/databases/mysql/)
 y [Maven Failsafe](https://maven.apache.org/surefire/maven-failsafe-plugin/).
+
+## Documentación de API y trazas
+
+Con la aplicación iniciada (puerto predeterminado 8080):
+
+- Swagger UI: <http://localhost:8080/swagger-ui/index.html>.
+- Especificación OpenAPI: <http://localhost:8080/v3/api-docs>.
+- Contratos Java: `ShipmentService` y `RepartidorService` describen precondiciones,
+  excepciones, consultas y efectos transaccionales.
+
+OpenAPI documenta las 11 operaciones, sus respuestas exitosas y los errores
+400/404/422/409 pertinentes mediante `ApiError` y ejemplos. Los esquemas de
+solicitud y respuesta explican kg/cm, límites y pasos decimales de #8. Un 409
+corresponde a una restricción real de datos; un email existente se reutiliza
+sin sobrescribir al cliente. Las transiciones permitidas son
+PENDIENTE → EN_RUTA/CANCELADO y EN_RUTA → ENTREGADO. EN_RUTA requiere un repartidor
+asignado y ACTIVO; ENTREGADO/CANCELADO son terminales. Asignar no cambia el estado
+ni agrega un evento de historial; cancelar solo admite PENDIENTE.
+
+Los logs INFO de `BusinessLog` registran UUID y estados después del commit:
+registro de envío/repartidor, asignación y cambio de estado (incluida cancelación).
+Si hay rollback, no se imprime un éxito. Se capturan valores inmutables, no
+entidades JPA, y no se registran cuerpos, nombres, emails, teléfonos, direcciones
+ni credenciales. Los servicios usan WARN para rechazos de reglas de negocio y
+DEBUG para consultas por estado. Para habilitar estas últimas sin activar SQL
+ni cuerpos HTTP, establecer
+`LOGGING_LEVEL_COM_LOGITRACK_ATOM_SHIPMENT_SERVICE_SERVICE_IMPL=DEBUG`.
+
+`OpenApiIT` verifica las operaciones, respuestas, referencias y ejemplos de
+error, precisión y recursos de Swagger UI. `BusinessLogIT` comprueba que los
+éxitos solo aparecen tras confirmar una transacción y no exponen los datos de
+las solicitudes. Se ejecutan con `sh ./mvnw clean verify`, junto con las pruebas
+de persistencia, API y rollback de #10.
