@@ -1,22 +1,13 @@
 package com.logitrack_atom.shipment_service.entity;
 
 import com.logitrack_atom.shipment_service.enums.EstadoEnvio;
-import jakarta.persistence.AttributeOverride;
-import jakarta.persistence.AttributeOverrides;
-import jakarta.persistence.Column;
-import jakarta.persistence.Embedded;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Entity
 @Table(name = "envios")
@@ -24,6 +15,7 @@ import java.math.BigDecimal;
 @Setter
 @NoArgsConstructor
 public class Envio extends BaseEntity {
+
 
     @Column(name = "codigo_seguimiento", nullable = false, unique = true, updatable = false)
     private String codigoSeguimiento;
