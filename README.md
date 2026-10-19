@@ -337,6 +337,7 @@ La revisión final, grabación y entrega siguen en
 | Síntoma | Comprobación |
 | --- | --- |
 | No conecta con Docker | Abrir/iniciar Docker y comprobar `docker info` |
+| Docker Desktop informa `mounts denied` | Usar una carpeta del repositorio compartida en Resources → File Sharing; `/tmp` puede no estar compartido |
 | Puerto o nombre ocupado | Revisar `docker compose ps`, puertos locales y los nombres fijos; ajustar el entorno sin borrar datos |
 | Java no recibe credenciales | Configurar `DB_*` en el proceso/IDE; no basta con editar `.env` |
 | Hibernate informa tabla/columna faltante | Comparar base y SQL; un volumen existente no ejecuta otra vez el init |
