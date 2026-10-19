@@ -62,7 +62,7 @@ solo una MySQL temporal con puertos y almacenamiento independientes. Desde la
 raíz del repositorio, elegir un nombre que no exista:
 
 ```sh
-docker run --detach --name shipment-schema-check --env-file .env  \
+docker run --detach --name shipment-schema-check --env-file .env \
   --publish 127.0.0.1::3306 \
   --mount type=volume,source=shipment_schema_check_data,target=/var/lib/mysql \
   --mount "type=bind,source=$(pwd)/docker/mysql/init,target=/docker-entrypoint-initdb.d,readonly" \
@@ -72,12 +72,13 @@ docker logs -f shipment-schema-check
 docker port shipment-schema-check 3306/tcp
 ```
 
-Con el puerto que devuelve Docker y las credenciales de `.env`, ejecutar:
+Para comprobar el arranque contra esa instancia manual, usar el puerto que devuelve
+Docker y las credenciales de `.env`:
 
 ```sh
 DB_URL='jdbc:mysql://127.0.0.1:<puerto>/shipment_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC' \
 DB_USERNAME='<MYSQL_USER>' DB_PASSWORD='<MYSQL_PASSWORD>' JPA_DDL_AUTO=validate \
-sh ./mvnw verify
+sh ./mvnw spring-boot:run
 ```
 
 Si `MYSQL_DATABASE` es distinto de `shipment_db`, ajustar también la URL. Al
@@ -91,3 +92,59 @@ antes de aplicar cambios. Si falta una tabla o existe una diferencia incompatibl
 `update` para evitar el error.
 
 Referencia: [inicialización de la imagen oficial de MySQL](https://hub.docker.com/_/mysql).
+
+
+## Pruebas unitarias y de integración
+
+Desde la raíz del repositorio, con Java 25:
+
+```sh
+# Surefire: pruebas *Test / *Tests, sin Docker ni base de datos.
+sh ./mvnw test
+
+# Surefire + Failsafe: todas las pruebas, incluidas las *IT contra MySQL real.
+sh ./mvnw clean verify
+```
+
+La suite completa requiere Docker disponible (`docker info`) y acceso a las
+imágenes `mysql:8.4` y al recolector Ryuk de Testcontainers. La primera ejecución
+puede demorar mientras las descarga. Si Docker no está disponible, las
+integraciones fallan; no se omiten silenciosamente. No hace falta levantar
+Compose, crear `.env`, configurar DB_URL ni preparar una base manual.
+
+`MySqlIntegrationSupport` inicia una única MySQL temporal por JVM de Failsafe,
+con puerto aleatorio, credenciales de prueba y base `shipment_test`. Copia el
+SQL de `docker/mysql/init/001-schema.sql` al entrypoint, sin duplicarlo entre los
+recursos de tests, y arranca Spring con `ddl-auto=validate`. Las propiedades
+dinámicas reemplazan cualquier conexión externa de desarrollo. No reutiliza
+contenedores ni volúmenes de Compose; Ryuk elimina los recursos al terminar.
+
+Las integraciones corren secuencialmente y limpian solo esa base antes de cada
+caso, respetando el orden de las FKs. No llevan `@Transactional` en la clase ni
+en los métodos: las llamadas al servicio realizan sus commits reales.
+
+- `ShipmentPersistenceIT`: UUID, auditoría, relaciones y direcciones después de
+  flush/clear; consultas por UUID/tracking/estado; unicidad, FKs y orden cronológico.
+- `ShipmentTransactionIT`: un trigger temporal de MySQL rechaza el INSERT del
+  historial. Se verifica el error real y se consulta desde una transacción nueva
+  que no se modificaron estado/historial ni quedaron altas parciales. El trigger
+  se crea con root dentro del contenedor de prueba y se elimina en finally;
+  la aplicación mantiene su usuario habitual de la base temporal.
+- `ShipmentApiIT`: MockMvc con el contexto real de Spring, sin mocks de servicios
+  o repositorios; flujo de entrega y cancelación, errores 400/404/422/409 y regresión
+  decimal de #8 con comprobación de filas/valores en MySQL. El caso 409 provoca
+  una violación real de longitud de columna, no un conflicto simulado de email
+  (el servicio reutiliza clientes existentes por email).
+
+El antiguo `contextLoads` queda cubierto por el arranque real de estas clases
+`@SpringBootTest`; ya no obliga a conectar con MySQL durante `mvn test`.
+Los informes XML quedan en `target/surefire-reports` y `target/failsafe-reports`.
+Para diagnosticar solo el rollback se puede ejecutar
+`sh ./mvnw -Dit.test=ShipmentTransactionIT verify`; esa ejecución selectiva no
+reemplaza `clean verify` para validar una entrega.
+
+Este entorno comprueba la aplicación con MySQL y el SQL versionado. La prueba
+de despliegue completo de Compose se realiza además al preparar la entrega.
+
+Referencias: [MySQL en Testcontainers](https://java.testcontainers.org/modules/databases/mysql/)
+y [Maven Failsafe](https://maven.apache.org/surefire/maven-failsafe-plugin/).
