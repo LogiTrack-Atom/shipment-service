@@ -12,6 +12,7 @@ import com.logitrack_atom.shipment_service.enums.EstadoRepartidor;
 import com.logitrack_atom.shipment_service.exception.RecursoNoEncontradoException;
 import com.logitrack_atom.shipment_service.exception.ReglaNegocioException;
 import com.logitrack_atom.shipment_service.exception.TransicionEstadoInvalidaException;
+import com.logitrack_atom.shipment_service.logging.BusinessLog;
 import com.logitrack_atom.shipment_service.mapper.ClienteMapper;
 import com.logitrack_atom.shipment_service.mapper.EnvioMapper;
 import com.logitrack_atom.shipment_service.mapper.HistorialEstadoEnvioMapper;
@@ -21,6 +22,7 @@ import com.logitrack_atom.shipment_service.repository.HistorialEstadoEnvioReposi
 import com.logitrack_atom.shipment_service.repository.RepartidorRepository;
 import com.logitrack_atom.shipment_service.service.ShipmentService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +30,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ShipmentServiceImpl implements ShipmentService {
@@ -49,6 +52,7 @@ public class ShipmentServiceImpl implements ShipmentService {
         Envio envio = envioMapper.toEntity(request, cliente, generarCodigoSeguimiento());
         envioRepository.save(envio);
         registrarHistorial(envio, null, EstadoEnvio.PENDIENTE);
+        BusinessLog.envioRegistrado(envio.getId(), envio.getEstado());
 
         return envioMapper.toResponse(envio);
     }
@@ -70,6 +74,7 @@ public class ShipmentServiceImpl implements ShipmentService {
     @Override
     @Transactional(readOnly = true)
     public List<EnvioResponse> listarPorEstado(EstadoEnvio estado) {
+        log.debug("envio.consulta estado={}", estado == null ? "TODOS" : estado);
         List<Envio> envios = estado == null
                 ? envioRepository.findAll()
                 : envioRepository.findByEstado(estado);
@@ -89,6 +94,7 @@ public class ShipmentServiceImpl implements ShipmentService {
         EstadoEnvio estadoActual = envio.getEstado();
 
         if (!estadoActual.puedeTransicionarA(nuevoEstado)) {
+            log.warn("envio.transicion_rechazada envioId={} anterior={} solicitado={}", id, estadoActual, nuevoEstado);
             throw new TransicionEstadoInvalidaException(estadoActual, nuevoEstado);
         }
         if (nuevoEstado == EstadoEnvio.EN_RUTA) {
@@ -98,6 +104,7 @@ public class ShipmentServiceImpl implements ShipmentService {
         envio.setEstado(nuevoEstado);
         envioRepository.save(envio);
         registrarHistorial(envio, estadoActual, nuevoEstado);
+        BusinessLog.estadoCambiado(envio.getId(), estadoActual, nuevoEstado);
 
         return envioMapper.toResponse(envio);
     }
@@ -107,17 +114,21 @@ public class ShipmentServiceImpl implements ShipmentService {
     public EnvioResponse asignarRepartidor(UUID envioId, UUID repartidorId) {
         Envio envio = buscarEnvio(envioId);
         if (envio.getEstado() != EstadoEnvio.PENDIENTE) {
+            log.warn("envio.asignacion_rechazada envioId={} estado={}", envioId, envio.getEstado());
             throw new ReglaNegocioException("Solo se puede asignar repartidor a un envío PENDIENTE");
         }
 
         Repartidor repartidor = repartidorRepository.findById(repartidorId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Repartidor", repartidorId));
         if (repartidor.getEstado() != EstadoRepartidor.ACTIVO) {
+            log.warn("envio.asignacion_rechazada envioId={} repartidorId={} estadoRepartidor={}",
+                    envioId, repartidorId, repartidor.getEstado());
             throw new ReglaNegocioException("El repartidor no está activo");
         }
 
         envio.setRepartidor(repartidor);
         envioRepository.save(envio);
+        BusinessLog.repartidorAsignado(envio.getId(), repartidor.getId());
 
         return envioMapper.toResponse(envio);
     }
@@ -139,9 +150,12 @@ public class ShipmentServiceImpl implements ShipmentService {
     private void validarRepartidorAsignado(Envio envio) {
         Repartidor repartidor = envio.getRepartidor();
         if (repartidor == null) {
+            log.warn("envio.en_ruta_rechazado envioId={} motivo=sin_repartidor", envio.getId());
             throw new ReglaNegocioException("El envío no tiene repartidor asignado");
         }
         if (repartidor.getEstado() != EstadoRepartidor.ACTIVO) {
+            log.warn("envio.en_ruta_rechazado envioId={} repartidorId={} estadoRepartidor={}",
+                    envio.getId(), repartidor.getId(), repartidor.getEstado());
             throw new ReglaNegocioException("El repartidor asignado no está activo");
         }
     }
