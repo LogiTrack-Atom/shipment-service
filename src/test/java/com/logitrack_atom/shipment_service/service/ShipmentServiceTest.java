@@ -25,6 +25,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -119,6 +120,141 @@ public class ShipmentServiceTest {
         verify(clienteRepository, times(1)).findByEmail(emailCliente);
         verify(envioRepository, times(1)).save(envioMock);
         verify(historialRepository, times(1)).save(any(HistorialEstadoEnvio.class));
+        verify(envioMapper, times(1)).toResponse(envioMock);
+    }
+    @Test
+    @DisplayName("Debe retornar un envío exitosamente al buscar por un ID existente")
+    void testObtenerPorIdExitoso() {
+        // Arrange (Preparación)
+        UUID envioId = UUID.randomUUID();
+
+        Envio envioMock = new Envio();
+        envioMock.setCodigoSeguimiento("LT-9876543210");
+        envioMock.setEstado(EstadoEnvio.PENDIENTE);
+
+        EnvioResponse responseEsperado = mock(EnvioResponse.class);
+
+        // Configuración de Mocks
+        when(envioRepository.findById(envioId)).thenReturn(Optional.of(envioMock));
+        when(envioMapper.toResponse(envioMock)).thenReturn(responseEsperado);
+
+        // Act (Ejecución)
+        EnvioResponse resultado = shipmentService.obtenerPorId(envioId);
+
+        // Assert (Verificación)
+        assertNotNull(resultado);
+        verify(envioRepository, times(1)).findById(envioId);
+        verify(envioMapper, times(1)).toResponse(envioMock);
+    }
+
+    @Test
+    @DisplayName("Debe lanzar RecursoNoEncontradoException al buscar un envío con un ID que no existe")
+    void testObtenerPorIdNoEncontrado() {
+        // Arrange (Preparación)
+        UUID envioId = UUID.randomUUID();
+
+        when(envioRepository.findById(envioId)).thenReturn(Optional.empty());
+
+        // Act & Assert (Ejecución y Verificación de Excepción)
+        Exception exception = assertThrows(com.logitrack_atom.shipment_service.exception.RecursoNoEncontradoException.class, () -> {
+            shipmentService.obtenerPorId(envioId);
+        });
+
+        assertNotNull(exception.getMessage());
+        verify(envioRepository, times(1)).findById(envioId);
+        verify(envioMapper, never()).toResponse(any());
+    }
+    @Test
+    @DisplayName("Debe retornar un envío exitosamente al buscar por un código de seguimiento existente")
+    void testObtenerPorCodigoSeguimientoExitoso() {
+        // Arrange (Preparación)
+        String codigoSeguimiento = "LT-1234567890";
+
+        Envio envioMock = new Envio();
+        envioMock.setCodigoSeguimiento(codigoSeguimiento);
+        envioMock.setEstado(EstadoEnvio.PENDIENTE);
+
+        EnvioResponse responseEsperado = mock(EnvioResponse.class);
+
+        // Configuración de Mocks
+        when(envioRepository.findByCodigoSeguimiento(codigoSeguimiento)).thenReturn(Optional.of(envioMock));
+        when(envioMapper.toResponse(envioMock)).thenReturn(responseEsperado);
+
+        // Act (Ejecución)
+        EnvioResponse resultado = shipmentService.obtenerPorCodigoSeguimiento(codigoSeguimiento);
+
+        // Assert (Verificación)
+        assertNotNull(resultado);
+        verify(envioRepository, times(1)).findByCodigoSeguimiento(codigoSeguimiento);
+        verify(envioMapper, times(1)).toResponse(envioMock);
+    }
+
+    @Test
+    @DisplayName("Debe lanzar RecursoNoEncontradoException al buscar por un código de seguimiento que no existe")
+    void testObtenerPorCodigoSeguimientoNoEncontrado() {
+        // Arrange (Preparación)
+        String codigoSeguimiento = "LT-NO-EXISTE";
+
+        when(envioRepository.findByCodigoSeguimiento(codigoSeguimiento)).thenReturn(Optional.empty());
+
+        // Act & Assert (Ejecución y Verificación de Excepción)
+        Exception exception = assertThrows(com.logitrack_atom.shipment_service.exception.RecursoNoEncontradoException.class, () -> {
+            shipmentService.obtenerPorCodigoSeguimiento(codigoSeguimiento);
+        });
+
+        assertNotNull(exception.getMessage());
+        verify(envioRepository, times(1)).findByCodigoSeguimiento(codigoSeguimiento);
+        verify(envioMapper, never()).toResponse(any());
+    }
+
+    @Test
+    @DisplayName("Debe retornar todos los envíos cuando el estado a filtrar es nulo")
+    void testListarPorEstadoNulo() {
+        // Arrange (Preparación)
+        Envio envioMock = new Envio();
+        envioMock.setEstado(EstadoEnvio.PENDIENTE);
+        List<Envio> listaEnvios = List.of(envioMock);
+
+        EnvioResponse responseMock = mock(EnvioResponse.class);
+
+        // Configuración de Mocks
+        when(envioRepository.findAll()).thenReturn(listaEnvios);
+        when(envioMapper.toResponse(envioMock)).thenReturn(responseMock);
+
+        // Act (Ejecución)
+        List<EnvioResponse> resultado = shipmentService.listarPorEstado(null);
+
+        // Assert (Verificación)
+        assertNotNull(resultado);
+        assertEquals(1, resultado.size());
+        verify(envioRepository, times(1)).findAll();
+        verify(envioRepository, never()).findByEstado(any());
+        verify(envioMapper, times(1)).toResponse(envioMock);
+    }
+
+    @Test
+    @DisplayName("Debe retornar los envíos filtrados cuando se especifica un estado válido")
+    void testListarPorEstadoEspecifico() {
+        // Arrange (Preparación)
+        EstadoEnvio estadoBuscado = EstadoEnvio.PENDIENTE;
+        Envio envioMock = new Envio();
+        envioMock.setEstado(estadoBuscado);
+        List<Envio> listaEnvios = List.of(envioMock);
+
+        EnvioResponse responseMock = mock(EnvioResponse.class);
+
+        // Configuración de Mocks
+        when(envioRepository.findByEstado(estadoBuscado)).thenReturn(listaEnvios);
+        when(envioMapper.toResponse(envioMock)).thenReturn(responseMock);
+
+        // Act (Ejecución)
+        List<EnvioResponse> resultado = shipmentService.listarPorEstado(estadoBuscado);
+
+        // Assert (Verificación)
+        assertNotNull(resultado);
+        assertEquals(1, resultado.size());
+        verify(envioRepository, times(1)).findByEstado(estadoBuscado);
+        verify(envioRepository, never()).findAll();
         verify(envioMapper, times(1)).toResponse(envioMock);
     }
 
