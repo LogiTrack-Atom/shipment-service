@@ -1,0 +1,1785 @@
+{
+  "info": {
+    "_postman_id": "4d4713bd-182c-52dc-956b-be8992b9e792",
+    "name": "LogiTrack Atom — Sprint 01",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Ejecutar la colección completa en orden con el entorno Local seleccionado. 00 regenera las variables. 01 entrega un envío; 02 reutiliza el cliente y cancela otro; 03 verifica errores esperados. Cada ejecución crea un cliente, dos envíos, un repartidor y cinco eventos; no borra datos. Los UUID/tracking se obtienen de respuestas, nunca se copian a mano. Los 400/404/422/409 de 03 son resultados correctos, no fallos del runner."
+  },
+  "item": [
+    {
+      "name": "00 — Preparación",
+      "item": [
+        {
+          "name": "00.1 - API disponible y preparar variables",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/v3/api-docs",
+            "description": "Inicia una ejecución nueva. Regenera email y borra UUID/tracking anteriores; no modifica registros del servidor."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const runId = pm.variables.replaceIn('{{$guid}}');",
+                  "pm.environment.set('runId', runId);",
+                  "pm.environment.set('clienteEmail', 'postman-' + runId + '@example.test');",
+                  "['envioId', 'tracking', 'clienteId', 'repartidorId', 'cancelacionId', 'cancelacionTracking'].forEach(key => pm.environment.unset(key));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "const body = pm.response.json();",
+                  "pm.test('OpenAPI disponible', function () { pm.expect(body.openapi).to.be.a('string'); pm.expect(body.paths).to.have.property('/api/v1/envios'); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "01 — Entrega completa",
+      "item": [
+        {
+          "name": "01.1 - Registrar envío PENDIENTE",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente\": {\n    \"nombre\": \"Ana Demo\",\n    \"email\": \"{{clienteEmail}}\",\n    \"telefono\": \"+5493880000000\"\n  },\n  \"origen\": {\n    \"calle\": \"Belgrano\",\n    \"numero\": \"100\",\n    \"ciudad\": \"Jujuy\",\n    \"codigoPostal\": \"Y4600\"\n  },\n  \"destino\": {\n    \"calle\": \"Alvear\",\n    \"numero\": \"200\",\n    \"ciudad\": \"Salta\",\n    \"codigoPostal\": \"A4400\"\n  },\n  \"pesoKg\": 1.25,\n  \"anchoCm\": 25.25,\n  \"altoCm\": 15.5,\n  \"largoCm\": 30.75\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('runId')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta runId'); }",
+                  "if (!pm.environment.get('clienteEmail')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta clienteEmail'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code === 201) {",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('UUID, tracking y estado inicial', function () {",
+                  "    pm.expect(body.id).to.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);",
+                  "    pm.expect(body.codigoSeguimiento).to.be.a('string').and.not.empty;",
+                  "    pm.expect(body.estado).to.eql('PENDIENTE');",
+                  "    pm.expect(body.createdAt).to.be.a('string');",
+                  "    pm.expect(body.repartidor).to.eql(null);",
+                  "});",
+                  "pm.environment.set('envioId', body.id);",
+                  "pm.environment.set('tracking', body.codigoSeguimiento);",
+                  "pm.environment.set('clienteId', body.cliente.id);",
+                  "",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "01.2 - Consultar envío por UUID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios/{{envioId}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('envioId')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta envioId'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "const body = pm.response.json();",
+                  "pm.test('Mismo envío y medidas', function () { pm.expect(body.id).to.eql(pm.environment.get('envioId')); pm.expect(body.pesoKg).to.eql(1.25); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "01.3 - Consultar por tracking",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios/seguimiento/{{tracking}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('envioId')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta envioId'); }",
+                  "if (!pm.environment.get('tracking')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta tracking'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "const body = pm.response.json();",
+                  "pm.test('Tracking corresponde al envío', function () { pm.expect(body.id).to.eql(pm.environment.get('envioId')); pm.expect(body.codigoSeguimiento).to.eql(pm.environment.get('tracking')); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "01.4 - Registrar repartidor ACTIVO",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/repartidores",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Repartidor Demo\",\n  \"tipoVehiculo\": \"MOTO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code === 201) {",
+                  "const body = pm.response.json();",
+                  "pm.test('Repartidor activo con UUID', function () { pm.expect(body.id).to.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i); pm.expect(body.estado).to.eql('ACTIVO'); });",
+                  "pm.environment.set('repartidorId', body.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "01.5 - Consultar repartidor por UUID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/repartidores/{{repartidorId}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('repartidorId')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta repartidorId'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "const body = pm.response.json();",
+                  "pm.test('Mismo repartidor', function () { pm.expect(body.id).to.eql(pm.environment.get('repartidorId')); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "01.6 - Listar repartidores activos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/repartidores?estado=ACTIVO",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('repartidorId')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta repartidorId'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "const body = pm.response.json();",
+                  "pm.test('Filtro ACTIVO incluye el repartidor', function () { pm.expect(body).to.be.an('array'); pm.expect(body.every(x => x.estado === 'ACTIVO')).to.eql(true); pm.expect(body.some(x => x.id === pm.environment.get('repartidorId'))).to.eql(true); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "01.7 - Asignar repartidor",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios/{{envioId}}/repartidor",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"repartidorId\": \"{{repartidorId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('envioId')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta envioId'); }",
+                  "if (!pm.environment.get('repartidorId')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta repartidorId'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "const body = pm.response.json();",
+                  "pm.test('Asignación sin cambiar estado', function () { pm.expect(body.repartidor.id).to.eql(pm.environment.get('repartidorId')); pm.expect(body.estado).to.eql('PENDIENTE'); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "01.8 - Pasar a EN_RUTA",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios/{{envioId}}/estado",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"EN_RUTA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('envioId')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta envioId'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "const body = pm.response.json();",
+                  "pm.test('Estado EN_RUTA', function () { pm.expect(body.estado).to.eql('EN_RUTA'); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "01.9 - Pasar a ENTREGADO",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios/{{envioId}}/estado",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"ENTREGADO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('envioId')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta envioId'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "const body = pm.response.json();",
+                  "pm.test('Estado terminal ENTREGADO', function () { pm.expect(body.estado).to.eql('ENTREGADO'); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "01.10 - Historial de la entrega",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios/{{envioId}}/historial",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('envioId')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta envioId'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('Tres eventos en orden cronológico', function () {",
+                  "    pm.expect(body.map(x => x.estadoNuevo)).to.eql(['PENDIENTE', 'EN_RUTA', 'ENTREGADO']);",
+                  "    pm.expect(body[0].estadoAnterior).to.eql(null);",
+                  "    const fechas = body.map(x => Date.parse(x.fechaCambio));",
+                  "    pm.expect(fechas.every((x, i) => !Number.isNaN(x) && (i === 0 || x >= fechas[i - 1]))).to.eql(true);",
+                  "});",
+                  "",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "01.11 - Listar todos los envíos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('envioId')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta envioId'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "const body = pm.response.json();",
+                  "pm.test('La lista incluye nuestro envío', function () { pm.expect(body).to.be.an('array'); pm.expect(body.some(x => x.id === pm.environment.get('envioId'))).to.eql(true); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "01.12 - Filtrar envíos entregados",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios?estado=ENTREGADO",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('envioId')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta envioId'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "const body = pm.response.json();",
+                  "pm.test('Filtro ENTREGADO', function () { pm.expect(body).to.be.an('array'); pm.expect(body.every(x => x.estado === 'ENTREGADO')).to.eql(true); pm.expect(body.some(x => x.id === pm.environment.get('envioId'))).to.eql(true); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02 — Cancelación y reutilización de Cliente",
+      "item": [
+        {
+          "name": "02.1 - Registrar otro envío con el mismo Cliente y medidas mínimas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente\": {\n    \"nombre\": \"Ana Demo\",\n    \"email\": \"{{clienteEmail}}\",\n    \"telefono\": \"+5493880000000\"\n  },\n  \"origen\": {\n    \"calle\": \"Belgrano\",\n    \"numero\": \"100\",\n    \"ciudad\": \"Jujuy\",\n    \"codigoPostal\": \"Y4600\"\n  },\n  \"destino\": {\n    \"calle\": \"Alvear\",\n    \"numero\": \"200\",\n    \"ciudad\": \"Salta\",\n    \"codigoPostal\": \"A4400\"\n  },\n  \"pesoKg\": 0.001,\n  \"anchoCm\": 0.01,\n  \"altoCm\": 0.01,\n  \"largoCm\": 0.01\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('clienteEmail')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta clienteEmail'); }",
+                  "if (!pm.environment.get('clienteId')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta clienteId'); }",
+                  "if (!pm.environment.get('envioId')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta envioId'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code === 201) {",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('Reutiliza cliente y conserva mínimos válidos', function () {",
+                  "    pm.expect(body.cliente.id).to.eql(pm.environment.get('clienteId'));",
+                  "    pm.expect(body.id).not.to.eql(pm.environment.get('envioId'));",
+                  "    pm.expect(body.pesoKg).to.eql(0.001);",
+                  "    ['anchoCm', 'altoCm', 'largoCm'].forEach(key => pm.expect(body[key]).to.eql(0.01));",
+                  "});",
+                  "pm.environment.set('cancelacionId', body.id);",
+                  "pm.environment.set('cancelacionTracking', body.codigoSeguimiento);",
+                  "",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "02.2 - Cancelar envío PENDIENTE",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios/{{cancelacionId}}/cancelacion",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('cancelacionId')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta cancelacionId'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "const body = pm.response.json();",
+                  "pm.test('Estado CANCELADO', function () { pm.expect(body.estado).to.eql('CANCELADO'); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "02.3 - Historial de cancelación",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios/{{cancelacionId}}/historial",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('cancelacionId')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta cancelacionId'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "const body = pm.response.json();",
+                  "pm.test('Historial independiente', function () { pm.expect(body.map(x => x.estadoNuevo)).to.eql(['PENDIENTE', 'CANCELADO']); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "02.4 - Filtrar envíos cancelados",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios?estado=CANCELADO",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('cancelacionId')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta cancelacionId'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "const body = pm.response.json();",
+                  "pm.test('Filtro CANCELADO', function () { pm.expect(body.every(x => x.estado === 'CANCELADO')).to.eql(true); pm.expect(body.some(x => x.id === pm.environment.get('cancelacionId'))).to.eql(true); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03 — Errores esperados",
+      "item": [
+        {
+          "name": "400 - pesoKg=0.0001 no representable/positivo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios",
+            "description": "La solicitud debe rechazarse; no se agrega un envío. Contrato de precisión de #8.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente\": {\n    \"nombre\": \"Ana Demo\",\n    \"email\": \"{{clienteEmail}}\",\n    \"telefono\": \"+5493880000000\"\n  },\n  \"origen\": {\n    \"calle\": \"Belgrano\",\n    \"numero\": \"100\",\n    \"ciudad\": \"Jujuy\",\n    \"codigoPostal\": \"Y4600\"\n  },\n  \"destino\": {\n    \"calle\": \"Alvear\",\n    \"numero\": \"200\",\n    \"ciudad\": \"Salta\",\n    \"codigoPostal\": \"A4400\"\n  },\n  \"pesoKg\": 0.0001,\n  \"anchoCm\": 25.25,\n  \"altoCm\": 15.5,\n  \"largoCm\": 30.75\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('clienteEmail')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta clienteEmail'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', function () { pm.response.to.have.status(400); });",
+                  "if (pm.response.code === 400) {",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('ApiError coherente', function () {",
+                  "    pm.expect(body).to.have.all.keys('timestamp', 'status', 'error', 'mensaje', 'detalles');",
+                  "    pm.expect(body.status).to.eql(pm.response.code);",
+                  "    pm.expect(body.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(body.detalles).to.be.an('array');",
+                  "    pm.expect(Number.isNaN(Date.parse(body.timestamp))).to.eql(false);",
+                  "});",
+                  "pm.test('Detalle del campo rechazado', function () { pm.expect(body.detalles.some(x => x.startsWith('pesoKg:'))).to.eql(true); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "400 - pesoKg=10000000 no representable/positivo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios",
+            "description": "La solicitud debe rechazarse; no se agrega un envío. Contrato de precisión de #8.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente\": {\n    \"nombre\": \"Ana Demo\",\n    \"email\": \"{{clienteEmail}}\",\n    \"telefono\": \"+5493880000000\"\n  },\n  \"origen\": {\n    \"calle\": \"Belgrano\",\n    \"numero\": \"100\",\n    \"ciudad\": \"Jujuy\",\n    \"codigoPostal\": \"Y4600\"\n  },\n  \"destino\": {\n    \"calle\": \"Alvear\",\n    \"numero\": \"200\",\n    \"ciudad\": \"Salta\",\n    \"codigoPostal\": \"A4400\"\n  },\n  \"pesoKg\": 10000000,\n  \"anchoCm\": 25.25,\n  \"altoCm\": 15.5,\n  \"largoCm\": 30.75\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('clienteEmail')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta clienteEmail'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', function () { pm.response.to.have.status(400); });",
+                  "if (pm.response.code === 400) {",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('ApiError coherente', function () {",
+                  "    pm.expect(body).to.have.all.keys('timestamp', 'status', 'error', 'mensaje', 'detalles');",
+                  "    pm.expect(body.status).to.eql(pm.response.code);",
+                  "    pm.expect(body.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(body.detalles).to.be.an('array');",
+                  "    pm.expect(Number.isNaN(Date.parse(body.timestamp))).to.eql(false);",
+                  "});",
+                  "pm.test('Detalle del campo rechazado', function () { pm.expect(body.detalles.some(x => x.startsWith('pesoKg:'))).to.eql(true); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "400 - pesoKg=0 no representable/positivo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios",
+            "description": "La solicitud debe rechazarse; no se agrega un envío. Contrato de precisión de #8.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente\": {\n    \"nombre\": \"Ana Demo\",\n    \"email\": \"{{clienteEmail}}\",\n    \"telefono\": \"+5493880000000\"\n  },\n  \"origen\": {\n    \"calle\": \"Belgrano\",\n    \"numero\": \"100\",\n    \"ciudad\": \"Jujuy\",\n    \"codigoPostal\": \"Y4600\"\n  },\n  \"destino\": {\n    \"calle\": \"Alvear\",\n    \"numero\": \"200\",\n    \"ciudad\": \"Salta\",\n    \"codigoPostal\": \"A4400\"\n  },\n  \"pesoKg\": 0,\n  \"anchoCm\": 25.25,\n  \"altoCm\": 15.5,\n  \"largoCm\": 30.75\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('clienteEmail')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta clienteEmail'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', function () { pm.response.to.have.status(400); });",
+                  "if (pm.response.code === 400) {",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('ApiError coherente', function () {",
+                  "    pm.expect(body).to.have.all.keys('timestamp', 'status', 'error', 'mensaje', 'detalles');",
+                  "    pm.expect(body.status).to.eql(pm.response.code);",
+                  "    pm.expect(body.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(body.detalles).to.be.an('array');",
+                  "    pm.expect(Number.isNaN(Date.parse(body.timestamp))).to.eql(false);",
+                  "});",
+                  "pm.test('Detalle del campo rechazado', function () { pm.expect(body.detalles.some(x => x.startsWith('pesoKg:'))).to.eql(true); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "400 - anchoCm=0.001 no representable/positivo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios",
+            "description": "La solicitud debe rechazarse; no se agrega un envío. Contrato de precisión de #8.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente\": {\n    \"nombre\": \"Ana Demo\",\n    \"email\": \"{{clienteEmail}}\",\n    \"telefono\": \"+5493880000000\"\n  },\n  \"origen\": {\n    \"calle\": \"Belgrano\",\n    \"numero\": \"100\",\n    \"ciudad\": \"Jujuy\",\n    \"codigoPostal\": \"Y4600\"\n  },\n  \"destino\": {\n    \"calle\": \"Alvear\",\n    \"numero\": \"200\",\n    \"ciudad\": \"Salta\",\n    \"codigoPostal\": \"A4400\"\n  },\n  \"pesoKg\": 1.25,\n  \"anchoCm\": 0.001,\n  \"altoCm\": 15.5,\n  \"largoCm\": 30.75\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('clienteEmail')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta clienteEmail'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', function () { pm.response.to.have.status(400); });",
+                  "if (pm.response.code === 400) {",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('ApiError coherente', function () {",
+                  "    pm.expect(body).to.have.all.keys('timestamp', 'status', 'error', 'mensaje', 'detalles');",
+                  "    pm.expect(body.status).to.eql(pm.response.code);",
+                  "    pm.expect(body.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(body.detalles).to.be.an('array');",
+                  "    pm.expect(Number.isNaN(Date.parse(body.timestamp))).to.eql(false);",
+                  "});",
+                  "pm.test('Detalle del campo rechazado', function () { pm.expect(body.detalles.some(x => x.startsWith('anchoCm:'))).to.eql(true); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "400 - altoCm=0.001 no representable/positivo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios",
+            "description": "La solicitud debe rechazarse; no se agrega un envío. Contrato de precisión de #8.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente\": {\n    \"nombre\": \"Ana Demo\",\n    \"email\": \"{{clienteEmail}}\",\n    \"telefono\": \"+5493880000000\"\n  },\n  \"origen\": {\n    \"calle\": \"Belgrano\",\n    \"numero\": \"100\",\n    \"ciudad\": \"Jujuy\",\n    \"codigoPostal\": \"Y4600\"\n  },\n  \"destino\": {\n    \"calle\": \"Alvear\",\n    \"numero\": \"200\",\n    \"ciudad\": \"Salta\",\n    \"codigoPostal\": \"A4400\"\n  },\n  \"pesoKg\": 1.25,\n  \"anchoCm\": 25.25,\n  \"altoCm\": 0.001,\n  \"largoCm\": 30.75\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('clienteEmail')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta clienteEmail'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', function () { pm.response.to.have.status(400); });",
+                  "if (pm.response.code === 400) {",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('ApiError coherente', function () {",
+                  "    pm.expect(body).to.have.all.keys('timestamp', 'status', 'error', 'mensaje', 'detalles');",
+                  "    pm.expect(body.status).to.eql(pm.response.code);",
+                  "    pm.expect(body.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(body.detalles).to.be.an('array');",
+                  "    pm.expect(Number.isNaN(Date.parse(body.timestamp))).to.eql(false);",
+                  "});",
+                  "pm.test('Detalle del campo rechazado', function () { pm.expect(body.detalles.some(x => x.startsWith('altoCm:'))).to.eql(true); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "400 - largoCm=0.001 no representable/positivo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios",
+            "description": "La solicitud debe rechazarse; no se agrega un envío. Contrato de precisión de #8.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente\": {\n    \"nombre\": \"Ana Demo\",\n    \"email\": \"{{clienteEmail}}\",\n    \"telefono\": \"+5493880000000\"\n  },\n  \"origen\": {\n    \"calle\": \"Belgrano\",\n    \"numero\": \"100\",\n    \"ciudad\": \"Jujuy\",\n    \"codigoPostal\": \"Y4600\"\n  },\n  \"destino\": {\n    \"calle\": \"Alvear\",\n    \"numero\": \"200\",\n    \"ciudad\": \"Salta\",\n    \"codigoPostal\": \"A4400\"\n  },\n  \"pesoKg\": 1.25,\n  \"anchoCm\": 25.25,\n  \"altoCm\": 15.5,\n  \"largoCm\": 0.001\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('clienteEmail')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta clienteEmail'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', function () { pm.response.to.have.status(400); });",
+                  "if (pm.response.code === 400) {",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('ApiError coherente', function () {",
+                  "    pm.expect(body).to.have.all.keys('timestamp', 'status', 'error', 'mensaje', 'detalles');",
+                  "    pm.expect(body.status).to.eql(pm.response.code);",
+                  "    pm.expect(body.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(body.detalles).to.be.an('array');",
+                  "    pm.expect(Number.isNaN(Date.parse(body.timestamp))).to.eql(false);",
+                  "});",
+                  "pm.test('Detalle del campo rechazado', function () { pm.expect(body.detalles.some(x => x.startsWith('largoCm:'))).to.eql(true); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "400 - JSON incompleto",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', function () { pm.response.to.have.status(400); });",
+                  "if (pm.response.code === 400) {",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('ApiError coherente', function () {",
+                  "    pm.expect(body).to.have.all.keys('timestamp', 'status', 'error', 'mensaje', 'detalles');",
+                  "    pm.expect(body.status).to.eql(pm.response.code);",
+                  "    pm.expect(body.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(body.detalles).to.be.an('array');",
+                  "    pm.expect(Number.isNaN(Date.parse(body.timestamp))).to.eql(false);",
+                  "});",
+                  "",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "400 - UUID de ruta inválido",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios/no-es-uuid",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', function () { pm.response.to.have.status(400); });",
+                  "if (pm.response.code === 400) {",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('ApiError coherente', function () {",
+                  "    pm.expect(body).to.have.all.keys('timestamp', 'status', 'error', 'mensaje', 'detalles');",
+                  "    pm.expect(body.status).to.eql(pm.response.code);",
+                  "    pm.expect(body.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(body.detalles).to.be.an('array');",
+                  "    pm.expect(Number.isNaN(Date.parse(body.timestamp))).to.eql(false);",
+                  "});",
+                  "",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "400 - Enum del cuerpo inválido",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios/{{envioId}}/estado",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"DESCONOCIDO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('envioId')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta envioId'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', function () { pm.response.to.have.status(400); });",
+                  "if (pm.response.code === 400) {",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('ApiError coherente', function () {",
+                  "    pm.expect(body).to.have.all.keys('timestamp', 'status', 'error', 'mensaje', 'detalles');",
+                  "    pm.expect(body.status).to.eql(pm.response.code);",
+                  "    pm.expect(body.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(body.detalles).to.be.an('array');",
+                  "    pm.expect(Number.isNaN(Date.parse(body.timestamp))).to.eql(false);",
+                  "});",
+                  "",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "400 - Enum del filtro inválido",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios?estado=DESCONOCIDO",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', function () { pm.response.to.have.status(400); });",
+                  "if (pm.response.code === 400) {",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('ApiError coherente', function () {",
+                  "    pm.expect(body).to.have.all.keys('timestamp', 'status', 'error', 'mensaje', 'detalles');",
+                  "    pm.expect(body.status).to.eql(pm.response.code);",
+                  "    pm.expect(body.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(body.detalles).to.be.an('array');",
+                  "    pm.expect(Number.isNaN(Date.parse(body.timestamp))).to.eql(false);",
+                  "});",
+                  "",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "400 - Faltan datos obligatorios",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', function () { pm.response.to.have.status(400); });",
+                  "if (pm.response.code === 400) {",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('ApiError coherente', function () {",
+                  "    pm.expect(body).to.have.all.keys('timestamp', 'status', 'error', 'mensaje', 'detalles');",
+                  "    pm.expect(body.status).to.eql(pm.response.code);",
+                  "    pm.expect(body.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(body.detalles).to.be.an('array');",
+                  "    pm.expect(Number.isNaN(Date.parse(body.timestamp))).to.eql(false);",
+                  "});",
+                  "",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "404 - Envío inexistente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios/00000000-0000-0000-0000-000000000001",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', function () { pm.response.to.have.status(404); });",
+                  "if (pm.response.code === 404) {",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('ApiError coherente', function () {",
+                  "    pm.expect(body).to.have.all.keys('timestamp', 'status', 'error', 'mensaje', 'detalles');",
+                  "    pm.expect(body.status).to.eql(pm.response.code);",
+                  "    pm.expect(body.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(body.detalles).to.be.an('array');",
+                  "    pm.expect(Number.isNaN(Date.parse(body.timestamp))).to.eql(false);",
+                  "});",
+                  "",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "404 - Repartidor inexistente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/repartidores/00000000-0000-0000-0000-000000000001",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', function () { pm.response.to.have.status(404); });",
+                  "if (pm.response.code === 404) {",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('ApiError coherente', function () {",
+                  "    pm.expect(body).to.have.all.keys('timestamp', 'status', 'error', 'mensaje', 'detalles');",
+                  "    pm.expect(body.status).to.eql(pm.response.code);",
+                  "    pm.expect(body.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(body.detalles).to.be.an('array');",
+                  "    pm.expect(Number.isNaN(Date.parse(body.timestamp))).to.eql(false);",
+                  "});",
+                  "",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "404 - Tracking inexistente",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios/seguimiento/LT-NO-EXISTE",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', function () { pm.response.to.have.status(404); });",
+                  "if (pm.response.code === 404) {",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('ApiError coherente', function () {",
+                  "    pm.expect(body).to.have.all.keys('timestamp', 'status', 'error', 'mensaje', 'detalles');",
+                  "    pm.expect(body.status).to.eql(pm.response.code);",
+                  "    pm.expect(body.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(body.detalles).to.be.an('array');",
+                  "    pm.expect(Number.isNaN(Date.parse(body.timestamp))).to.eql(false);",
+                  "});",
+                  "",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "422 - No cancelar un ENTREGADO",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios/{{envioId}}/cancelacion",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('envioId')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta envioId'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', function () { pm.response.to.have.status(422); });",
+                  "if (pm.response.code === 422) {",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('ApiError coherente', function () {",
+                  "    pm.expect(body).to.have.all.keys('timestamp', 'status', 'error', 'mensaje', 'detalles');",
+                  "    pm.expect(body.status).to.eql(pm.response.code);",
+                  "    pm.expect(body.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(body.detalles).to.be.an('array');",
+                  "    pm.expect(Number.isNaN(Date.parse(body.timestamp))).to.eql(false);",
+                  "});",
+                  "",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "422 - No repetir una cancelación",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios/{{cancelacionId}}/cancelacion",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('cancelacionId')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta cancelacionId'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', function () { pm.response.to.have.status(422); });",
+                  "if (pm.response.code === 422) {",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('ApiError coherente', function () {",
+                  "    pm.expect(body).to.have.all.keys('timestamp', 'status', 'error', 'mensaje', 'detalles');",
+                  "    pm.expect(body.status).to.eql(pm.response.code);",
+                  "    pm.expect(body.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(body.detalles).to.be.an('array');",
+                  "    pm.expect(Number.isNaN(Date.parse(body.timestamp))).to.eql(false);",
+                  "});",
+                  "",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "422 - No asignar repartidor a un ENTREGADO",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios/{{envioId}}/repartidor",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"repartidorId\": \"{{repartidorId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('envioId')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta envioId'); }",
+                  "if (!pm.environment.get('repartidorId')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta repartidorId'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', function () { pm.response.to.have.status(422); });",
+                  "if (pm.response.code === 422) {",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('ApiError coherente', function () {",
+                  "    pm.expect(body).to.have.all.keys('timestamp', 'status', 'error', 'mensaje', 'detalles');",
+                  "    pm.expect(body.status).to.eql(pm.response.code);",
+                  "    pm.expect(body.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(body.detalles).to.be.an('array');",
+                  "    pm.expect(Number.isNaN(Date.parse(body.timestamp))).to.eql(false);",
+                  "});",
+                  "",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "422 - ENTREGADO no vuelve a EN_RUTA",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios/{{envioId}}/estado",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"EN_RUTA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('envioId')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta envioId'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', function () { pm.response.to.have.status(422); });",
+                  "if (pm.response.code === 422) {",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('ApiError coherente', function () {",
+                  "    pm.expect(body).to.have.all.keys('timestamp', 'status', 'error', 'mensaje', 'detalles');",
+                  "    pm.expect(body.status).to.eql(pm.response.code);",
+                  "    pm.expect(body.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(body.detalles).to.be.an('array');",
+                  "    pm.expect(Number.isNaN(Date.parse(body.timestamp))).to.eql(false);",
+                  "});",
+                  "",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "409 - Longitud real de columna excedida",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/envios",
+            "description": "nombre pasa @NotBlank pero excede VARCHAR(255). MySQL rechaza el alta y la API devuelve ApiError 409; no se simula una colisión por email.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente\": {\n    \"nombre\": \"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n    \"email\": \"conflicto-{{runId}}@example.test\"\n  },\n  \"origen\": {\n    \"calle\": \"Belgrano\",\n    \"numero\": \"100\",\n    \"ciudad\": \"Jujuy\",\n    \"codigoPostal\": \"Y4600\"\n  },\n  \"destino\": {\n    \"calle\": \"Alvear\",\n    \"numero\": \"200\",\n    \"ciudad\": \"Salta\",\n    \"codigoPostal\": \"A4400\"\n  },\n  \"pesoKg\": 1.25,\n  \"anchoCm\": 25.25,\n  \"altoCm\": 15.5,\n  \"largoCm\": 30.75\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get('runId')) { throw new Error('Ejecutar primero 00 y los pasos previos de la colección: falta runId'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', function () { pm.response.to.have.status(409); });",
+                  "if (pm.response.code === 409) {",
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('ApiError coherente', function () {",
+                  "    pm.expect(body).to.have.all.keys('timestamp', 'status', 'error', 'mensaje', 'detalles');",
+                  "    pm.expect(body.status).to.eql(pm.response.code);",
+                  "    pm.expect(body.mensaje).to.be.a('string').and.not.empty;",
+                  "    pm.expect(body.detalles).to.be.an('array');",
+                  "    pm.expect(Number.isNaN(Date.parse(body.timestamp))).to.eql(false);",
+                  "});",
+                  "",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    }
+  ]
+}

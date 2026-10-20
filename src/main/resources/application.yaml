@@ -9,3 +9,7 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: ${JPA_DDL_AUTO:validate}
+
+springdoc:
+  # Cada operación declara sus errores pertinentes, sin respuestas globales indiscriminadas.
+  override-with-generic-response: false
