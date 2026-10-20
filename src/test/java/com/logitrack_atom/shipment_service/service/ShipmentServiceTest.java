@@ -8,6 +8,7 @@ import com.logitrack_atom.shipment_service.dto.response.EnvioResponse;
 import com.logitrack_atom.shipment_service.entity.Cliente;
 import com.logitrack_atom.shipment_service.entity.Envio;
 import com.logitrack_atom.shipment_service.entity.HistorialEstadoEnvio;
+import com.logitrack_atom.shipment_service.entity.Repartidor;
 import com.logitrack_atom.shipment_service.enums.EstadoEnvio;
 import com.logitrack_atom.shipment_service.exception.RecursoNoEncontradoException;
 import com.logitrack_atom.shipment_service.mapper.ClienteMapper;
@@ -21,6 +22,8 @@ import com.logitrack_atom.shipment_service.service.impl.ShipmentServiceImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -37,6 +40,9 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
+ * Pruebas unitarias para el servicio de gestión de envíos
+ * Trazabilidad del historial inicial mediante {@link ArgumentCaptor}
+ * y consultas de recursos bajo el patrón AAA.
  * @author JMatiasF
  * @since 18/10/2026
  */
@@ -422,6 +428,83 @@ public class ShipmentServiceTest {
         verify(envioRepository, times(1)).findByEstado(estadoBuscado);
         verify(envioRepository, never()).findAll();
         verify(envioMapper, times(1)).toResponse(envioMock);
+    }
+    /**
+     * Prueba parametrizada para validar la matriz completa de las 16 combinaciones
+     * de estados en el método cambiarEstado.
+     * Permite exclusivamente:
+     * - PENDIENTE -> EN_RUTA
+     * - PENDIENTE -> CANCELADO
+     * - EN_RUTA -> ENTREGADO
+     * Y verifica que cualquier otra transición lance una excepción sin guardar cambios.
+     */
+    @ParameterizedTest
+    @CsvSource({
+            // Combinaciones desde PENDIENTE
+            "PENDIENTE, PENDIENTE, false",
+            "PENDIENTE, EN_RUTA, true",
+            "PENDIENTE, ENTREGADO, false",
+            "PENDIENTE, CANCELADO, true",
+
+            // Combinaciones desde EN_RUTA
+            "EN_RUTA, PENDIENTE, false",
+            "EN_RUTA, EN_RUTA, false",
+            "EN_RUTA, ENTREGADO, true",
+            "EN_RUTA, CANCELADO, false",
+
+            // Combinaciones desde ENTREGADO (Estado final, ninguna permitida)
+            "ENTREGADO, PENDIENTE, false",
+            "ENTREGADO, EN_RUTA, false",
+            "ENTREGADO, ENTREGADO, false",
+            "ENTREGADO, CANCELADO, false",
+
+            // Combinaciones desde CANCELADO (Estado final, ninguna permitida)
+            "CANCELADO, PENDIENTE, false",
+            "CANCELADO, EN_RUTA, false",
+            "CANCELADO, ENTREGADO, false",
+            "CANCELADO, CANCELADO, false"
+    })
+    @DisplayName("Debe validar las 16 combinaciones de la máquina de estados en cambiarEstado")
+    void testMatrizCambiarEstado(EstadoEnvio estadoActual, EstadoEnvio estadoNuevo, boolean esPermitida) {
+        // ==========================================
+        // 1. ARRANGE (Preparación común)
+        // ==========================================
+        UUID envioId = UUID.randomUUID();
+        Envio envioMock = new Envio();
+        envioMock.setId(envioId);
+        envioMock.setEstado(estadoActual);
+
+        // Siempre se busca la entidad primero
+        when(envioRepository.findById(envioId)).thenReturn(Optional.of(envioMock));
+
+        // ==========================================
+        // 2. ACT & 3. ASSERT (Ejecución y Verificación)
+        // ==========================================
+        if (esPermitida) {
+            // Configurar stubs solo para los casos exitosos donde sí se guarda y mapea
+            when(envioRepository.save(any(Envio.class))).thenReturn(envioMock);
+            when(historialRepository.save(any(HistorialEstadoEnvio.class))).thenReturn(new HistorialEstadoEnvio());
+            when(envioMapper.toResponse(any(Envio.class))).thenReturn(mock(EnvioResponse.class));
+
+            // Si transiciona a EN_RUTA, asignamos un repartidor para cumplir con la regla de negocio del servicio
+            if (estadoNuevo == EstadoEnvio.EN_RUTA) {
+                envioMock.setRepartidor(new Repartidor());
+            }
+
+            assertDoesNotThrow(() -> shipmentService.cambiarEstado(envioId, estadoNuevo),
+                    () -> String.format("La transición de %s a %s debería estar PERMITIDA", estadoActual, estadoNuevo));
+
+            assertEquals(estadoNuevo, envioMock.getEstado(), "El estado del envío debe actualizarse correctamente");
+            verify(envioRepository, times(1)).save(envioMock);
+            verify(historialRepository, times(1)).save(any(HistorialEstadoEnvio.class));
+        } else {
+            // En los casos prohibidos, el servicio lanza excepción antes de guardar
+            assertThrows(Exception.class, () -> shipmentService.cambiarEstado(envioId, estadoNuevo),
+                    () -> String.format("La transición de %s a %s debería estar PROHIBIDA", estadoActual, estadoNuevo));
+
+            verify(envioRepository, never()).save(any(Envio.class));
+            verify(historialRepository, never()).save(any(HistorialEstadoEnvio.class));
+        }
     }
 
 }
