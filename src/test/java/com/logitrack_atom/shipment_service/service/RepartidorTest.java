@@ -5,12 +5,17 @@ import com.logitrack_atom.shipment_service.dto.response.RepartidorResponse;
 import com.logitrack_atom.shipment_service.entity.Repartidor;
 import com.logitrack_atom.shipment_service.enums.EstadoRepartidor;
 import com.logitrack_atom.shipment_service.mapper.RepartidorMapper;
+import com.logitrack_atom.shipment_service.exception.RecursoNoEncontradoException;
 import com.logitrack_atom.shipment_service.repository.RepartidorRepository;
 import com.logitrack_atom.shipment_service.service.impl.RepartidorServiceImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.NullSource;
 import org.mockito.InjectMocks;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -26,8 +31,9 @@ import static org.mockito.Mockito.*;
 /**
  * Clase de pruebas unitarias para validar la lógica de negocio y las reglas
  * del servicio de repartidores (RepartidorServiceImpl).
- * Utiliza JUnit 5 y Mockito para aislar el comportamiento de los repositorios y mappers.
+ * Utiliza JUnit Jupiter y Mockito para aislar el comportamiento de los repositorios y mappers.
  * @author JMatiasF
+ * @author MaxDZ-10
  * @since 20/10/2026
  */
 @ExtendWith(MockitoExtension.class)
@@ -56,7 +62,6 @@ public class RepartidorTest {
         Repartidor repartidorEntity = new Repartidor();
         repartidorEntity.setNombre("Carlos Gómez");
         repartidorEntity.setTipoVehiculo("Moto");
-        repartidorEntity.setEstado(EstadoRepartidor.ACTIVO);
 
         Repartidor repartidorGuardado = new Repartidor();
         ReflectionTestUtils.setField(repartidorGuardado, "id", UUID.randomUUID());
@@ -73,7 +78,7 @@ public class RepartidorTest {
 
         // Configuración del comportamiento simulado de los componentes dependientes
         when(repartidorMapper.toEntity(request)).thenReturn(repartidorEntity);
-        when(repartidorRepository.save(any(Repartidor.class))).thenReturn(repartidorGuardado);
+        when(repartidorRepository.save(repartidorEntity)).thenReturn(repartidorGuardado);
         when(repartidorMapper.toResponse(repartidorGuardado)).thenReturn(responseEsperado);
 
         // ==========================================
@@ -91,7 +96,11 @@ public class RepartidorTest {
 
         // Verificación de llamadas a las dependencias simuladas
         verify(repartidorMapper, times(1)).toEntity(request);
-        verify(repartidorRepository, times(1)).save(any(Repartidor.class));
+        ArgumentCaptor<Repartidor> captor = ArgumentCaptor.forClass(Repartidor.class);
+        verify(repartidorRepository).save(captor.capture());
+        assertSame(repartidorEntity, captor.getValue());
+        assertEquals(EstadoRepartidor.ACTIVO, captor.getValue().getEstado());
+        assertSame(responseEsperado, resultado);
         verify(repartidorMapper, times(1)).toResponse(repartidorGuardado);
     }
 
@@ -132,25 +141,26 @@ public class RepartidorTest {
         // 3. ASSERT (Verificación)
         // ==========================================
         assertNotNull(resultado, "La lista resultante no debe ser nula");
-        assertEquals(1, resultado.size(), "Debe retornar exactamente un elemento");
+        assertIterableEquals(List.of(responseMock), resultado);
         assertEquals("Carlos Gómez", resultado.get(0).nombre(), "El nombre del elemento debe coincidir");
 
         verify(repartidorRepository, times(1)).findAll();
         verify(repartidorRepository, never()).findByEstado(any());
         verify(repartidorMapper, times(1)).toResponse(repartidorEntity);
+        verify(repartidorRepository, never()).save(any());
     }
 
     /**
      * Prueba unitaria para validar que el metodo listar filtre correctamente los repartidores
      * al recibir un estado específico (por ejemplo, ACTIVO).
      */
-    @Test
+    @ParameterizedTest(name = "Repartidores {0}")
+    @EnumSource(EstadoRepartidor.class)
     @DisplayName("Debe listar los repartidores filtrados cuando se especifica un estado válido")
-    void testListarRepartidoresEstadoEspecifico() {
+    void testListarRepartidoresEstadoEspecifico(EstadoRepartidor estadoBuscado) {
         // ==========================================
         // 1. ARRANGE (Preparación)
         // ==========================================
-        EstadoRepartidor estadoBuscado = EstadoRepartidor.ACTIVO;
 
         Repartidor repartidorEntity = new Repartidor();
         ReflectionTestUtils.setField(repartidorEntity, "id", UUID.randomUUID());
@@ -179,12 +189,13 @@ public class RepartidorTest {
         // 3. ASSERT (Verificación)
         // ==========================================
         assertNotNull(resultado, "La lista filtrada no debe ser nula");
-        assertEquals(1, resultado.size(), "Debe retornar un elemento filtrado");
+        assertIterableEquals(List.of(responseMock), resultado);
         assertEquals(estadoBuscado, resultado.get(0).estado(), "El estado debe coincidir con el filtro aplicado");
 
         verify(repartidorRepository, times(1)).findByEstado(estadoBuscado);
         verify(repartidorRepository, never()).findAll();
         verify(repartidorMapper, times(1)).toResponse(repartidorEntity);
+        verify(repartidorRepository, never()).save(any());
     }
     /**
      * Prueba unitaria para validar que se retorne un repartidor exitosamente
@@ -223,11 +234,13 @@ public class RepartidorTest {
         // 3. ASSERT (Verificación)
         // ==========================================
         assertNotNull(resultado, "El resultado no debe ser nulo");
+        assertSame(responseEsperado, resultado);
         assertEquals(repartidorId, resultado.id(), "El ID del repartidor debe coincidir");
         assertEquals("Carlos Gómez", resultado.nombre(), "El nombre debe coincidir");
 
         verify(repartidorRepository, times(1)).findById(repartidorId);
         verify(repartidorMapper, times(1)).toResponse(repartidorEntity);
+        verify(repartidorRepository, never()).save(any());
     }
 
     /**
@@ -247,16 +260,38 @@ public class RepartidorTest {
         // ==========================================
         // 2. ACT & 3. ASSERT (Ejecución y Verificación de Excepción)
         // ==========================================
-        Exception exception = assertThrows(
-                com.logitrack_atom.shipment_service.exception.RecursoNoEncontradoException.class,
+        RecursoNoEncontradoException exception = assertThrowsExactly(
+                RecursoNoEncontradoException.class,
                 () -> repartidorService.obtenerPorId(repartidorId),
                 "Debería lanzar RecursoNoEncontradoException"
         );
 
-        assertNotNull(exception.getMessage(), "El mensaje de la excepción no debe ser nulo");
+        assertTrue(exception.getMessage().contains(repartidorId.toString()));
 
         verify(repartidorRepository, times(1)).findById(repartidorId);
-        verify(repartidorMapper, never()).toResponse(any());
+        verify(repartidorRepository, never()).save(any());
+        verifyNoMoreInteractions(repartidorRepository);
+        verifyNoInteractions(repartidorMapper);
+    }
+
+    @ParameterizedTest(name = "Sin repartidores para filtro {0}")
+    @NullSource
+    @EnumSource(EstadoRepartidor.class)
+    @DisplayName("Listar repartidores sin coincidencias devuelve una lista vacía sin mapear ni escribir")
+    void testListarRepartidoresSinResultados(EstadoRepartidor estado) {
+        // Arrange
+        if (estado == null) {
+            when(repartidorRepository.findAll()).thenReturn(List.of());
+        } else {
+            when(repartidorRepository.findByEstado(estado)).thenReturn(List.of());
+        }
+
+        // Act
+        List<RepartidorResponse> resultado = repartidorService.listar(estado);
+
+        // Assert
+        assertTrue(resultado.isEmpty());
+        verify(repartidorRepository, never()).save(any());
+        verifyNoInteractions(repartidorMapper);
     }
 }
-
