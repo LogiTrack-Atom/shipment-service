@@ -231,7 +231,7 @@ Desde la raíz, con Java 25:
 
 ```sh
 # Unitarias/web aisladas con Surefire: sin Docker ni MySQL.
-sh ./mvnw test
+sh ./mvnw clean test
 # Suite completa: Surefire + integraciones *IT con Failsafe y MySQL temporal.
 sh ./mvnw clean verify
 ```
@@ -249,6 +249,8 @@ retira sus recursos al terminar.
 
 | Suite | Qué comprueba |
 | --- | --- |
+| `ShipmentServiceTest` | Registro nuevo/existente, tracking, 16 transiciones, repartidor para EN_RUTA, asignación, cancelación, consultas e historial; Mockito sin Spring ni base |
+| `RepartidorTest` | Alta, consultas y filtros de repartidores; casos vacíos y ausentes sin escrituras |
 | `EnvioMedidasValidationTest` | Frontera HTTP y Bean Validation sin base de datos |
 | `ShipmentPersistenceIT` | UUID/auditoría/relaciones/direcciones tras flush-clear, búsquedas, unicidad, FKs e historial ordenado |
 | `ShipmentApiIT` | Flujo persistente, precisión y respuestas 400/404/422/409 con Spring/MockMvc y MySQL reales |
@@ -256,11 +258,16 @@ retira sus recursos al terminar.
 | `OpenApiIT` | 11 operaciones, 12 ejemplos cotejados con errores reales, esquemas y recursos de Swagger UI |
 | `BusinessLogIT` | Logs de éxito solo después de commit, sin datos de las solicitudes |
 
-La base integrada de #11 tiene **84 pruebas aprobadas: 28 unitarias y 56 IT**,
-sin fallos, errores ni omitidas. No es un porcentaje de cobertura; las unitarias
-del core de [#7](https://github.com/LogiTrack-Atom/shipment-service/issues/7) siguen
-su propio seguimiento. Los reportes están en `target/surefire-reports` y
-`target/failsafe-reports`; el resultado de cada entrega queda en su PR.
+La verificación de [#7](https://github.com/LogiTrack-Atom/shipment-service/issues/7)
+del 20/10/2026 pasó con **146 pruebas: 90 sin base y 56 IT**, sin fallos,
+errores ni omitidas. Surefire ejecuta 53 casos de `ShipmentServiceTest`,
+9 de `RepartidorTest` y 28 validaciones MVC. La ejecución `clean test` se comprobó
+con `DOCKER_HOST` y `DB_URL` deliberadamente inaccesibles: no requiere MySQL.
+`clean verify` agrega las 56 integraciones preexistentes con MySQL real.
+Estos conteos no son un porcentaje de cobertura ni una demostración de rollback
+con mocks; la atomicidad la verifican las IT. Los reportes están en
+`target/surefire-reports` y `target/failsafe-reports`; comandos y evidencia de cada
+entrega quedan en su PR.
 `sh ./mvnw -Dit.test=ShipmentTransactionIT verify` sirve para diagnóstico, pero
 una selección de pruebas no sustituye `clean verify`.
 
@@ -327,8 +334,14 @@ Se registra quién publicó cada aporte, sin atribuir como propio el código pre
 Esta guía y Postman se entregan mediante [#12](https://github.com/LogiTrack-Atom/shipment-service/issues/12).
 La reproducción desde checkout limpio se verifica con los comandos anteriores;
 el commit, entorno y resultados se registran en la PR enlazada desde la issue.
-JMatiasF continúa las unitarias del core en
-[#7](https://github.com/LogiTrack-Atom/shipment-service/issues/7).
+Las unitarias del core de [#7](https://github.com/LogiTrack-Atom/shipment-service/issues/7)
+fueron iniciadas por JMatiasF y completadas por MaxDZ-10 por coordinación del equipo.
+Se conservaron los commits y la rama `feature/3-pruebas-unitarias`; la PR y su
+evidencia quedan enlazadas desde la issue. Los nuevos commits se agregan después
+de los originales, sin reescribir su autoría.
+
+Las PR de trabajo y la entrega final apuntan exclusivamente a `develop`.
+Por decisión del equipo, no se integra `develop` en `main`.
 La revisión final, grabación y entrega siguen en
 [#13](https://github.com/LogiTrack-Atom/shipment-service/issues/13).
 
