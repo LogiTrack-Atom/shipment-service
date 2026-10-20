@@ -28,6 +28,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -98,12 +99,12 @@ public class ShipmentServiceTest {
 
         UUID clienteId = UUID.randomUUID();
         Cliente clienteExistente = new Cliente();
-        clienteExistente.setId(clienteId);
+        ReflectionTestUtils.setField(clienteExistente, "id", clienteId);
         clienteExistente.setEmail(emailCliente);
         clienteExistente.setNombre("María Gómez");
 
         Envio envioMock = new Envio();
-        envioMock.setId(UUID.randomUUID());
+        ReflectionTestUtils.setField(envioMock, "id", UUID.randomUUID());
         envioMock.setCodigoSeguimiento("LT-ABC1234567");
         envioMock.setCliente(clienteExistente);
         envioMock.setEstado(EstadoEnvio.PENDIENTE);
@@ -196,12 +197,12 @@ public class ShipmentServiceTest {
         clienteNuevoMapeado.setNombre("Pedro Nuñez");
 
         Cliente clienteGuardado = new Cliente();
-        clienteGuardado.setId(UUID.randomUUID());
+        ReflectionTestUtils.setField(clienteGuardado, "id", UUID.randomUUID());
         clienteGuardado.setEmail(emailCliente);
         clienteGuardado.setNombre("Pedro Nuñez");
 
         Envio envioMock = new Envio();
-        envioMock.setId(UUID.randomUUID());
+        ReflectionTestUtils.setField(envioMock, "id", UUID.randomUUID());
         envioMock.setCodigoSeguimiento("LT-XYZ9876543");
         envioMock.setCliente(clienteGuardado);
         envioMock.setEstado(EstadoEnvio.PENDIENTE);
@@ -471,7 +472,7 @@ public class ShipmentServiceTest {
         // ==========================================
         UUID envioId = UUID.randomUUID();
         Envio envioMock = new Envio();
-        envioMock.setId(envioId);
+        ReflectionTestUtils.setField(envioMock, "id", envioId);
         envioMock.setEstado(estadoActual);
 
         // Siempre se busca la entidad primero

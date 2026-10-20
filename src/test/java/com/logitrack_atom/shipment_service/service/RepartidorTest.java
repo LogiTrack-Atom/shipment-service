@@ -13,6 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -58,7 +59,7 @@ public class RepartidorTest {
         repartidorEntity.setEstado(EstadoRepartidor.ACTIVO);
 
         Repartidor repartidorGuardado = new Repartidor();
-        repartidorGuardado.setId(UUID.randomUUID());
+        ReflectionTestUtils.setField(repartidorGuardado, "id", UUID.randomUUID());
         repartidorGuardado.setNombre("Carlos Gómez");
         repartidorGuardado.setTipoVehiculo("Moto");
         repartidorGuardado.setEstado(EstadoRepartidor.ACTIVO);
@@ -105,7 +106,7 @@ public class RepartidorTest {
         // 1. ARRANGE (Preparación)
         // ==========================================
         Repartidor repartidorEntity = new Repartidor();
-        repartidorEntity.setId(UUID.randomUUID());
+        ReflectionTestUtils.setField(repartidorEntity, "id", UUID.randomUUID());
         repartidorEntity.setNombre("Carlos Gómez");
         repartidorEntity.setTipoVehiculo("Moto");
         repartidorEntity.setEstado(EstadoRepartidor.ACTIVO);
@@ -152,7 +153,7 @@ public class RepartidorTest {
         EstadoRepartidor estadoBuscado = EstadoRepartidor.ACTIVO;
 
         Repartidor repartidorEntity = new Repartidor();
-        repartidorEntity.setId(UUID.randomUUID());
+        ReflectionTestUtils.setField(repartidorEntity, "id", UUID.randomUUID());
         repartidorEntity.setNombre("Ana Torres");
         repartidorEntity.setTipoVehiculo("Bicicleta");
         repartidorEntity.setEstado(estadoBuscado);
@@ -198,7 +199,7 @@ public class RepartidorTest {
         UUID repartidorId = UUID.randomUUID();
 
         Repartidor repartidorEntity = new Repartidor();
-        repartidorEntity.setId(repartidorId);
+        ReflectionTestUtils.setField(repartidorEntity, "id", repartidorId);
         repartidorEntity.setNombre("Carlos Gómez");
         repartidorEntity.setTipoVehiculo("Moto");
         repartidorEntity.setEstado(EstadoRepartidor.ACTIVO);
