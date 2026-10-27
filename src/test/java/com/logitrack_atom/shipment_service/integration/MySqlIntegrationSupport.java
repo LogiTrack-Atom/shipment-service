@@ -55,6 +55,7 @@ abstract class MySqlIntegrationSupport {
 
     @DynamicPropertySource
     static void configurarMySql(DynamicPropertyRegistry registry) {
+        com.logitrack_atom.shipment_service.support.TestRsaKeys.registrar(registry);
         registry.add("spring.datasource.url", MYSQL::getJdbcUrl);
         registry.add("spring.datasource.username", MYSQL::getUsername);
         registry.add("spring.datasource.password", MYSQL::getPassword);

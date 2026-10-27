@@ -1,6 +1,7 @@
 package com.logitrack_atom.shipment_service.client;
 
 import com.logitrack_atom.shipment_service.exception.CourierNoDisponibleException;
+import com.logitrack_atom.shipment_service.exception.CourierRespuestaInvalidaException;
 import com.logitrack_atom.shipment_service.exception.RecursoNoEncontradoException;
 import com.logitrack_atom.shipment_service.exception.ReglaNegocioException;
 import java.util.UUID;
@@ -21,6 +22,9 @@ public interface CourierClient {
      * @throws RecursoNoEncontradoException si no existe
      * @throws ReglaNegocioException si no está disponible
      * @throws CourierNoDisponibleException si no se puede comprobar
+     * @throws CourierRespuestaInvalidaException si el proveedor no cumple su contrato
+     * @throws org.springframework.security.core.AuthenticationException si falta una credencial válida
+     * @throws org.springframework.security.access.AccessDeniedException si no está autorizado
      */
     void verificarDisponible(UUID repartidorId);
 }

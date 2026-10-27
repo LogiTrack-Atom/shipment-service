@@ -2,6 +2,8 @@ package com.logitrack_atom.shipment_service.exception;
 
 import com.logitrack_atom.shipment_service.dto.response.ApiError;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -20,6 +22,37 @@ import java.util.List;
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    /**
+     * Rechaza credenciales ausentes o inválidas sin repetir sus valores.
+     * @param ex fallo de autenticación local
+     * @return error 401 con desafío Bearer
+     */
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ApiError> manejarAutenticacion(AuthenticationException ex) {
+        var response = construir(HttpStatus.UNAUTHORIZED, "Se requiere una credencial Bearer válida", List.of());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).header("WWW-Authenticate", "Bearer").body(response.getBody());
+    }
+
+    /**
+     * Impide llamadas de usuarios sin permiso administrativo en esta etapa.
+     * @param ex permiso local insuficiente
+     * @return error público 403
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiError> manejarAcceso(AccessDeniedException ex) {
+        return construir(HttpStatus.FORBIDDEN, "No tiene permiso para realizar esta operación", List.of());
+    }
+
+    /**
+     * Traduce respuestas inesperadas de courier sin exponer su contenido.
+     * @param ex contrato remoto inválido
+     * @return error público 502
+     */
+    @ExceptionHandler(CourierRespuestaInvalidaException.class)
+    public ResponseEntity<ApiError> manejarCourierInvalido(CourierRespuestaInvalidaException ex) {
+        return construir(HttpStatus.BAD_GATEWAY, ex.getMessage(), List.of());
+    }
 
     /**
      * Traduce un recurso inexistente a 404.

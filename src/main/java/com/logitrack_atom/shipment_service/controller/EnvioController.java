@@ -140,13 +140,16 @@ public class EnvioController {
      * @return envío actualizado
      */
     @Operation(operationId = "cambiarEstadoEnvio", summary = "Cambiar el estado de un envío",
-            description = "Permite PENDIENTE → EN_RUTA/CANCELADO y EN_RUTA → ENTREGADO. EN_RUTA requiere verificar disponibilidad del UUID asignado mediante CourierClient. La integración REST está pendiente en #24; entretanto responde 503 al necesitar esa consulta. ENTREGADO y CANCELADO son terminales; repetir el estado se rechaza. Estado e historial se confirman o revierten juntos.")
+            description = "Permite PENDIENTE → EN_RUTA/CANCELADO y EN_RUTA → ENTREGADO. EN_RUTA requiere verificar disponibilidad del UUID asignado mediante CourierClient. La consulta exige Bearer JWT ADMIN validado localmente; la autorización completa por pertenencia se incorpora en #25. Un fallo remoto no modifica el envío. ENTREGADO y CANCELADO son terminales; repetir el estado se rechaza. Estado e historial se confirman o revierten juntos.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Estado e historial actualizados.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = EnvioResponse.class))),
             @ApiResponse(responseCode = "400", ref = "#/components/responses/CuerpoInvalido"),
             @ApiResponse(responseCode = "404", ref = "#/components/responses/EnvioNoEncontrado"),
             @ApiResponse(responseCode = "422", ref = "#/components/responses/TransicionInvalida"),
+            @ApiResponse(responseCode = "401", ref = "#/components/responses/AutenticacionRequerida"),
+            @ApiResponse(responseCode = "403", ref = "#/components/responses/AccesoDenegado"),
+            @ApiResponse(responseCode = "502", ref = "#/components/responses/CourierRespuestaInvalida"),
             @ApiResponse(responseCode = "503", ref = "#/components/responses/CourierNoDisponible")
     })
     @PatchMapping("/{id}/estado")
@@ -181,7 +184,7 @@ public class EnvioController {
      * @return envío con asignación confirmada
      */
     @Operation(operationId = "asignarRepartidor", summary = "Asignar un repartidor activo",
-            description = "Asigna o reemplaza el UUID únicamente en PENDIENTE y tras verificar disponibilidad mediante CourierClient. Hasta integrar REST en #24 responde 503 sin modificar el envío. No cambia el estado ni crea un evento de historial.")
+            description = "Asigna o reemplaza el UUID únicamente en PENDIENTE y tras verificar disponibilidad mediante CourierClient. Exige Bearer JWT ADMIN validado localmente. Inactivo 422, inexistente 404, indisponibilidad 503 y respuesta inválida 502, sin mutación. No cambia el estado ni crea un evento de historial.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Repartidor asignado.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = EnvioResponse.class))),
@@ -189,6 +192,9 @@ public class EnvioController {
             @ApiResponse(responseCode = "404", ref = "#/components/responses/AsignacionNoEncontrada"),
             @ApiResponse(responseCode = "422", ref = "#/components/responses/AsignacionInvalida"),
             @ApiResponse(responseCode = "409", ref = "#/components/responses/ConflictoDeDatos"),
+            @ApiResponse(responseCode = "401", ref = "#/components/responses/AutenticacionRequerida"),
+            @ApiResponse(responseCode = "403", ref = "#/components/responses/AccesoDenegado"),
+            @ApiResponse(responseCode = "502", ref = "#/components/responses/CourierRespuestaInvalida"),
             @ApiResponse(responseCode = "503", ref = "#/components/responses/CourierNoDisponible")
     })
     @PutMapping("/{id}/repartidor")

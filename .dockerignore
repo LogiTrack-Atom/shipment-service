@@ -15,3 +15,8 @@ README.md
 postman/
 docker/
 *.log
+# Claves externas; no forman parte del código ni del contexto de construcción.
+*.pem
+*.key
+**/*.pem
+**/*.key

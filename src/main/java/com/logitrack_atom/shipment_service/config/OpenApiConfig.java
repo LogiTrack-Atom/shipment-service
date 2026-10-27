@@ -65,14 +65,23 @@ public class OpenApiConfig {
                 "No se pudo comprobar disponibilidad; no se modifica asignación, estado ni historial.",
                 "No se pudo verificar la disponibilidad del repartidor"));
 
+        components.addResponses("AutenticacionRequerida", error(401,
+                "Falta un JWT Bearer válido para verificar disponibilidad.", "Se requiere una credencial Bearer válida"));
+        components.addResponses("AccesoDenegado", error(403,
+                "El usuario autenticado no está autorizado para esta operación.", "No tiene permiso para realizar esta operación"));
+        components.addResponses("CourierRespuestaInvalida", error(502,
+                "Contrato remoto inválido o HTTP inesperado, incluido 401/403 del proveedor.",
+                "El servicio de repartidores devolvió una respuesta inválida"));
+
         return new OpenAPI().components(components).info(new Info()
                 .title("shipment-service API").version("v1")
                 .description("""
                         Gestión de envíos de LogiTrack Atom — Sprint 02.
                         repartidorId nullable reemplaza el objeto repartidor del Sprint01.
                         La administración de repartidores se trasladó a courier-service (8081).
-                        Las lecturas usan solo datos locales. Integración REST pendiente en #24;
-                        las operaciones que necesitan disponibilidad responden 503 hasta completarla.
+                        Las lecturas usan solo datos locales. Asignar e iniciar ruta consultan
+                        disponibilidad por REST, con JWT ADMIN validado localmente. Las reglas
+                        completas de autorización por pertenencia se incorporan en #25.
                         Cada envío se registra PENDIENTE con historial inicial. PENDIENTE permite
                         EN_RUTA (con repartidor activo) o CANCELADO; EN_RUTA permite ENTREGADO.
                         ENTREGADO y CANCELADO son terminales. Las escrituras y su historial son atómicos.
