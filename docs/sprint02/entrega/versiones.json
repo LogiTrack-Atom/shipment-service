@@ -1,0 +1,32 @@
+{
+  "version": "sprint02-1.0.0",
+  "fecha_verificacion": "2026-10-27",
+  "plataforma_imagenes": "linux/amd64",
+  "configuracion": {
+    "repositorio": "https://github.com/LogiTrack-Atom/configserver-ms",
+    "commit": "b40bd4d0eecd5eff6e5ef0a7b23d0a106a39ba13",
+    "tag": "sprint02-1.0.0"
+  },
+  "imagenes": {
+    "shipment-service": {
+      "referencia": "maxdz10/shipment-service:sprint02-1.0.0",
+      "digest": "sha256:f4e4b26e93a944923341816d7b56e3f877ee5c1716624300dacdb410c34f3b1b",
+      "commit_fuente": "b2dda870e4790d99af45b40dd0235f1114ac9a91"
+    },
+    "courier-service": {
+      "referencia": "maxdz10/courier-service:sprint02-1.0.0",
+      "digest": "sha256:adad71a7915768b0d7a1aefcfedc039a8302018250f6726c85517adf8689d979",
+      "commit_fuente": "33ffdd06441b7cd0c5d4972a37b565fc20e75a88"
+    },
+    "security-service": {
+      "referencia": "maxdz10/security-service:sprint02-1.0.0",
+      "digest": "sha256:6a5ca59a65520761bdc9745bf9817daaec318c614ef8d5cc77ddc34ca42a5717",
+      "commit_fuente": "9d29a30ef320536567f3e4621c8b95db2bc05e22"
+    },
+    "configserver": {
+      "referencia": "maxdz10/configserver:sprint02-1.0.0",
+      "digest": "sha256:1658bc0e413f5519087ab00ef0e170de31cb20a17b6b84aef08ca17acf19874b",
+      "commit_fuente": "8e5cc47470279a90687a4901b149ccda6957971b"
+    }
+  }
+}

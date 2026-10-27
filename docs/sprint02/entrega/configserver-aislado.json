@@ -1,0 +1,64 @@
+{
+  "resultado": "OK",
+  "mysql": false,
+  "config_client": false,
+  "usuario": "10001:10001",
+  "consultas": [
+    {
+      "aplicacion": "shipment-service",
+      "perfil": "dev",
+      "version": "b40bd4d0eecd5eff6e5ef0a7b23d0a106a39ba13",
+      "fuentes": [
+        "https://github.com/LogiTrack-Atom/configserver-ms.git/shipment-service-dev.yml",
+        "https://github.com/LogiTrack-Atom/configserver-ms.git/shipment-service.yml"
+      ]
+    },
+    {
+      "aplicacion": "shipment-service",
+      "perfil": "prod",
+      "version": "b40bd4d0eecd5eff6e5ef0a7b23d0a106a39ba13",
+      "fuentes": [
+        "https://github.com/LogiTrack-Atom/configserver-ms.git/shipment-service-prod.yml",
+        "https://github.com/LogiTrack-Atom/configserver-ms.git/shipment-service.yml"
+      ]
+    },
+    {
+      "aplicacion": "courier-service",
+      "perfil": "dev",
+      "version": "b40bd4d0eecd5eff6e5ef0a7b23d0a106a39ba13",
+      "fuentes": [
+        "https://github.com/LogiTrack-Atom/configserver-ms.git/courier-service-dev.yml",
+        "https://github.com/LogiTrack-Atom/configserver-ms.git/courier-service.yml"
+      ]
+    },
+    {
+      "aplicacion": "courier-service",
+      "perfil": "prod",
+      "version": "b40bd4d0eecd5eff6e5ef0a7b23d0a106a39ba13",
+      "fuentes": [
+        "https://github.com/LogiTrack-Atom/configserver-ms.git/courier-service-prod.yml",
+        "https://github.com/LogiTrack-Atom/configserver-ms.git/courier-service.yml"
+      ]
+    },
+    {
+      "aplicacion": "security-service",
+      "perfil": "dev",
+      "version": "b40bd4d0eecd5eff6e5ef0a7b23d0a106a39ba13",
+      "fuentes": [
+        "https://github.com/LogiTrack-Atom/configserver-ms.git/security-service-dev.yml",
+        "https://github.com/LogiTrack-Atom/configserver-ms.git/security-service.yml"
+      ]
+    },
+    {
+      "aplicacion": "security-service",
+      "perfil": "prod",
+      "version": "b40bd4d0eecd5eff6e5ef0a7b23d0a106a39ba13",
+      "fuentes": [
+        "https://github.com/LogiTrack-Atom/configserver-ms.git/security-service-prod.yml",
+        "https://github.com/LogiTrack-Atom/configserver-ms.git/security-service.yml"
+      ]
+    }
+  ],
+  "actuator_env_configprops": 404,
+  "aplicacion_inexistente": 404
+}

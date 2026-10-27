@@ -1,0 +1,209 @@
+{
+  "resultado": "OK",
+  "contenedores": 7,
+  "mysql_separados": {
+    "shipment": true,
+    "courier": true,
+    "security": true
+  },
+  "config_label": "b40bd4d0eecd5eff6e5ef0a7b23d0a106a39ba13",
+  "config_consultas": 6,
+  "pull_publico_sin_build": true,
+  "capas_cache_reutilizadas": true,
+  "perfiles_reales": [
+    "dev",
+    "prod"
+  ],
+  "seguridad_y_courier_caido": true,
+  "persistencia_tras_recrear": true,
+  "bootstrap_desactivado_segundo_arranque": true,
+  "solicitudes": 36,
+  "casos": [
+    {
+      "metodo": "GET",
+      "ruta": "/shipment-service/dev/b40bd4d0eecd5eff6e5ef0a7b23d0a106a39ba13",
+      "http": 200
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/shipment-service/prod/b40bd4d0eecd5eff6e5ef0a7b23d0a106a39ba13",
+      "http": 200
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/courier-service/dev/b40bd4d0eecd5eff6e5ef0a7b23d0a106a39ba13",
+      "http": 200
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/courier-service/prod/b40bd4d0eecd5eff6e5ef0a7b23d0a106a39ba13",
+      "http": 200
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/security-service/dev/b40bd4d0eecd5eff6e5ef0a7b23d0a106a39ba13",
+      "http": 200
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/security-service/prod/b40bd4d0eecd5eff6e5ef0a7b23d0a106a39ba13",
+      "http": 200
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/actuator/env",
+      "http": 404
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/actuator/configprops",
+      "http": 404
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/shipment-service/dev/no-existe-5240162339fd414db37d3246898967a5",
+      "http": 404
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/api/v1/auth/login",
+      "http": 200
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/api/v1/auth/register",
+      "http": 201
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/api/v1/auth/login",
+      "http": 200
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/api/v1/usuarios",
+      "http": 201
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/api/v1/auth/login",
+      "http": 200
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/api/v1/repartidores",
+      "http": 201
+    },
+    {
+      "metodo": "PUT",
+      "ruta": "/api/v1/repartidores/09ed2e60-86ea-4f9f-9004-deeddfc6ec92/usuario",
+      "http": 200
+    },
+    {
+      "metodo": "PUT",
+      "ruta": "/api/v1/asociaciones/repartidores/09ed2e60-86ea-4f9f-9004-deeddfc6ec92",
+      "http": 200
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/api/v1/envios",
+      "http": 201
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/api/v1/auth/register",
+      "http": 201
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/api/v1/auth/login",
+      "http": 200
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/api/v1/envios/6ad841a1-deee-4b5f-8758-7c8d6e05192f",
+      "http": 403
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/api/v1/envios",
+      "http": 401
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/api/v1/envios",
+      "http": 401
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/api/v1/envios/6ad841a1-deee-4b5f-8758-7c8d6e05192f",
+      "http": 200
+    },
+    {
+      "metodo": "PUT",
+      "ruta": "/api/v1/envios/6ad841a1-deee-4b5f-8758-7c8d6e05192f/repartidor",
+      "http": 503
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/api/v1/envios/6ad841a1-deee-4b5f-8758-7c8d6e05192f",
+      "http": 200
+    },
+    {
+      "metodo": "PUT",
+      "ruta": "/api/v1/envios/6ad841a1-deee-4b5f-8758-7c8d6e05192f/repartidor",
+      "http": 200
+    },
+    {
+      "metodo": "PATCH",
+      "ruta": "/api/v1/envios/6ad841a1-deee-4b5f-8758-7c8d6e05192f/estado",
+      "http": 200
+    },
+    {
+      "metodo": "PATCH",
+      "ruta": "/api/v1/envios/6ad841a1-deee-4b5f-8758-7c8d6e05192f/estado",
+      "http": 200
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/api/v1/envios/6ad841a1-deee-4b5f-8758-7c8d6e05192f/historial",
+      "http": 200
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/api/v1/envios",
+      "http": 401
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/api/v1/auth/login",
+      "http": 200
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/api/v1/auth/login",
+      "http": 200
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/api/v1/envios/6ad841a1-deee-4b5f-8758-7c8d6e05192f",
+      "http": 200
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/api/v1/envios/6ad841a1-deee-4b5f-8758-7c8d6e05192f/historial",
+      "http": 200
+    },
+    {
+      "metodo": "GET",
+      "ruta": "/api/v1/repartidores/09ed2e60-86ea-4f9f-9004-deeddfc6ec92",
+      "http": 200
+    }
+  ],
+  "imagenes": {
+    "CONFIGSERVER_IMAGE": "maxdz10/configserver:sprint02-1.0.0",
+    "SHIPMENT_IMAGE": "maxdz10/shipment-service:sprint02-1.0.0",
+    "COURIER_IMAGE": "maxdz10/courier-service:sprint02-1.0.0",
+    "SECURITY_IMAGE": "maxdz10/security-service:sprint02-1.0.0"
+  }
+}
