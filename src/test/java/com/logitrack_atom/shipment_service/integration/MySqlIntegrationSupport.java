@@ -3,8 +3,9 @@ package com.logitrack_atom.shipment_service.integration;
 import com.logitrack_atom.shipment_service.repository.ClienteRepository;
 import com.logitrack_atom.shipment_service.repository.EnvioRepository;
 import com.logitrack_atom.shipment_service.repository.HistorialEstadoEnvioRepository;
-import com.logitrack_atom.shipment_service.repository.RepartidorRepository;
-import com.logitrack_atom.shipment_service.service.RepartidorService;
+import com.logitrack_atom.shipment_service.client.CourierClient;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import static org.mockito.Mockito.reset;
 import com.logitrack_atom.shipment_service.service.ShipmentService;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,7 +30,12 @@ import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** MySQL compartida durante el fork de Failsafe; Ryuk la elimina al terminar. */
+/**
+ * MySQL real aislada y doble exclusivo del puerto remoto de courier.
+ *
+ * @author MaxDz
+ * @version 0.2.0
+ */
 @SpringBootTest
 @AutoConfigureMockMvc
 abstract class MySqlIntegrationSupport {
@@ -60,10 +66,9 @@ abstract class MySqlIntegrationSupport {
     @Autowired protected EntityManager entityManager;
     @Autowired protected PlatformTransactionManager transactionManager;
     @Autowired protected ShipmentService shipmentService;
-    @Autowired protected RepartidorService repartidorService;
+    @MockitoBean protected CourierClient courierClient;
     @Autowired protected ClienteRepository clientes;
     @Autowired protected EnvioRepository envios;
-    @Autowired protected RepartidorRepository repartidores;
     @Autowired protected HistorialEstadoEnvioRepository historiales;
 
     @BeforeEach
@@ -72,7 +77,7 @@ abstract class MySqlIntegrationSupport {
         jdbc.execute("DROP TRIGGER IF EXISTS fallo_historial_prueba");
         jdbc.update("DELETE FROM historial_estados_envio");
         jdbc.update("DELETE FROM envios");
-        jdbc.update("DELETE FROM repartidores");
+        reset(courierClient);
         jdbc.update("DELETE FROM clientes");
     }
 
@@ -86,7 +91,7 @@ abstract class MySqlIntegrationSupport {
     protected void comprobarBaseVacia() {
         assertThat(jdbc.queryForObject("""
                 SELECT (SELECT COUNT(*) FROM clientes) + (SELECT COUNT(*) FROM envios)
-                     + (SELECT COUNT(*) FROM repartidores) + (SELECT COUNT(*) FROM historial_estados_envio)
+                     + (SELECT COUNT(*) FROM historial_estados_envio)
                 """, Long.class)).isZero();
     }
 

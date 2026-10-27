@@ -17,7 +17,18 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
+/**
+ * Envío con cliente local y referencia al repartidor administrado por courier.
+ *
+ * <p>La referencia remota conserva su UUID sin relación JPA ni clave foránea.
+ * Las consultas de este agregado no requieren disponibilidad de courier.</p>
+ *
+ * @author MaxDz
+ * @version 0.2.0
+ * @see Cliente
+ */
 @Entity
 @Table(name = "envios")
 @Getter
@@ -32,9 +43,8 @@ public class Envio extends BaseEntity {
     @JoinColumn(name = "cliente_id", nullable = false)
     private Cliente cliente;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "repartidor_id")
-    private Repartidor repartidor;
+    @Column(name = "repartidor_id", columnDefinition = "BINARY(16)")
+    private UUID repartidorId;
 
     @Column(name = "peso_kg", nullable = false, precision = 10, scale = 3)
     private BigDecimal pesoKg;

@@ -1,13 +1,10 @@
 package com.logitrack_atom.shipment_service.integration;
 
-import com.logitrack_atom.shipment_service.dto.request.RepartidorRequest;
 import com.logitrack_atom.shipment_service.entity.BaseEntity;
 import com.logitrack_atom.shipment_service.entity.Cliente;
 import com.logitrack_atom.shipment_service.entity.Envio;
 import com.logitrack_atom.shipment_service.entity.HistorialEstadoEnvio;
-import com.logitrack_atom.shipment_service.entity.Repartidor;
 import com.logitrack_atom.shipment_service.enums.EstadoEnvio;
-import com.logitrack_atom.shipment_service.enums.EstadoRepartidor;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -20,13 +17,18 @@ import static com.logitrack_atom.shipment_service.integration.IntegrationFixture
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+/**
+ * Verifica UUID remotos y restricciones locales mediante MySQL real.
+ * @author MaxDz
+ * @version 0.2.0
+ */
 class ShipmentPersistenceIT extends MySqlIntegrationSupport {
 
     @Test
     void recuperaUuidAuditoriaRelacionesYDireccionesTrasFlushClear() {
         var envio = shipmentService.registrar(solicitud("persistencia@example.test"));
-        var repartidor = repartidorService.registrar(new RepartidorRequest("Luis", "MOTO"));
-        shipmentService.asignarRepartidor(envio.id(), repartidor.id());
+        UUID repartidor = UUID.randomUUID();
+        shipmentService.asignarRepartidor(envio.id(), repartidor);
 
         nuevaTransaccion(() -> {
             entityManager.flush();
@@ -34,7 +36,6 @@ class ShipmentPersistenceIT extends MySqlIntegrationSupport {
             Envio leido = entityManager.find(Envio.class, envio.id());
             comprobarAuditoria(leido);
             comprobarAuditoria(leido.getCliente());
-            comprobarAuditoria(leido.getRepartidor());
             var historial = historiales.findByEnvioIdOrderByFechaCambioAsc(envio.id());
             assertThat(historial).hasSize(1);
             comprobarAuditoria(historial.getFirst());
@@ -44,8 +45,7 @@ class ShipmentPersistenceIT extends MySqlIntegrationSupport {
             assertThat(historial.getFirst().getFechaCambio()).isNotNull();
             assertThat(leido.getCliente().getEmail()).isEqualTo("persistencia@example.test");
             assertThat(leido.getCliente().getTelefono()).isNull();
-            assertThat(leido.getRepartidor().getId()).isEqualTo(repartidor.id());
-            assertThat(leido.getRepartidor().getEstado()).isEqualTo(EstadoRepartidor.ACTIVO);
+            assertThat(leido.getRepartidorId()).isEqualTo(repartidor);
             assertThat(leido.getOrigen()).extracting("calle", "numero", "ciudad", "codigoPostal")
                     .containsExactly("Belgrano", "100", "Jujuy", "Y4600");
             assertThat(leido.getDestino()).extracting("calle", "numero", "ciudad", "codigoPostal")
@@ -56,7 +56,7 @@ class ShipmentPersistenceIT extends MySqlIntegrationSupport {
             assertThat(leido.getLargoCm()).isEqualByComparingTo("30.75");
             return null;
         });
-        for (String table : new String[]{"clientes", "envios", "repartidores", "historial_estados_envio"}) {
+        for (String table : new String[]{"clientes", "envios", "historial_estados_envio"}) {
             assertThat(jdbc.queryForObject("SELECT OCTET_LENGTH(id) FROM " + table, Integer.class)).isEqualTo(16);
         }
     }
@@ -134,7 +134,7 @@ class ShipmentPersistenceIT extends MySqlIntegrationSupport {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"cliente", "repartidor", "envio"})
+    @ValueSource(strings = {"cliente", "envio"})
     void rechazaClavesForaneasInexistentes(String relacion) {
         UUID clienteId = clientes.saveAndFlush(cliente("fk@example.test")).getId();
         var error = assertThrows(DataIntegrityViolationException.class, () -> nuevaTransaccion(() -> {
@@ -145,7 +145,6 @@ class ShipmentPersistenceIT extends MySqlIntegrationSupport {
             } else {
                 Envio nuevo = envio(cliente, "LT-FK");
                 if (relacion.equals("cliente")) nuevo.setCliente(entityManager.getReference(Cliente.class, UUID.randomUUID()));
-                else nuevo.setRepartidor(entityManager.getReference(Repartidor.class, UUID.randomUUID()));
                 envios.saveAndFlush(nuevo);
             }
             return null;

@@ -4,6 +4,9 @@ import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.logitrack_atom.shipment_service.enums.EstadoEnvio;
 import org.junit.jupiter.api.Test;
+import static org.mockito.Mockito.doThrow;
+import com.logitrack_atom.shipment_service.exception.RecursoNoEncontradoException;
+import java.util.UUID;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.MediaType;
@@ -23,6 +26,11 @@ import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+/**
+ * Contrasta el contrato publicado con respuestas reales de shipment.
+ * @author MaxDz
+ * @version 0.2.0
+ */
 class OpenApiIT extends MySqlIntegrationSupport {
     private static final String MISSING = "00000000-0000-0000-0000-000000000001";
     private static final Map<String, Set<String>> CONTRACTS = Map.ofEntries(
@@ -31,18 +39,15 @@ class OpenApiIT extends MySqlIntegrationSupport {
             Map.entry("get /api/v1/envios/{id}", Set.of("200", "400", "404")),
             Map.entry("get /api/v1/envios/seguimiento/{codigoSeguimiento}", Set.of("200", "404")),
             Map.entry("get /api/v1/envios/{id}/historial", Set.of("200", "400", "404")),
-            Map.entry("patch /api/v1/envios/{id}/estado", Set.of("200", "400", "404", "422")),
+            Map.entry("patch /api/v1/envios/{id}/estado", Set.of("200", "400", "404", "422", "503")),
             Map.entry("patch /api/v1/envios/{id}/cancelacion", Set.of("200", "400", "404", "422")),
-            Map.entry("put /api/v1/envios/{id}/repartidor", Set.of("200", "400", "404", "409", "422")),
-            Map.entry("post /api/v1/repartidores", Set.of("201", "400", "409")),
-            Map.entry("get /api/v1/repartidores", Set.of("200", "400")),
-            Map.entry("get /api/v1/repartidores/{id}", Set.of("200", "400", "404")));
+            Map.entry("put /api/v1/envios/{id}/repartidor", Set.of("200", "400", "404", "409", "422", "503")));
 
     @Test
-    void publicaOnceOperacionesConRespuestasTipadasYErroresPertinentes() throws Exception {
+    void publicaOchoOperacionesConRespuestasTipadasYErroresPertinentes() throws Exception {
         DocumentContext document = documentacion();
         Map<String, Map<String, Map<String, Object>>> paths = document.read("$.paths");
-        assertThat(paths.values().stream().mapToInt(Map::size).sum()).isEqualTo(11);
+        assertThat(paths.values().stream().mapToInt(Map::size).sum()).isEqualTo(8);
         Set<String> operationIds = new HashSet<>();
         for (var contract : CONTRACTS.entrySet()) {
             String[] key = contract.getKey().split(" ", 2);
@@ -73,6 +78,13 @@ class OpenApiIT extends MySqlIntegrationSupport {
                 }
             }
         }
+        Map<String, Object> envioProperties = document.read("$.components.schemas.EnvioResponse.properties");
+        assertThat(envioProperties).containsKey("repartidorId").doesNotContainKey("repartidor");
+        Map<String, Object> referencia = document.read("$.components.schemas.EnvioResponse.properties.repartidorId");
+        assertThat(referencia.get("format")).isEqualTo("uuid");
+        assertThat(referencia.get("type")).isInstanceOf(List.class);
+        List<String> tipos = document.read("$.components.schemas.EnvioResponse.properties.repartidorId.type");
+        assertThat(tipos).containsExactlyInAnyOrder("string", "null");
         List<String> required = document.read("$.components.schemas.ApiError.required");
         assertThat(required)
                 .containsExactlyInAnyOrder("timestamp", "status", "error", "mensaje", "detalles");
@@ -113,22 +125,23 @@ class OpenApiIT extends MySqlIntegrationSupport {
 
     @ParameterizedTest
     @ValueSource(strings = {"MedidasInvalidas", "CuerpoInvalido", "UuidInvalido", "EstadoInvalido",
-            "EnvioNoEncontrado", "TrackingNoEncontrado", "RepartidorNoEncontrado", "AsignacionNoEncontrada",
+            "EnvioNoEncontrado", "TrackingNoEncontrado", "AsignacionNoEncontrada",
             "TransicionInvalida", "CancelacionInvalida", "AsignacionInvalida", "ConflictoDeDatos"})
     void ejemplosDocumentadosRepresentanErroresReales(String component) throws Exception {
         MockHttpServletRequestBuilder request;
         switch (component) {
             case "MedidasInvalidas" -> request = post("/api/v1/envios").content(envioJson("0.0001", "1", "1", "1"));
-            case "CuerpoInvalido" -> request = post("/api/v1/repartidores").content("{");
+            case "CuerpoInvalido" -> request = post("/api/v1/envios").content("{");
             case "UuidInvalido" -> request = get("/api/v1/envios/no-es-uuid");
             case "EstadoInvalido" -> request = get("/api/v1/envios").param("estado", "DESCONOCIDO");
             case "EnvioNoEncontrado" -> request = get("/api/v1/envios/" + MISSING);
             case "TrackingNoEncontrado" -> request = get("/api/v1/envios/seguimiento/LT-NO-EXISTE");
-            case "RepartidorNoEncontrado" -> request = get("/api/v1/repartidores/" + MISSING);
             case "ConflictoDeDatos" -> request = post("/api/v1/envios").content(envioJson().replace("Ana Pérez", "A".repeat(256)));
             default -> {
                 var envio = shipmentService.registrar(solicitud("ejemplo@example.test"));
                 if (component.equals("AsignacionNoEncontrada")) {
+                    doThrow(new RecursoNoEncontradoException("Repartidor", UUID.fromString(MISSING)))
+                            .when(courierClient).verificarDisponible(UUID.fromString(MISSING));
                     request = put("/api/v1/envios/{id}/repartidor", envio.id()).content("{\"repartidorId\":\"" + MISSING + "\"}");
                 } else if (component.equals("TransicionInvalida")) {
                     request = patch("/api/v1/envios/{id}/estado", envio.id()).content("{\"estado\":\"ENTREGADO\"}");
