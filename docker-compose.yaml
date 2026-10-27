@@ -36,7 +36,9 @@ services:
       DB_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       DB_USERNAME: ${MYSQL_USER}
       DB_PASSWORD: ${MYSQL_PASSWORD}
-      JPA_DDL_AUTO: ${JPA_DDL_AUTO:-validate}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      CONFIG_SERVER_URL: ${CONFIG_SERVER_URL:?Definir origen HTTP de Config Server accesible desde Docker}
+      CONFIG_LABEL: ${CONFIG_LABEL:-develop}
       JWT_PUBLIC_KEY_LOCATION: file:/run/keys/jwt-public.pem
       SECURITY_SERVICE_URL: ${SECURITY_SERVICE_URL:?Definir el origen HTTP de security para verificar asociaciones administrativas}
       COURIER_SERVICE_URL: ${COURIER_SERVICE_URL:?Definir el origen HTTP de courier accesible desde el contenedor}

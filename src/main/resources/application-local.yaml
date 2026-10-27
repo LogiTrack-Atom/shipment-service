@@ -1,0 +1,61 @@
+server:
+  port: ${SHIPMENT_SERVER_PORT:8080}
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+spring:
+  config:
+    activate:
+      on-profile: (local | test) & !dev & !prod
+  cloud:
+    config:
+      enabled: false
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+    datatype:
+      enum:
+        fail-on-numbers-for-enums: true
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+
+springdoc:
+  # Cada operación declara sus errores pertinentes, sin respuestas globales indiscriminadas.
+  override-with-generic-response: false
+
+# Solo se requiere la clave pública para validar los JWT de la API y del transporte.
+logitrack:
+  config:
+    marker: shipment-service-local
+  security:
+    issuer: ${JWT_ISSUER:logitrack-security}
+    audience: ${JWT_AUDIENCE:logitrack-api}
+    access-token-ttl: 900s
+    clock-skew: 60s
+    public-key-location: ${JWT_PUBLIC_KEY_LOCATION}
+clients:
+  security:
+    base-url: ${SECURITY_SERVICE_URL:http://localhost:8082}
+    connect-timeout: ${SECURITY_CONNECT_TIMEOUT:2s}
+    read-timeout: ${SECURITY_READ_TIMEOUT:3s}
+  courier:
+    base-url: ${COURIER_SERVICE_URL:http://localhost:8081}
+    connect-timeout: ${COURIER_CONNECT_TIMEOUT:2s}
+    read-timeout: ${COURIER_READ_TIMEOUT:3s}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      show-components: never

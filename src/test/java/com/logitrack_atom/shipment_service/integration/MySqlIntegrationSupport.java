@@ -36,6 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author MaxDz
  * @version 0.2.0
  */
+@org.springframework.test.context.ActiveProfiles("test")
 @SpringBootTest
 @AutoConfigureMockMvc
 abstract class MySqlIntegrationSupport {
@@ -60,6 +61,14 @@ abstract class MySqlIntegrationSupport {
         registry.add("spring.datasource.username", MYSQL::getUsername);
         registry.add("spring.datasource.password", MYSQL::getPassword);
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
+    }
+
+    /**
+     * Proporciona la conexión aislada a los ensayos de configuración remota.
+     * @return variables del cliente que no se incorporan al repositorio Git temporal
+     */
+    static java.util.Map<String, Object> databaseProperties() {
+        return java.util.Map.of("DB_URL", MYSQL.getJdbcUrl(), "DB_USERNAME", MYSQL.getUsername(), "DB_PASSWORD", MYSQL.getPassword());
     }
 
     @Autowired protected MockMvc mvc;

@@ -1,0 +1,48 @@
+spring:
+  application:
+    name: shipment-service
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+    datatype:
+      enum:
+        fail-on-numbers-for-enums: true
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+server:
+  port: ${SHIPMENT_SERVER_PORT:8080}
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+clients:
+  courier:
+    base-url: ${COURIER_SERVICE_URL:http://localhost:8081}
+    connect-timeout: 2s
+    read-timeout: 3s
+  security:
+    base-url: ${SECURITY_SERVICE_URL:http://localhost:8082}
+    connect-timeout: ${SECURITY_CONNECT_TIMEOUT:2s}
+    read-timeout: ${SECURITY_READ_TIMEOUT:3s}
+logitrack:
+  security:
+    issuer: logitrack-security
+    audience: logitrack-api
+    access-token-ttl: 15m
+    clock-skew: 60s
+    public-key-location: ${JWT_PUBLIC_KEY_LOCATION}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      show-components: never
