@@ -7,3 +7,9 @@ Esta carpeta registra la planificación y el comportamiento objetivo del Sprint 
 - [Project LogiTrack Atom](https://github.com/orgs/LogiTrack-Atom/projects/1): seguimiento común de los cinco repositorios.
 
 El Compose general y la documentación de integración se mantienen en shipment-service. El código, SQL y las verificaciones históricas del Sprint 01 conservan su identificación en sprint01-baseline. La integración y entrega continúan desde develop.
+
+
+## Preparación de datos
+
+- [Ensayo y procedimiento de migración de repartidores](migracion/README.md).
+- [Evidencia y límites de integración](migracion/Evidencia_ensayo.md).
