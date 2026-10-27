@@ -47,4 +47,16 @@ public interface EnvioRepository extends JpaRepository<Envio, UUID> {
      * @return verdadero si existe
      */
     boolean existsByCodigoSeguimiento(String codigoSeguimiento);
+    /**
+     * Filtra en SQL por las asociaciones y roles del usuario autenticado.
+     * @param usuarioId identidad del JWT
+     * @param repartidorId UUID de dominio comprobado, o nulo
+     * @param cliente habilita la pertenencia de cliente
+     * @param repartidor habilita la pertenencia de repartidor
+     * @param estado filtro opcional
+     * @return exclusivamente envíos visibles
+     */
+    @Query("select e from Envio e where (:estado is null or e.estado=:estado) and "
+            + "((:cliente=true and e.cliente.usuarioId=:usuarioId) or (:repartidor=true and e.repartidorId=:repartidorId))")
+    List<Envio> findVisibles(UUID usuarioId,UUID repartidorId,boolean cliente,boolean repartidor,EstadoEnvio estado);
 }

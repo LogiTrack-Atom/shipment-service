@@ -38,6 +38,7 @@ services:
       DB_PASSWORD: ${MYSQL_PASSWORD}
       JPA_DDL_AUTO: ${JPA_DDL_AUTO:-validate}
       JWT_PUBLIC_KEY_LOCATION: file:/run/keys/jwt-public.pem
+      SECURITY_SERVICE_URL: ${SECURITY_SERVICE_URL:?Definir el origen HTTP de security para verificar asociaciones administrativas}
       COURIER_SERVICE_URL: ${COURIER_SERVICE_URL:?Definir el origen HTTP de courier accesible desde el contenedor}
     volumes:
       - type: bind

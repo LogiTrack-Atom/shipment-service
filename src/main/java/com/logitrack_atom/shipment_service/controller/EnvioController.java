@@ -36,6 +36,7 @@ import java.util.UUID;
  * @author MaxDz
  * @version 0.2.0
  */
+@io.swagger.v3.oas.annotations.security.SecurityRequirement(name = "bearerAuth")
 @Tag(name = "Envíos")
 @RestController
 @RequestMapping("/api/v1/envios")
@@ -50,12 +51,14 @@ public class EnvioController {
      * @return envío creado
      */
     @Operation(operationId = "registrarEnvio", summary = "Registrar un envío",
-            description = "Crea un envío PENDIENTE y su historial inicial en una sola transacción. Reutiliza el cliente por email sin sobrescribir sus datos. Peso positivo en kg (7 enteros/3 decimales); dimensiones positivas en cm (8 enteros/2 decimales).")
+            description = "Crea un envío PENDIENTE y su historial inicial en una sola transacción. ADMIN puede reutilizar el cliente por email. CLIENTE usa su asociación local o crea un cliente nuevo vinculado al sub; nunca reclama contactos previos por email. Peso positivo en kg (7 enteros/3 decimales); dimensiones positivas en cm (8 enteros/2 decimales).")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Envío registrado con tracking, UUID y auditoría.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = EnvioResponse.class))),
             @ApiResponse(responseCode = "400", ref = "#/components/responses/MedidasInvalidas"),
-            @ApiResponse(responseCode = "409", ref = "#/components/responses/ConflictoDeDatos")
+            @ApiResponse(responseCode = "409", ref = "#/components/responses/ConflictoDeDatos"),
+            @ApiResponse(responseCode = "401", ref = "#/components/responses/AutenticacionRequerida"),
+            @ApiResponse(responseCode = "403", ref = "#/components/responses/AccesoDenegado")
     })
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -69,11 +72,13 @@ public class EnvioController {
      * @return envíos locales coincidentes
      */
     @Operation(operationId = "listarEnvios", summary = "Listar envíos por estado",
-            description = "El filtro estado es opcional; al omitirlo devuelve todos. Sin coincidencias devuelve una lista vacía. No garantiza un orden específico.")
+            description = "El filtro estado es opcional; al omitirlo devuelve los visibles para el usuario. ADMIN ve todos; CLIENTE solo propios y REPARTIDOR solo asignados, con filtro SQL por identidad. Sin coincidencias devuelve una lista vacía. No garantiza un orden específico.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lista de envíos.",
                     content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = EnvioResponse.class)))),
-            @ApiResponse(responseCode = "400", ref = "#/components/responses/EstadoInvalido")
+            @ApiResponse(responseCode = "400", ref = "#/components/responses/EstadoInvalido"),
+            @ApiResponse(responseCode = "401", ref = "#/components/responses/AutenticacionRequerida"),
+            @ApiResponse(responseCode = "403", ref = "#/components/responses/AccesoDenegado")
     })
     @GetMapping
     public List<EnvioResponse> listar(@RequestParam(required = false) EstadoEnvio estado) {
@@ -91,7 +96,9 @@ public class EnvioController {
             @ApiResponse(responseCode = "200", description = "Envío encontrado.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = EnvioResponse.class))),
             @ApiResponse(responseCode = "400", ref = "#/components/responses/UuidInvalido"),
-            @ApiResponse(responseCode = "404", ref = "#/components/responses/EnvioNoEncontrado")
+            @ApiResponse(responseCode = "404", ref = "#/components/responses/EnvioNoEncontrado"),
+            @ApiResponse(responseCode = "401", ref = "#/components/responses/AutenticacionRequerida"),
+            @ApiResponse(responseCode = "403", ref = "#/components/responses/AccesoDenegado")
     })
     @GetMapping("/{id}")
     public EnvioResponse obtenerPorId(@PathVariable UUID id) {
@@ -104,11 +111,13 @@ public class EnvioController {
      * @return envío local
      */
     @Operation(operationId = "seguirEnvio", summary = "Consultar por código de seguimiento",
-            description = "Busca el código único generado durante el registro.")
+            description = "Exige JWT y pertenencia al envío; conocer el tracking no concede acceso. ADMIN recibe 404 si no existe, los demás reciben 403 ante un envío inexistente o ajeno.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Envío encontrado.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = EnvioResponse.class))),
-            @ApiResponse(responseCode = "404", ref = "#/components/responses/TrackingNoEncontrado")
+            @ApiResponse(responseCode = "404", ref = "#/components/responses/TrackingNoEncontrado"),
+            @ApiResponse(responseCode = "401", ref = "#/components/responses/AutenticacionRequerida"),
+            @ApiResponse(responseCode = "403", ref = "#/components/responses/AccesoDenegado")
     })
     @GetMapping("/seguimiento/{codigoSeguimiento}")
     public EnvioResponse obtenerPorCodigoSeguimiento(@PathVariable String codigoSeguimiento) {
@@ -126,7 +135,9 @@ public class EnvioController {
             @ApiResponse(responseCode = "200", description = "Eventos del envío ordenados por fecha.",
                     content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = HistorialEstadoEnvioResponse.class)))),
             @ApiResponse(responseCode = "400", ref = "#/components/responses/UuidInvalido"),
-            @ApiResponse(responseCode = "404", ref = "#/components/responses/EnvioNoEncontrado")
+            @ApiResponse(responseCode = "404", ref = "#/components/responses/EnvioNoEncontrado"),
+            @ApiResponse(responseCode = "401", ref = "#/components/responses/AutenticacionRequerida"),
+            @ApiResponse(responseCode = "403", ref = "#/components/responses/AccesoDenegado")
     })
     @GetMapping("/{id}/historial")
     public List<HistorialEstadoEnvioResponse> obtenerHistorial(@PathVariable UUID id) {
@@ -140,7 +151,7 @@ public class EnvioController {
      * @return envío actualizado
      */
     @Operation(operationId = "cambiarEstadoEnvio", summary = "Cambiar el estado de un envío",
-            description = "Permite PENDIENTE → EN_RUTA/CANCELADO y EN_RUTA → ENTREGADO. EN_RUTA requiere verificar disponibilidad del UUID asignado mediante CourierClient. La consulta exige Bearer JWT ADMIN validado localmente; la autorización completa por pertenencia se incorpora en #25. Un fallo remoto no modifica el envío. ENTREGADO y CANCELADO son terminales; repetir el estado se rechaza. Estado e historial se confirman o revierten juntos.")
+            description = "Permite PENDIENTE → EN_RUTA/CANCELADO y EN_RUTA → ENTREGADO. EN_RUTA requiere verificar disponibilidad del UUID asignado mediante CourierClient. ADMIN puede aplicar todas las transiciones de negocio. REPARTIDOR solo EN_RUTA y ENTREGADO en sus asignaciones; CLIENTE no puede cambiar estados. El JWT validado se propaga a courier al iniciar ruta. Un fallo remoto no modifica el envío. ENTREGADO y CANCELADO son terminales; repetir el estado se rechaza. Estado e historial se confirman o revierten juntos.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Estado e historial actualizados.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = EnvioResponse.class))),
@@ -164,13 +175,15 @@ public class EnvioController {
      * @return envío cancelado
      */
     @Operation(operationId = "cancelarEnvio", summary = "Cancelar un envío pendiente",
-            description = "Solo admite PENDIENTE → CANCELADO. Registra el evento en la misma transacción; repetir una cancelación devuelve 422.")
+            description = "Exclusivo ADMIN. Solo admite PENDIENTE → CANCELADO. Registra el evento en la misma transacción; repetir una cancelación devuelve 422.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Envío cancelado con su evento.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = EnvioResponse.class))),
             @ApiResponse(responseCode = "400", ref = "#/components/responses/UuidInvalido"),
             @ApiResponse(responseCode = "404", ref = "#/components/responses/EnvioNoEncontrado"),
-            @ApiResponse(responseCode = "422", ref = "#/components/responses/CancelacionInvalida")
+            @ApiResponse(responseCode = "422", ref = "#/components/responses/CancelacionInvalida"),
+            @ApiResponse(responseCode = "401", ref = "#/components/responses/AutenticacionRequerida"),
+            @ApiResponse(responseCode = "403", ref = "#/components/responses/AccesoDenegado")
     })
     @PatchMapping("/{id}/cancelacion")
     public EnvioResponse cancelar(@PathVariable UUID id) {

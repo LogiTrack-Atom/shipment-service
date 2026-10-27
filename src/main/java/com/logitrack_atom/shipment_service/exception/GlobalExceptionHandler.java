@@ -35,7 +35,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Impide llamadas de usuarios sin permiso administrativo en esta etapa.
+     * Rechaza operaciones sin el rol o la pertenencia requeridos.
      * @param ex permiso local insuficiente
      * @return error público 403
      */
@@ -104,6 +104,9 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiError> manejarCuerpoIlegible(HttpMessageNotReadableException ex) {
+        for(Throwable cause=ex;cause!=null;cause=cause.getCause()) {
+            if(cause instanceof AccessDeniedException denied)return manejarAcceso(denied);
+        }
         return construir(HttpStatus.BAD_REQUEST,
                 "El cuerpo de la solicitud es inválido o contiene un valor no permitido", List.of());
     }
@@ -128,6 +131,26 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> manejarIntegridad(DataIntegrityViolationException ex) {
         return construir(HttpStatus.CONFLICT,
                 "La operación viola una restricción de datos, por ejemplo un valor duplicado", List.of());
+    }
+
+    /**
+     * Expone un conflicto de identidad sin revelar su propietario.
+     * @param ex conflicto de asociación
+     * @return respuesta 409
+     */
+    @ExceptionHandler(AsociacionConflictoException.class)
+    public ResponseEntity<ApiError> manejarAsociacion(AsociacionConflictoException ex) {
+        return construir(HttpStatus.CONFLICT,ex.getMessage(),List.of());
+    }
+
+    /**
+     * Traduce fallas de comprobación de identidades sin divulgar la respuesta remota.
+     * @param ex rechazo del proveedor
+     * @return ApiError 502 o 503
+     */
+    @ExceptionHandler(ServicioIdentidadException.class)
+    public ResponseEntity<ApiError> manejarIdentidad(ServicioIdentidadException ex) {
+        return construir(ex.getStatus(),ex.getMessage(),List.of());
     }
 
     private ResponseEntity<ApiError> construir(HttpStatus status, String mensaje, List<String> detalles) {

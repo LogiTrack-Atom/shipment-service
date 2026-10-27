@@ -61,8 +61,17 @@ class CourierRestIT {
     @Autowired private ShipmentService shipmentService;
     @Autowired private JdbcTemplate jdbc;
 
+    @Autowired private org.springframework.web.context.WebApplicationContext webContext;
+    @org.junit.jupiter.api.AfterEach
+    void limpiarActor() { com.logitrack_atom.shipment_service.support.SecurityTestActors.clear(); }
+
     @BeforeEach
     void limpiar() {
+        com.logitrack_atom.shipment_service.support.SecurityTestActors.admin();
+        mvc=org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup(webContext)
+                .addFilters(webContext.getBean("springSecurityFilterChain", jakarta.servlet.Filter.class))
+                .alwaysDo(result->com.logitrack_atom.shipment_service.support.SecurityTestActors.admin()).build();
+        jdbc.update("DELETE FROM repartidor_usuarios");
         assertThat(jdbc.queryForObject("SELECT DATABASE()",String.class)).isEqualTo("shipment_courier_test");
         jdbc.update("DELETE FROM historial_estados_envio");jdbc.update("DELETE FROM envios");jdbc.update("DELETE FROM clientes");
         CourierStub.reset();
@@ -86,7 +95,7 @@ class CourierRestIT {
         assertThat(CourierStub.requests()).isEqualTo(3);
         assertThat(shipmentService.obtenerHistorial(envio.id())).hasSize(2);
         CourierStub.responder(503,"privado","text/plain",0);
-        mvc.perform(get("/api/v1/envios/{id}",envio.id())).andExpect(status().isOk());
+        mvc.perform(get("/api/v1/envios/{id}",envio.id()).header("Authorization","Bearer "+bearer)).andExpect(status().isOk());
         assertThat(shipmentService.obtenerHistorial(envio.id())).hasSize(2);
         shipmentService.cambiarEstado(envio.id(),EstadoEnvio.ENTREGADO);
         assertThat(CourierStub.requests()).isEqualTo(3);
@@ -210,7 +219,7 @@ class CourierRestIT {
             var asignacion=executor.submit(()->{asignar(antes.id(),repartidor,TestRsaKeys.token(ADMIN,"ADMIN"),200);return null;});
             assertThat(CourierStub.esperarConsulta()).isTrue();
             var started=new java.util.concurrent.CountDownLatch(1);
-            var cancelacion=executor.submit(()->{started.countDown();return shipmentService.cancelar(antes.id());});
+            var cancelacion=executor.submit(()->{com.logitrack_atom.shipment_service.support.SecurityTestActors.admin();started.countDown();return shipmentService.cancelar(antes.id());});
             assertThat(started.await(3,java.util.concurrent.TimeUnit.SECONDS)).isTrue();
             try {
                 org.junit.jupiter.api.Assertions.assertThrows(java.util.concurrent.TimeoutException.class,

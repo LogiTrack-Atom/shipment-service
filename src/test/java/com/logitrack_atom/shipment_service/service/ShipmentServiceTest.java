@@ -57,6 +57,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 public class ShipmentServiceTest {
     @Mock
+    private com.logitrack_atom.shipment_service.security.ShipmentAccess access;
+    @Mock
     private EnvioRepository envioRepository;
     @Mock
     private ClienteRepository clienteRepository;
@@ -70,6 +72,9 @@ public class ShipmentServiceTest {
     private ClienteMapper clienteMapper;
     @Mock
     private HistorialEstadoEnvioMapper historialMapper;
+
+    @org.junit.jupiter.api.BeforeEach
+    void administradorDeRegresion() { org.mockito.Mockito.lenient().when(access.esAdmin()).thenReturn(true); }
 
     @InjectMocks
     private ShipmentServiceImpl shipmentService;

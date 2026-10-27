@@ -34,20 +34,22 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class OpenApiIT extends MySqlIntegrationSupport {
     private static final String MISSING = "00000000-0000-0000-0000-000000000001";
     private static final Map<String, Set<String>> CONTRACTS = Map.ofEntries(
-            Map.entry("post /api/v1/envios", Set.of("201", "400", "409")),
-            Map.entry("get /api/v1/envios", Set.of("200", "400")),
-            Map.entry("get /api/v1/envios/{id}", Set.of("200", "400", "404")),
-            Map.entry("get /api/v1/envios/seguimiento/{codigoSeguimiento}", Set.of("200", "404")),
-            Map.entry("get /api/v1/envios/{id}/historial", Set.of("200", "400", "404")),
+            Map.entry("post /api/v1/envios", Set.of("201", "400", "409", "401", "403")),
+            Map.entry("get /api/v1/envios", Set.of("200", "400", "401", "403")),
+            Map.entry("get /api/v1/envios/{id}", Set.of("200", "400", "404", "401", "403")),
+            Map.entry("get /api/v1/envios/seguimiento/{codigoSeguimiento}", Set.of("200", "404", "401", "403")),
+            Map.entry("get /api/v1/envios/{id}/historial", Set.of("200", "400", "404", "401", "403")),
             Map.entry("patch /api/v1/envios/{id}/estado", Set.of("200", "400", "404", "422", "401", "403", "502", "503")),
-            Map.entry("patch /api/v1/envios/{id}/cancelacion", Set.of("200", "400", "404", "422")),
-            Map.entry("put /api/v1/envios/{id}/repartidor", Set.of("200", "400", "404", "409", "422", "401", "403", "502", "503")));
+            Map.entry("patch /api/v1/envios/{id}/cancelacion", Set.of("200", "400", "404", "422", "401", "403")),
+            Map.entry("put /api/v1/envios/{id}/repartidor", Set.of("200", "400", "404", "409", "422", "401", "403", "502", "503")),
+            Map.entry("put /api/v1/clientes/{id}/usuario", Set.of("200","400","401","403","404","409","422","502","503")),
+            Map.entry("put /api/v1/asociaciones/repartidores/{id}", Set.of("200","400","401","403","404","409","422","502","503")));
 
     @Test
-    void publicaOchoOperacionesConRespuestasTipadasYErroresPertinentes() throws Exception {
+    void publicaDiezOperacionesConRespuestasTipadasYErroresPertinentes() throws Exception {
         DocumentContext document = documentacion();
         Map<String, Map<String, Map<String, Object>>> paths = document.read("$.paths");
-        assertThat(paths.values().stream().mapToInt(Map::size).sum()).isEqualTo(8);
+        assertThat(paths.values().stream().mapToInt(Map::size).sum()).isEqualTo(10);
         Set<String> operationIds = new HashSet<>();
         for (var contract : CONTRACTS.entrySet()) {
             String[] key = contract.getKey().split(" ", 2);

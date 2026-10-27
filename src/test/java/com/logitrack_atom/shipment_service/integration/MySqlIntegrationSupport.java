@@ -63,6 +63,13 @@ abstract class MySqlIntegrationSupport {
     }
 
     @Autowired protected MockMvc mvc;
+    @Autowired private org.springframework.web.context.WebApplicationContext webContext;
+    /** @return verdadero si la regresión HTTP usa ADMIN por defecto */
+    protected boolean autenticarPorDefecto() { return true; }
+    /** Retira el actor de prueba y evita contaminar la siguiente ejecución. */
+    @org.junit.jupiter.api.AfterEach
+    void limpiarActor() { com.logitrack_atom.shipment_service.support.SecurityTestActors.clear(); }
+
     @Autowired protected JdbcTemplate jdbc;
     @Autowired protected EntityManager entityManager;
     @Autowired protected PlatformTransactionManager transactionManager;
@@ -74,6 +81,14 @@ abstract class MySqlIntegrationSupport {
 
     @BeforeEach
     void limpiarBaseDePrueba() {
+        com.logitrack_atom.shipment_service.support.SecurityTestActors.admin();
+        var builder=org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup(webContext)
+                .addFilters(webContext.getBean("springSecurityFilterChain", jakarta.servlet.Filter.class))
+                .alwaysDo(result->com.logitrack_atom.shipment_service.support.SecurityTestActors.admin());
+        if(autenticarPorDefecto())builder.defaultRequest(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/")
+                .header("Authorization","Bearer "+com.logitrack_atom.shipment_service.support.SecurityTestActors.adminToken()));
+        mvc=builder.build();
+        jdbc.update("DELETE FROM repartidor_usuarios");
         assertThat(jdbc.queryForObject("SELECT DATABASE()", String.class)).isEqualTo("shipment_test");
         jdbc.execute("DROP TRIGGER IF EXISTS fallo_historial_prueba");
         jdbc.update("DELETE FROM historial_estados_envio");
