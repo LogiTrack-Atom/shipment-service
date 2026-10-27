@@ -324,7 +324,7 @@ public class ShipmentServiceTest {
         Envio envio = envioEnEstado(estadoActual);
         UUID repartidor = repartidorEnEstado(EstadoRepartidor.ACTIVO);
         envio.setRepartidorId(repartidor);
-        when(envioRepository.findById(envio.getId())).thenReturn(Optional.of(envio));
+        when(envioRepository.findByIdForUpdate(envio.getId())).thenReturn(Optional.of(envio));
 
         // Act / Assert
         if (esPermitida) {
@@ -338,7 +338,7 @@ public class ShipmentServiceTest {
                     () -> shipmentService.cambiarEstado(envio.getId(), estadoNuevo));
             assertEquals(estadoActual, envio.getEstado());
             assertSame(repartidor, envio.getRepartidorId());
-            verify(envioRepository).findById(envio.getId());
+            verify(envioRepository).findByIdForUpdate(envio.getId());
             verificarRechazoSinEscrituras();
         }
     }
@@ -377,7 +377,7 @@ public class ShipmentServiceTest {
         Envio envio = envioEnEstado(EstadoEnvio.PENDIENTE);
         UUID asignado = estadoRepartidor == null ? null : repartidorEnEstado(estadoRepartidor);
         envio.setRepartidorId(asignado);
-        when(envioRepository.findById(envio.getId())).thenReturn(Optional.of(envio));
+        when(envioRepository.findByIdForUpdate(envio.getId())).thenReturn(Optional.of(envio));
 
         // Act / Assert
         if (estadoRepartidor == EstadoRepartidor.ACTIVO) {
@@ -390,7 +390,7 @@ public class ShipmentServiceTest {
                     () -> shipmentService.cambiarEstado(envio.getId(), EstadoEnvio.EN_RUTA));
             assertEquals(EstadoEnvio.PENDIENTE, envio.getEstado());
             assertSame(asignado, envio.getRepartidorId());
-            verify(envioRepository).findById(envio.getId());
+            verify(envioRepository).findByIdForUpdate(envio.getId());
             if (asignado != null) verify(courierClient).verificarDisponible(asignado);
             verificarRechazoSinEscrituras();
         }
@@ -401,12 +401,12 @@ public class ShipmentServiceTest {
     void testCambiarEstadoDeEnvioInexistente() {
         // Arrange
         UUID id = UUID.randomUUID();
-        when(envioRepository.findById(id)).thenReturn(Optional.empty());
+        when(envioRepository.findByIdForUpdate(id)).thenReturn(Optional.empty());
 
         // Act / Assert
         assertThrowsExactly(RecursoNoEncontradoException.class,
                 () -> shipmentService.cambiarEstado(id, EstadoEnvio.CANCELADO));
-        verify(envioRepository).findById(id);
+        verify(envioRepository).findByIdForUpdate(id);
         verificarRechazoSinEscrituras();
     }
 
@@ -420,7 +420,7 @@ public class ShipmentServiceTest {
             envio.setRepartidorId(repartidorEnEstado(EstadoRepartidor.ACTIVO));
         }
         UUID nuevo = repartidorEnEstado(EstadoRepartidor.ACTIVO);
-        when(envioRepository.findById(envio.getId())).thenReturn(Optional.of(envio));
+        when(envioRepository.findByIdForUpdate(envio.getId())).thenReturn(Optional.of(envio));
         prepararRespuestaDeEnvio(envio);
 
         // Act
@@ -447,14 +447,14 @@ public class ShipmentServiceTest {
         UUID anterior = repartidorEnEstado(EstadoRepartidor.ACTIVO);
         envio.setRepartidorId(anterior);
         UUID inactivo = repartidorEnEstado(EstadoRepartidor.INACTIVO);
-        when(envioRepository.findById(envio.getId())).thenReturn(Optional.of(envio));
+        when(envioRepository.findByIdForUpdate(envio.getId())).thenReturn(Optional.of(envio));
 
         // Act / Assert
         assertThrowsExactly(ReglaNegocioException.class,
                 () -> shipmentService.asignarRepartidor(envio.getId(), inactivo));
         assertEquals(EstadoEnvio.PENDIENTE, envio.getEstado());
         assertSame(anterior, envio.getRepartidorId());
-        verify(envioRepository).findById(envio.getId());
+        verify(envioRepository).findByIdForUpdate(envio.getId());
         verify(courierClient).verificarDisponible(inactivo);
         verificarRechazoSinEscrituras();
     }
@@ -467,7 +467,7 @@ public class ShipmentServiceTest {
         UUID anterior = repartidorEnEstado(EstadoRepartidor.ACTIVO);
         envio.setRepartidorId(anterior);
         UUID repartidorId = UUID.randomUUID();
-        when(envioRepository.findById(envio.getId())).thenReturn(Optional.of(envio));
+        when(envioRepository.findByIdForUpdate(envio.getId())).thenReturn(Optional.of(envio));
         doThrow(new RecursoNoEncontradoException("Repartidor", repartidorId))
                 .when(courierClient).verificarDisponible(repartidorId);
 
@@ -477,7 +477,7 @@ public class ShipmentServiceTest {
         assertTrue(error.getMessage().contains(repartidorId.toString()));
         assertEquals(EstadoEnvio.PENDIENTE, envio.getEstado());
         assertSame(anterior, envio.getRepartidorId());
-        verify(envioRepository).findById(envio.getId());
+        verify(envioRepository).findByIdForUpdate(envio.getId());
         verify(courierClient).verificarDisponible(repartidorId);
         verificarRechazoSinEscrituras();
     }
@@ -488,12 +488,12 @@ public class ShipmentServiceTest {
         // Arrange
         UUID envioId = UUID.randomUUID();
         UUID repartidorId = UUID.randomUUID();
-        when(envioRepository.findById(envioId)).thenReturn(Optional.empty());
+        when(envioRepository.findByIdForUpdate(envioId)).thenReturn(Optional.empty());
 
         // Act / Assert
         assertThrowsExactly(RecursoNoEncontradoException.class,
                 () -> shipmentService.asignarRepartidor(envioId, repartidorId));
-        verify(envioRepository).findById(envioId);
+        verify(envioRepository).findByIdForUpdate(envioId);
         verificarRechazoSinEscrituras();
     }
 
@@ -506,14 +506,14 @@ public class ShipmentServiceTest {
         UUID anterior = repartidorEnEstado(EstadoRepartidor.ACTIVO);
         envio.setRepartidorId(anterior);
         UUID nuevoId = UUID.randomUUID();
-        when(envioRepository.findById(envio.getId())).thenReturn(Optional.of(envio));
+        when(envioRepository.findByIdForUpdate(envio.getId())).thenReturn(Optional.of(envio));
 
         // Act / Assert
         assertThrowsExactly(ReglaNegocioException.class,
                 () -> shipmentService.asignarRepartidor(envio.getId(), nuevoId));
         assertEquals(estado, envio.getEstado());
         assertSame(anterior, envio.getRepartidorId());
-        verify(envioRepository).findById(envio.getId());
+        verify(envioRepository).findByIdForUpdate(envio.getId());
         verificarRechazoSinEscrituras();
     }
 
@@ -522,7 +522,7 @@ public class ShipmentServiceTest {
     void testCancelarEnvioPendiente() {
         // Arrange
         Envio envio = envioEnEstado(EstadoEnvio.PENDIENTE);
-        when(envioRepository.findById(envio.getId())).thenReturn(Optional.of(envio));
+        when(envioRepository.findByIdForUpdate(envio.getId())).thenReturn(Optional.of(envio));
         prepararRespuestaDeEnvio(envio);
 
         // Act
@@ -541,14 +541,14 @@ public class ShipmentServiceTest {
         Envio envio = envioEnEstado(estado);
         UUID asignado = repartidorEnEstado(EstadoRepartidor.ACTIVO);
         envio.setRepartidorId(asignado);
-        when(envioRepository.findById(envio.getId())).thenReturn(Optional.of(envio));
+        when(envioRepository.findByIdForUpdate(envio.getId())).thenReturn(Optional.of(envio));
 
         // Act / Assert
         assertThrowsExactly(TransicionEstadoInvalidaException.class,
                 () -> shipmentService.cancelar(envio.getId()));
         assertEquals(estado, envio.getEstado());
         assertSame(asignado, envio.getRepartidorId());
-        verify(envioRepository).findById(envio.getId());
+        verify(envioRepository).findByIdForUpdate(envio.getId());
         verificarRechazoSinEscrituras();
     }
 
@@ -557,11 +557,11 @@ public class ShipmentServiceTest {
     void testCancelarEnvioInexistente() {
         // Arrange
         UUID id = UUID.randomUUID();
-        when(envioRepository.findById(id)).thenReturn(Optional.empty());
+        when(envioRepository.findByIdForUpdate(id)).thenReturn(Optional.empty());
 
         // Act / Assert
         assertThrowsExactly(RecursoNoEncontradoException.class, () -> shipmentService.cancelar(id));
-        verify(envioRepository).findById(id);
+        verify(envioRepository).findByIdForUpdate(id);
         verificarRechazoSinEscrituras();
     }
 

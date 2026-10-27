@@ -20,6 +20,8 @@ public final class CourierStub {
     private static volatile String contentType = "application/json";
     private static volatile int delay;
     private static volatile boolean delayBody;
+    private static volatile java.util.concurrent.CountDownLatch entered;
+    private static volatile java.util.concurrent.CountDownLatch release;
     private static volatile String authorization;
     private static volatile String method;
     private static volatile String path;
@@ -32,12 +34,14 @@ public final class CourierStub {
                 REQUESTS.incrementAndGet();
                 authorization = exchange.getRequestHeaders().getFirst("Authorization");
                 method = exchange.getRequestMethod(); path = exchange.getRequestURI().getPath();
-                int code = status; int wait = delay; boolean afterHeaders = delayBody; String type = contentType; String data = body;
+                int code = status; int wait = delay; boolean afterHeaders = delayBody;
+                var entryGate=entered; var releaseGate=release; String type = contentType; String data = body;
                 if (data == null) {
                     String id = path.split("/")[4];
                     data = "{\"repartidorId\":\""+id+"\",\"estado\":\"ACTIVO\",\"disponible\":true}";
                 }
                 try {
+                    if (entryGate != null) { entryGate.countDown(); releaseGate.await(3,java.util.concurrent.TimeUnit.SECONDS); }
                     if (wait > 0 && !afterHeaders) Thread.sleep(wait);
                     if (type != null) exchange.getResponseHeaders().set("Content-Type", type);
                     exchange.getResponseHeaders().set("Location", baseUrl()+"/destino-no-autorizado");
@@ -62,7 +66,7 @@ public final class CourierStub {
     /** @return origen efímero del servidor controlado */
     public static String baseUrl() { return "http://127.0.0.1:"+SERVER.getAddress().getPort(); }
     /** Restablece respuestas y contadores entre escenarios secuenciales. */
-    public static void reset() { status=200;body=null;contentType="application/json";delay=0;delayBody=false;authorization=null;method=null;path=null;REQUESTS.set(0);REDIRECTS.set(0); }
+    public static void reset() { status=200;body=null;contentType="application/json";delay=0;delayBody=false;entered=null;release=null;authorization=null;method=null;path=null;REQUESTS.set(0);REDIRECTS.set(0); }
     /**
      * Configura una respuesta inesperada o un rechazo remoto.
      * @param code estado HTTP
@@ -76,6 +80,16 @@ public final class CourierStub {
      * @param milliseconds demora de cuerpo en milisegundos
      */
     public static void demorarCuerpo(int milliseconds) { delay=milliseconds;delayBody=true; }
+    /** Detiene una respuesta hasta que el ensayo libere la operación concurrente. */
+    public static void pausar() { entered=new java.util.concurrent.CountDownLatch(1);release=new java.util.concurrent.CountDownLatch(1); }
+    /**
+     * Espera una consulta en curso sin depender de sleeps de preparación.
+     * @return verdadero si la consulta alcanzó la barrera
+     * @throws InterruptedException si se interrumpe la espera del ensayo
+     */
+    public static boolean esperarConsulta() throws InterruptedException { return entered.await(3,java.util.concurrent.TimeUnit.SECONDS); }
+    /** Libera la respuesta del proveedor controlado. */
+    public static void continuar() { release.countDown(); }
     /** @return número de consultas recibidas */
     public static int requests() { return REQUESTS.get(); }
     /** @return solicitudes recibidas por el destino de una redirección */

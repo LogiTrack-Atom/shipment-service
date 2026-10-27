@@ -33,6 +33,11 @@ todavía todos los endpoints de shipment. Config Client y Compose general siguen
 | Conexión, timeout, `429` o `5xx` | 503 |
 | JSON/identidad/estado incoherente, redirección u otro HTTP inesperado (incluido `401/403`) | 502 |
 
+Las asignaciones, cancelaciones y cambios de estado bloquean la fila del envío
+hasta confirmar o revertir la transacción. Esto impide que una escritura concurrente
+sobrescriba estado/asignación mientras se comprueba disponibilidad por REST; el límite
+de espera remoto sigue siendo finito. No se realiza una transacción distribuida.
+
 Ante rechazo no cambian asignación, estado, auditoría ni historial. Solo se aceptan los
 tres campos acordados con tipos correctos, un UUID coincidente y estado/disponibilidad
 coherentes; el cuerpo está limitado a 64 KiB. No se vuelcan tokens ni respuestas remotas

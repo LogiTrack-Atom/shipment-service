@@ -202,6 +202,34 @@ class CourierRestIT {
         assertThat(CourierStub.requests()).isZero();
     }
 
+    @Test
+    void cancelacionConcurrenteEsperaLaAsignacionYNoPierdeElUuidConfirmado() throws Exception {
+        var creado=nuevo();var antes=shipmentService.obtenerPorId(creado.id());
+        UUID repartidor=UUID.randomUUID();CourierStub.pausar();
+        try (var executor=java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor()) {
+            var asignacion=executor.submit(()->{asignar(antes.id(),repartidor,TestRsaKeys.token(ADMIN,"ADMIN"),200);return null;});
+            assertThat(CourierStub.esperarConsulta()).isTrue();
+            var started=new java.util.concurrent.CountDownLatch(1);
+            var cancelacion=executor.submit(()->{started.countDown();return shipmentService.cancelar(antes.id());});
+            assertThat(started.await(3,java.util.concurrent.TimeUnit.SECONDS)).isTrue();
+            try {
+                org.junit.jupiter.api.Assertions.assertThrows(java.util.concurrent.TimeoutException.class,
+                        ()->cancelacion.get(150,java.util.concurrent.TimeUnit.MILLISECONDS));
+            } finally { CourierStub.continuar(); }
+            asignacion.get(3,java.util.concurrent.TimeUnit.SECONDS);
+            var cancelado=cancelacion.get(3,java.util.concurrent.TimeUnit.SECONDS);
+            assertThat(cancelado.estado()).isEqualTo(EstadoEnvio.CANCELADO);
+            assertThat(cancelado.repartidorId()).isEqualTo(repartidor);
+            var persistido=shipmentService.obtenerPorId(antes.id());
+            assertThat(persistido.estado()).isEqualTo(EstadoEnvio.CANCELADO);
+            assertThat(persistido.repartidorId()).isEqualTo(repartidor);
+            assertThat(persistido.createdAt()).isEqualTo(antes.createdAt());
+            assertThat(persistido.updatedAt()).isAfter(antes.updatedAt());
+            assertThat(shipmentService.obtenerHistorial(antes.id())).extracting("estadoNuevo")
+                    .containsExactly(EstadoEnvio.PENDIENTE,EstadoEnvio.CANCELADO);
+        }
+    }
+
     private EnvioResponse nuevo() { return shipmentService.registrar(solicitud("rest@example.test")); }
     private EnvioResponse conAsignacion() {
         var envio=nuevo();UUID id=UUID.randomUUID();
