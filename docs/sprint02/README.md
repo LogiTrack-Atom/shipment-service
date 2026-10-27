@@ -1,6 +1,6 @@
 # Sprint 02 — Planificación y contratos
 
-Esta carpeta registra la planificación y el comportamiento objetivo del Sprint 02. Su publicación no implica que los servicios o sus pruebas ya estén implementados.
+Esta carpeta reúne la planificación, los contratos y la entrega técnica del Sprint02. El informe de entrega identifica las versiones, verificaciones realizadas y tareas académicas que requieren evidencia del equipo.
 
 - [Contratos técnicos](Contratos_tecnicos.md): datos, APIs, seguridad, configuración, versiones y entrega.
 - [Backlog y orden de ejecución](Backlog.md): responsables, issues, dependencias y trazabilidad.
@@ -17,3 +17,5 @@ El Compose general y la documentación de integración se mantienen en shipment-
 - [Matriz de regresión y comandos de verificación](Regresion.md).
 
 - [Compose integrado y persistencia](Compose.md).
+
+- [Entrega técnica y matriz de cumplimiento](Entrega.md).

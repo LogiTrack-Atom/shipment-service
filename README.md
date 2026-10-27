@@ -21,7 +21,7 @@ después de la consulta: se vuelve a comprobar al iniciar ruta.
 **Autorización (#25):** todas las operaciones de negocio requieren una única cabecera
 `Authorization: Bearer ...`, firma RS256 local, emisor, audiencia, UUID, roles y tiempos
 válidos. No se aceptan credenciales por query, formulario o cookies. Las lecturas no
-llaman a security ni a courier. Config Client está integrado y el Compose general se incorpora en #28.
+llaman a security ni a courier. Config Client y el Compose general están integrados.
 
 | Operación | ADMIN | CLIENTE | REPARTIDOR |
 | --- | --- | --- | --- |
@@ -244,3 +244,7 @@ registra sus comandos y resultados actuales. La generación JavaDoc usa doclint 
 y falla ante advertencias, sin ocultarlas. Los constructores están documentados explícitamente
 y se conservan getters/setters de Lombok. La colección Postman comprueba ApiError y
 compara la auditoría de escrituras con sus lecturas posteriores.
+
+## Entrega Sprint02
+
+La [guía de entrega](docs/sprint02/Entrega.md) identifica imágenes públicas, configuración fija, resultado integrado y procedimiento de arranque. El Compose base descarga `maxdz10/*:sprint02-1.0.0`; las claves y credenciales se proporcionan externamente.
