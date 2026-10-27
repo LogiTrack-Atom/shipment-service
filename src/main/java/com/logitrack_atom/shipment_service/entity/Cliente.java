@@ -7,6 +7,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * Cliente local con vínculo opcional y único a una cuenta de security.
+ * @author MaxDz
+ * @version 0.2.0
+ */
 @Entity
 @Table(name = "clientes")
 @Getter
@@ -21,4 +26,7 @@ public class Cliente extends BaseEntity {
     private String email;
 
     private String telefono;
+
+    @Column(name="usuario_id",unique=true,columnDefinition="BINARY(16)")
+    private java.util.UUID usuarioId;
 }

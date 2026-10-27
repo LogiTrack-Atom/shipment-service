@@ -66,13 +66,20 @@ public class OpenApiConfig {
                 "No se pudo verificar la disponibilidad del repartidor"));
 
         components.addResponses("AutenticacionRequerida", error(401,
-                "Falta un JWT Bearer válido para verificar disponibilidad.", "Se requiere una credencial Bearer válida"));
+                "Falta un JWT Bearer válido para acceder a la API.", "Se requiere una credencial Bearer válida"));
         components.addResponses("AccesoDenegado", error(403,
                 "El usuario autenticado no está autorizado para esta operación.", "No tiene permiso para realizar esta operación"));
         components.addResponses("CourierRespuestaInvalida", error(502,
                 "Contrato remoto inválido o HTTP inesperado, incluido 401/403 del proveedor.",
                 "El servicio de repartidores devolvió una respuesta inválida"));
 
+        components.addSecuritySchemes("bearerAuth", new io.swagger.v3.oas.models.security.SecurityScheme()
+                .type(io.swagger.v3.oas.models.security.SecurityScheme.Type.HTTP).scheme("bearer").bearerFormat("JWT"));
+        components.addResponses("IdentidadNoEncontrada", error(404,"No existe el cliente o el recurso remoto.","Recurso no encontrado"));
+        components.addResponses("AsociacionIncompatible", error(409,"Asociación existente, duplicada o incompatible.","La asociación de identidad requiere revisión administrativa"));
+        components.addResponses("RolIncompatible", error(422,"La cuenta no tiene el rol requerido.","La cuenta no tiene el rol requerido para esta asociación"));
+        components.addResponses("IdentidadRespuestaInvalida", error(502,"Contrato remoto inválido.","No se pudo verificar la asociación de identidad"));
+        components.addResponses("IdentidadNoDisponible", error(503,"No se pudo comprobar la asociación.","No se pudo verificar la asociación de identidad"));
         return new OpenAPI().components(components).info(new Info()
                 .title("shipment-service API").version("v1")
                 .description("""
@@ -80,8 +87,10 @@ public class OpenApiConfig {
                         repartidorId nullable reemplaza el objeto repartidor del Sprint01.
                         La administración de repartidores se trasladó a courier-service (8081).
                         Las lecturas usan solo datos locales. Asignar e iniciar ruta consultan
-                        disponibilidad por REST, con JWT ADMIN validado localmente. Las reglas
-                        completas de autorización por pertenencia se incorporan en #25.
+                        disponibilidad por REST, con JWT validado localmente. ADMIN administra; CLIENTE
+                        consulta y crea sus envíos; REPARTIDOR consulta y avanza sus asignaciones.
+                        Listados, tracking e historial exigen pertenencia. Las asociaciones de cuenta
+                        son administrativas, verificadas e inmutables; sub identifica al usuario.
                         Cada envío se registra PENDIENTE con historial inicial. PENDIENTE permite
                         EN_RUTA (con repartidor activo) o CANCELADO; EN_RUTA permite ENTREGADO.
                         ENTREGADO y CANCELADO son terminales. Las escrituras y su historial son atómicos.

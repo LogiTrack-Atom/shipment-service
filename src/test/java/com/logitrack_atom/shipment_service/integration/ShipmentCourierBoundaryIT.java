@@ -46,7 +46,7 @@ class ShipmentCourierBoundaryIT extends MySqlIntegrationSupport {
                 AND COLUMN_NAME='repartidor_id' AND REFERENCED_TABLE_NAME IS NOT NULL
                 """, Integer.class)).isZero();
         for (String ruta : new String[]{"/api/v1/repartidores", "/api/v1/repartidores/"+remoto}) {
-            mvc.perform(get(ruta)).andExpect(status().isNotFound());
+            mvc.perform(get(ruta)).andExpect(status().isForbidden());
         }
     }
 

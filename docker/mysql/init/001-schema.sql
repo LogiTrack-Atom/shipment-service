@@ -10,6 +10,8 @@ CREATE TABLE clientes (
     nombre VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
     telefono VARCHAR(255),
+    usuario_id BINARY(16),
+    CONSTRAINT uk_clientes_usuario UNIQUE (usuario_id),
     PRIMARY KEY (id),
     CONSTRAINT uk_clientes_email UNIQUE (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -52,4 +54,10 @@ CREATE TABLE historial_estados_envio (
     PRIMARY KEY (id),
     KEY idx_historial_envio (envio_id),
     CONSTRAINT fk_historial_envio FOREIGN KEY (envio_id) REFERENCES envios (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE repartidor_usuarios (
+    repartidor_id BINARY(16) NOT NULL PRIMARY KEY,
+    usuario_id BINARY(16) NOT NULL UNIQUE,
+    verificado_at DATETIME(6) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

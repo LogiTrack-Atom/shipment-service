@@ -1,61 +1,54 @@
 package com.logitrack_atom.shipment_service.security;
 
-import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.JwtException;
-import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
-import java.util.Collections;
 
 /**
- * Obtiene exclusivamente credenciales administrativas verificadas antes de llamar a courier.
+ * Reutiliza exclusivamente el JWT validado por el filtro stateless de la API.
  *
- * <p>Esta etapa valida firma y claims localmente al requerir la precondición remota.
- * No reenvía cabeceras arbitrarias ni acepta token por query o formulario. El filtro
- * general y los permisos de CLIENTE/REPARTIDOR por pertenencia se completan en #25.</p>
+ * <p>El servicio de envíos comprueba la pertenencia antes de invocar courier. Las asociaciones
+ * administrativas requieren además ADMIN explícito.
  *
  * @author MaxDz
  * @version 0.2.0
  */
 @Component
 public class CourierBearerProvider {
-    private final JwtDecoder decoder;
-    private final DefaultBearerTokenResolver resolver = new DefaultBearerTokenResolver();
+    /** Crea el acceso a credenciales del contexto autenticado. */
+    public CourierBearerProvider() {}
 
     /**
-     * Recibe el verificador RS256 local.
-     * @param decoder verificador de firma y contrato JWT
-     */
-    public CourierBearerProvider(JwtDecoder decoder) { this.decoder = decoder; }
-
-    /**
-     * Valida la única cabecera Bearer y exige administración antes de cualquier HTTP remoto.
-     * @return JWT validado, utilizado únicamente como cabecera del origen configurado
-     * @throws org.springframework.security.core.AuthenticationException si falta o es inválido
-     * @throws AccessDeniedException si el token válido no tiene ADMIN
+     * Obtiene la credencial para una operación de reparto ya autorizada localmente.
+     *
+     * @return JWT validado, sin volver a leer cabeceras ni llamar al emisor
      */
     public String obtener() {
-        if (!(RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attributes)) {
-            throw new AuthenticationCredentialsNotFoundException("Se requiere autenticación Bearer.");
-        }
-        var request = attributes.getRequest();
-        if (Collections.list(request.getHeaders("Authorization")).size() != 1) {
-            throw new BadCredentialsException("Credencial Bearer inválida.");
-        }
-        String bearer = resolver.resolve(request);
-        if (bearer == null) throw new AuthenticationCredentialsNotFoundException("Se requiere autenticación Bearer.");
-        try {
-            var jwt = decoder.decode(bearer);
-            if (!jwt.getClaimAsStringList("roles").contains("ADMIN")) {
-                throw new AccessDeniedException("Se requiere administración autenticada.");
-            }
-        } catch (JwtException ex) {
-            throw new BadCredentialsException("Credencial Bearer inválida.");
-        }
-        return bearer;
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (!(auth instanceof JwtAuthenticationToken jwt) || !jwt.isAuthenticated())
+            throw new AuthenticationCredentialsNotFoundException("Se requiere autenticación.");
+        if (jwt.getAuthorities().stream()
+                .noneMatch(
+                        a ->
+                                a.getAuthority().equals("ROLE_ADMIN")
+                                        || a.getAuthority().equals("ROLE_REPARTIDOR")))
+            throw new AccessDeniedException("Acceso denegado.");
+        return jwt.getToken().getTokenValue();
+    }
+
+    /**
+     * Obtiene la credencial de una operación administrativa ya autenticada.
+     *
+     * @return JWT administrativo validado para verificar una asociación
+     */
+    public String obtenerAdministrativo() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null
+                || auth.getAuthorities().stream()
+                        .noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN")))
+            throw new AccessDeniedException("Acceso denegado.");
+        return obtener();
     }
 }

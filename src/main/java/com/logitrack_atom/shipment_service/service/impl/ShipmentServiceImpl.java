@@ -8,6 +8,7 @@ import com.logitrack_atom.shipment_service.entity.Cliente;
 import com.logitrack_atom.shipment_service.entity.Envio;
 import com.logitrack_atom.shipment_service.entity.HistorialEstadoEnvio;
 import com.logitrack_atom.shipment_service.enums.EstadoEnvio;
+import com.logitrack_atom.shipment_service.exception.AsociacionConflictoException;
 import com.logitrack_atom.shipment_service.exception.RecursoNoEncontradoException;
 import com.logitrack_atom.shipment_service.exception.ReglaNegocioException;
 import com.logitrack_atom.shipment_service.exception.TransicionEstadoInvalidaException;
@@ -18,9 +19,14 @@ import com.logitrack_atom.shipment_service.mapper.HistorialEstadoEnvioMapper;
 import com.logitrack_atom.shipment_service.repository.ClienteRepository;
 import com.logitrack_atom.shipment_service.repository.EnvioRepository;
 import com.logitrack_atom.shipment_service.repository.HistorialEstadoEnvioRepository;
+import com.logitrack_atom.shipment_service.security.ShipmentAccess;
 import com.logitrack_atom.shipment_service.service.ShipmentService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,8 +37,8 @@ import java.util.UUID;
 /**
  * Gestiona el agregado de envíos y su historial dentro de transacciones locales.
  *
- * <p>La asignación y el inicio de ruta exigen disponibilidad mediante
- * {@link CourierClient}. Las lecturas no consultan servicios remotos.</p>
+ * <p>La asignación y el inicio de ruta exigen disponibilidad mediante {@link CourierClient}. Las
+ * lecturas no consultan servicios remotos.
  *
  * @author MaxDz
  * @version 0.2.0
@@ -43,6 +49,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ShipmentServiceImpl implements ShipmentService {
 
+    private final ShipmentAccess access;
     private final EnvioRepository envioRepository;
     private final ClienteRepository clienteRepository;
     private final CourierClient courierClient;
@@ -54,9 +61,31 @@ public class ShipmentServiceImpl implements ShipmentService {
     /** {@inheritDoc} */
     @Override
     @Transactional
+    @PreAuthorize("hasAnyRole('ADMIN','CLIENTE')")
     public EnvioResponse registrar(EnvioRequest request) {
-        Cliente cliente = clienteRepository.findByEmail(request.cliente().email())
-                .orElseGet(() -> clienteRepository.save(clienteMapper.toEntity(request.cliente())));
+        Cliente cliente;
+        if (access.esAdmin()) {
+            cliente =
+                    clienteRepository
+                            .findByEmail(request.cliente().email())
+                            .orElseGet(
+                                    () ->
+                                            clienteRepository.save(
+                                                    clienteMapper.toEntity(request.cliente())));
+        } else {
+            var propio = clienteRepository.findByUsuarioId(access.usuarioId());
+            if (propio.isPresent()) {
+                cliente = propio.get();
+                if (!cliente.getEmail().equalsIgnoreCase(request.cliente().email()))
+                    throw new AccessDeniedException("Acceso denegado.");
+            } else {
+                if (clienteRepository.findByEmail(request.cliente().email()).isPresent())
+                    throw new AsociacionConflictoException();
+                cliente = clienteMapper.toEntity(request.cliente());
+                cliente.setUsuarioId(access.usuarioId());
+                cliente = clienteRepository.save(cliente);
+            }
+        }
 
         Envio envio = envioMapper.toEntity(request, cliente, generarCodigoSeguimiento());
         envioRepository.save(envio);
@@ -69,33 +98,53 @@ public class ShipmentServiceImpl implements ShipmentService {
     /** {@inheritDoc} */
     @Override
     @Transactional(readOnly = true)
+    @PreAuthorize("hasAnyRole('ADMIN','CLIENTE','REPARTIDOR')")
     public EnvioResponse obtenerPorId(UUID id) {
-        return envioMapper.toResponse(buscarEnvio(id));
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    @Transactional(readOnly = true)
-    public EnvioResponse obtenerPorCodigoSeguimiento(String codigoSeguimiento) {
-        Envio envio = envioRepository.findByCodigoSeguimiento(codigoSeguimiento)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Envio", codigoSeguimiento));
+        var envio = buscarEnvio(id);
+        access.permitirLectura(envio);
         return envioMapper.toResponse(envio);
     }
 
     /** {@inheritDoc} */
     @Override
     @Transactional(readOnly = true)
+    @PreAuthorize("hasAnyRole('ADMIN','CLIENTE','REPARTIDOR')")
+    public EnvioResponse obtenerPorCodigoSeguimiento(String codigoSeguimiento) {
+        Envio envio =
+                envioRepository
+                        .findByCodigoSeguimiento(codigoSeguimiento)
+                        .orElseThrow(() -> noEncontrado(codigoSeguimiento));
+        access.permitirLectura(envio);
+        return envioMapper.toResponse(envio);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasAnyRole('ADMIN','CLIENTE','REPARTIDOR')")
     public List<EnvioResponse> listarPorEstado(EstadoEnvio estado) {
         log.debug("envio.consulta estado={}", estado == null ? "TODOS" : estado);
-        List<Envio> envios = estado == null
-                ? envioRepository.findAll()
-                : envioRepository.findByEstado(estado);
+        List<Envio> envios;
+        if (access.esAdmin())
+            envios =
+                    estado == null
+                            ? envioRepository.findAll()
+                            : envioRepository.findByEstado(estado);
+        else
+            envios =
+                    envioRepository.findVisibles(
+                            access.usuarioId(),
+                            access.repartidorId(),
+                            access.tieneRol("CLIENTE"),
+                            access.tieneRol("REPARTIDOR"),
+                            estado);
         return envios.stream().map(envioMapper::toResponse).toList();
     }
 
     /** {@inheritDoc} */
     @Override
     @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
     public EnvioResponse cancelar(UUID id) {
         return cambiarEstado(id, EstadoEnvio.CANCELADO);
     }
@@ -103,12 +152,18 @@ public class ShipmentServiceImpl implements ShipmentService {
     /** {@inheritDoc} */
     @Override
     @Transactional
+    @PreAuthorize("hasAnyRole('ADMIN','REPARTIDOR')")
     public EnvioResponse cambiarEstado(UUID id, EstadoEnvio nuevoEstado) {
         Envio envio = buscarEnvioParaModificar(id);
+        access.permitirCambio(envio, nuevoEstado);
         EstadoEnvio estadoActual = envio.getEstado();
 
         if (!estadoActual.puedeTransicionarA(nuevoEstado)) {
-            log.warn("envio.transicion_rechazada envioId={} anterior={} solicitado={}", id, estadoActual, nuevoEstado);
+            log.warn(
+                    "envio.transicion_rechazada envioId={} anterior={} solicitado={}",
+                    id,
+                    estadoActual,
+                    nuevoEstado);
             throw new TransicionEstadoInvalidaException(estadoActual, nuevoEstado);
         }
         if (nuevoEstado == EstadoEnvio.EN_RUTA) {
@@ -126,11 +181,13 @@ public class ShipmentServiceImpl implements ShipmentService {
     /** {@inheritDoc} */
     @Override
     @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
     public EnvioResponse asignarRepartidor(UUID envioId, UUID repartidorId) {
         Envio envio = buscarEnvioParaModificar(envioId);
         if (envio.getEstado() != EstadoEnvio.PENDIENTE) {
             log.warn("envio.asignacion_rechazada envioId={} estado={}", envioId, envio.getEstado());
-            throw new ReglaNegocioException("Solo se puede asignar repartidor a un envío PENDIENTE");
+            throw new ReglaNegocioException(
+                    "Solo se puede asignar repartidor a un envío PENDIENTE");
         }
 
         courierClient.verificarDisponible(repartidorId);
@@ -145,21 +202,26 @@ public class ShipmentServiceImpl implements ShipmentService {
     /** {@inheritDoc} */
     @Override
     @Transactional(readOnly = true)
+    @PreAuthorize("hasAnyRole('ADMIN','CLIENTE','REPARTIDOR')")
     public List<HistorialEstadoEnvioResponse> obtenerHistorial(UUID id) {
-        buscarEnvio(id);
+        access.permitirLectura(buscarEnvio(id));
         return historialRepository.findByEnvioIdOrderByFechaCambioAsc(id).stream()
                 .map(historialMapper::toResponse)
                 .toList();
     }
 
     private Envio buscarEnvio(UUID id) {
-        return envioRepository.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Envio", id));
+        return envioRepository.findById(id).orElseThrow(() -> noEncontrado(id));
     }
 
     private Envio buscarEnvioParaModificar(UUID id) {
-        return envioRepository.findByIdForUpdate(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Envio", id));
+        return envioRepository.findByIdForUpdate(id).orElseThrow(() -> noEncontrado(id));
+    }
+
+    private RuntimeException noEncontrado(Object id) {
+        return access.esAdmin()
+                ? new RecursoNoEncontradoException("Envio", id)
+                : new AccessDeniedException("Acceso denegado.");
     }
 
     private void validarRepartidorAsignado(Envio envio) {
@@ -178,7 +240,13 @@ public class ShipmentServiceImpl implements ShipmentService {
     private String generarCodigoSeguimiento() {
         String codigo;
         do {
-            codigo = "LT-" + UUID.randomUUID().toString().replace("-", "").substring(0, 10).toUpperCase();
+            codigo =
+                    "LT-"
+                            + UUID.randomUUID()
+                                    .toString()
+                                    .replace("-", "")
+                                    .substring(0, 10)
+                                    .toUpperCase();
         } while (envioRepository.existsByCodigoSeguimiento(codigo));
         return codigo;
     }

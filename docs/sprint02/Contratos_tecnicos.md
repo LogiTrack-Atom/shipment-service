@@ -36,6 +36,7 @@ Se adopta una asociación local: `Cliente.usuarioId` en shipment y `Repartidor.u
 
 - Para CLIENTE, shipment busca el cliente por el `sub` validado. En el primer registro puede crear el cliente y asociarlo al usuario autenticado. Si el email ya pertenece a un cliente histórico sin asociación, se devuelve 409 y se requiere vinculación administrativa; no se reclama ese cliente automáticamente por email. Para un cliente ya asociado, el cuerpo no permite cambiar de identidad ni sobrescribir los datos de otro cliente.
 - ADMIN vincula explícitamente una cuenta existente mediante `PUT /api/v1/clientes/{id}/usuario` en shipment o `PUT /api/v1/repartidores/{id}/usuario` en courier, con cuerpo `{"usuarioId":"<UUID>"}`. La operación comprueba existencia y rol compatible de la cuenta mediante la consulta administrativa a security antes de guardar; no consulta security en cada petición de negocio. Una cuenta no se vincula a dos clientes o a dos repartidores. Una asociación existente a otro usuario no se reemplaza silenciosamente: 409.
+- Para autorizar lecturas de reparto sin dependencia remota, shipment mantiene `repartidor_usuarios`, una referencia inmutable con `repartidorId`, `usuarioId` y fecha de comprobación; no almacena el dominio del repartidor ni añade FK remotas. ADMIN la registra mediante `PUT /api/v1/asociaciones/repartidores/{id}` con `{"usuarioId":"<UUID>"}`, después de vincular la cuenta en courier. Shipment comprueba rol REPARTIDOR en security y coincidencia exacta mediante el nuevo GET administrativo de courier antes de una transacción local de escritura. Las lecturas posteriores no usan HTTP. La inmutabilidad de las asociaciones en ambas APIs es una condición de esta decisión; no hay invalidación por TTL ni se admite revincular unilateralmente una copia. Ver [ADR-001](ADR-001-identidad-local.md).
 - Las respuestas que no son administrativas no exponen asociaciones ni datos de otros usuarios innecesariamente.
 
 ## 4. API de repartidores
@@ -51,6 +52,7 @@ Se conserva `/api/v1/repartidores` y el vocabulario español del Sprint 01. `Rep
 | PATCH /api/v1/repartidores/{id}/estado | Cuerpo `{"estado":"ACTIVO"}` o INACTIVO; repetir el valor es válido; 200 | ADMIN |
 | GET /api/v1/repartidores/{id}/disponibilidad | Consulta sin efectos; respuesta indicada debajo | ADMIN o REPARTIDOR asociado a ese registro |
 | PUT /api/v1/repartidores/{id}/usuario | Asociación administrativa de identidad; 200 | ADMIN |
+| GET /api/v1/repartidores/{id}/usuario | Referencia de identidad: `repartidorId` y `usuarioId` nullable; sin efectos ni llamada a security | ADMIN |
 
 Respuesta de disponibilidad:
 
@@ -137,6 +139,7 @@ El nombre de aplicación, la selección de perfil y la ubicación de Config Serv
 | spring.jpa.hibernate.ddl-auto | validate en la entrega con esquema versionado |
 | clients.courier.base-url | `${COURIER_SERVICE_URL:http://localhost:8081}` en shipment |
 | clients.courier.connect-timeout / read-timeout | 2s / 3s en shipment |
+| clients.security.connect-timeout / read-timeout | 2s / 3s para comprobaciones administrativas |
 | clients.security.base-url | `${SECURITY_SERVICE_URL:http://localhost:8082}` para las asociaciones administrativas |
 | logitrack.security.issuer / audience / access-token-ttl / clock-skew | logitrack-security / logitrack-api / 15m / 60s |
 | logitrack.security.public-key-location | `${JWT_PUBLIC_KEY_LOCATION}` en los validadores |

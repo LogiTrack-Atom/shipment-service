@@ -44,8 +44,9 @@ class ShipmentSchemaMigrationIT {
     static {
         MYSQL.start();
         try {
-            for (String table : TABLES) BEFORE.put(table, sql("SELECT * FROM " + table + " ORDER BY id"));
+            for (String table : TABLES) BEFORE.put(table, sql("SELECT " + (table.equals("clientes") ? "id,created_at,updated_at,nombre,email,telefono" : "*") + " FROM " + table + " ORDER BY id"));
             sql(Files.readString(Path.of("docker/mysql/migrations/002-separar-repartidores.sql")));
+            sql(Files.readString(Path.of("docker/mysql/migrations/003-identidades-autorizacion.sql")));
         } catch (Exception ex) {
             throw new ExceptionInInitializerError(ex);
         }
@@ -63,6 +64,11 @@ class ShipmentSchemaMigrationIT {
     @Autowired private ShipmentService shipmentService;
     @Autowired private JdbcTemplate jdbc;
     @MockitoBean private CourierClient courierClient;
+
+    @org.junit.jupiter.api.BeforeEach
+    void actor() { com.logitrack_atom.shipment_service.support.SecurityTestActors.admin(); }
+    @org.junit.jupiter.api.AfterEach
+    void limpiarActor() { com.logitrack_atom.shipment_service.support.SecurityTestActors.clear(); }
 
     @Test
     void conservaDatosYLeeUuidNulosRepetidosSinConsultarCourierYPermiteRevertirFk() throws Exception {
@@ -82,6 +88,8 @@ class ShipmentSchemaMigrationIT {
         }
         assertThat(shipmentService.listarPorEstado(null)).hasSize(5);
         verifyNoInteractions(courierClient);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM clientes WHERE usuario_id IS NOT NULL", Long.class)).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM repartidor_usuarios", Long.class)).isZero();
         comprobarFilas();
         // Solo se revierte en esta copia sintética; no hay escrituras nuevas ni UUID faltantes.
         sql("ALTER TABLE envios ADD CONSTRAINT fk_envios_repartidor FOREIGN KEY (repartidor_id) REFERENCES repartidores(id)");
@@ -95,7 +103,7 @@ class ShipmentSchemaMigrationIT {
 
     private static UUID uuid(int value) { return UUID.fromString("00000000-0000-0000-0000-" + String.format("%012x", value)); }
     private static void comprobarFilas() throws Exception {
-        for (String table : TABLES) assertThat(sql("SELECT * FROM " + table + " ORDER BY id")).as(table).isEqualTo(BEFORE.get(table));
+        for (String table : TABLES) assertThat(sql("SELECT " + (table.equals("clientes") ? "id,created_at,updated_at,nombre,email,telefono" : "*") + " FROM " + table + " ORDER BY id")).as(table).isEqualTo(BEFORE.get(table));
     }
     private static String sql(String query) throws Exception {
         var result = MYSQL.execInContainer("env", "MYSQL_PWD=" + MYSQL.getPassword(), "mysql", "-uroot",
