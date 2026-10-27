@@ -71,7 +71,8 @@ class MigrationMySqlTest(unittest.TestCase):
         """Limita DDL e inyección de fallos al administrador del contenedor propio."""
         env = {**os.environ, 'MYSQL_PWD': cls.root_passwords[name]}
         result = subprocess.run(['docker', 'exec', '-i', '-e', 'MYSQL_PWD', name, 'mysql', '-uroot',
-                                 '--default-character-set=utf8mb4', '--batch', '--raw', '--skip-column-names'],
+                                 '--protocol=TCP', '--host=127.0.0.1', '--default-character-set=utf8mb4',
+                                 '--batch', '--raw', '--skip-column-names'],
                                 input=sql, text=True, capture_output=True, env=env)
         if check and result.returncode:
             raise AssertionError('Falló SQL de preparación de datos sintéticos.')

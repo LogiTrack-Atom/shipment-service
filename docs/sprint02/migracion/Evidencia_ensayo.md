@@ -2,7 +2,7 @@
 
 ## Alcance verificado
 
-Se ejecutaron **18 pruebas aprobadas en 48.584 segundos** mediante:
+Se ejecutaron **18 pruebas aprobadas en 49.625 segundos** mediante:
 
 ```bash
 python3 -m unittest discover -s scripts/migracion/tests -p 'test_*.py' -v
@@ -51,7 +51,7 @@ no se presenta como una nueva ejecución de la regresión Java del Sprint01.
 | `docker/mysql/init/001-schema.sql` | `322eb45e27330386f0ddd3600cf537ad5de68b6deb5dd35db6b80db1098af33b` |
 | `docker/mysql/migrations/001-migration-ledger.sql` | `669771fc9dce4d916fd854fc4c6aa94b12e3a38830ae5b412b9635beaaa569c6` |
 | `scripts/migracion/repartidores.py` | `7724fb7b3665ea5ef3f4d1a294cdb18939cf7bb89d2c6af0e07ab905650a5bb9` |
-| `scripts/migracion/tests/test_migracion.py` | `2357bc6410c6d51c486789bf7bcf7902c81686f074d4aee40f3b73e5f34ec42a` |
+| `scripts/migracion/tests/test_migracion.py` | `1b0abea656ff8d9f1ec17bbe6150666f1f613ab9f1accf6cce9ea2b2eb0c7e6a` |
 | `scripts/migracion/tests/fixtures/courier-contract.sql` | `c3e79c149e0ff16cb4f2246f2e650367f2196ab97c1784569e65890c8f280160` |
 
 ## Pendiente para cerrar la integración
