@@ -1,0 +1,18 @@
+# Construcción opcional: requiere los cuatro repositorios hermanos y sus Dockerfiles.
+services:
+  shipment-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+  courier-service:
+    build:
+      context: ../courier-service
+      dockerfile: Dockerfile
+  security-service:
+    build:
+      context: ../security-service
+      dockerfile: Dockerfile
+  configserver:
+    build:
+      context: ../configserver
+      dockerfile: Dockerfile
