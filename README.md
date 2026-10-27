@@ -21,7 +21,7 @@ después de la consulta: se vuelve a comprobar al iniciar ruta.
 **Autorización (#25):** todas las operaciones de negocio requieren una única cabecera
 `Authorization: Bearer ...`, firma RS256 local, emisor, audiencia, UUID, roles y tiempos
 válidos. No se aceptan credenciales por query, formulario o cookies. Las lecturas no
-llaman a security ni a courier. Config Client se incorpora en #26; Compose general sigue en #28.
+llaman a security ni a courier. Config Client está integrado y el Compose general se incorpora en #28.
 
 | Operación | ADMIN | CLIENTE | REPARTIDOR |
 | --- | --- | --- | --- |
@@ -67,13 +67,12 @@ SPRING_PROFILES_ACTIVE=dev bash mvnw spring-boot:run
 
 La API escucha en 8080. Swagger UI: `/swagger-ui/index.html`; OpenAPI: `/v3/api-docs`.
 `ddl-auto=validate` comprueba el esquema, sin crearlo ni modificarlo.
-El Compose existente arranca shipment y su MySQL; todavía no orquesta el Sprint02.
-Usar `.env.example`, completar contraseñas, `JWT_PUBLIC_KEY_FILE` (archivo público
-externo legible por el contenedor), `COURIER_SERVICE_URL` y `SECURITY_SERVICE_URL` accesibles desde Docker.
-Luego ejecutar `docker compose up --build -d`. La clave se monta solo lectura, no se
-incluye en la imagen. Para MySQL únicamente: `docker compose up -d mysql` también
-requiere definir esas variables porque Compose valida el archivo completo.
-No versionar `.env` ni eliminar el volumen del equipo para adaptar su esquema.
+El [Compose general](docker-compose.yaml) declara cuatro aplicaciones y tres MySQL,
+con imágenes externas y sin `build` local. La [guía de arranque integrado](docs/sprint02/Compose.md)
+explica imágenes, variables, claves, versiones y persistencia. `compose.build.yaml` agrega
+construcción opcional desde los cuatro repositorios hermanos. La modalidad anterior del
+componente se conserva en `compose.component.yaml` y `.env.component.example`; los volúmenes
+originales no se renombran, reutilizan ni eliminan para probar la topología nueva.
 
 - **Base nueva:** `docker/mysql/init/001-schema.sql` crea clientes, envios, historial y referencias de autorización `repartidor_usuarios`.
   `repartidor_id BINARY(16)` conserva su índice y no tiene FK a courier.
@@ -124,12 +123,10 @@ solo de pruebas. La configuración local no se activa al combinar `prod,local` o
 ambos mantienen la importación remota obligatoria. No se usa `bootstrap.yml`: se conserva
 la importación de Config Data utilizada por los otros servicios.
 
-El Compose actual mantiene shipment y su MySQL, y requiere un Config Server externo
-accesible desde Docker. Las URLs entre contenedores usan DNS, por ejemplo
-`http://configserver:8085`, `http://courier-service:8081` y `http://security-service:8082`.
-`host.docker.internal` en `.env.example` sirve cuando los proveedores corren en el host;
-`localhost` dentro de shipment identifica su propio contenedor. La orquestación conjunta
-se completa en #28.
+El Compose general usa `http://configserver:8085`, `http://courier-service:8081` y
+`http://security-service:8082`. Cada aplicación se conecta únicamente a su MySQL mediante
+DNS interno. Las bases no publican puertos al host. Los puertos HTTP publicados se limitan
+a loopback y pueden ajustarse en el entorno privado.
 
 `RemoteConfigurationIT` inicia un Config Server real con backend Git temporal y copias
 SHA-256 de un commit de configserver-ms. Comprueba consumo dev/prod, precedencia de variables,

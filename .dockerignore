@@ -20,3 +20,9 @@ docker/
 *.key
 **/*.pem
 **/*.key
+
+compose*.yaml
+docker-compose.yaml
+.env.component.example
+docs/
+scripts/

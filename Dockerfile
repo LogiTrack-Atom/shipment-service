@@ -1,24 +1,19 @@
-# syntax=docker/dockerfile:1
-
-# ---------- Etapa 1: build ----------
-FROM eclipse-temurin:25-jdk AS build
+FROM eclipse-temurin:25-jdk-noble@sha256:ba0f0e1a33864105e1d454e88105c617ab40f71062db1f306bf58be32a3f8e5e AS build
 WORKDIR /workspace
-
-COPY .mvn/ .mvn/
+COPY .mvn .mvn
 COPY mvnw pom.xml ./
-RUN sed -i 's/\r$//' mvnw && chmod +x mvnw
-RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -q dependency:go-offline
+RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -ntp dependency:go-offline
+COPY src/main src/main
+RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -ntp -Dmaven.test.skip=true package
 
-COPY src/ src/
-RUN --mount=type=cache,target=/root/.m2 \
-    ./mvnw -B -q package -DskipTests && cp target/*.jar app.jar
-
-# ---------- Etapa 2: runtime ----------
-FROM eclipse-temurin:25-jre-alpine AS runtime
-RUN addgroup -S spring && adduser -S spring -G spring
+FROM eclipse-temurin:25-jre-noble@sha256:3f2223fe04b750aa5a8179e29b5c9a1ddf7665fc9bb08bfe11ad01d143bc13a5
+RUN groupadd --system --gid 10001 logitrack \
+    && useradd --system --uid 10001 --gid logitrack --home-dir /app --shell /usr/sbin/nologin logitrack
 WORKDIR /app
-COPY --from=build --chown=spring:spring /workspace/app.jar app.jar
-
-USER spring
+COPY --from=build --chown=10001:10001 /workspace/target/shipment-service-0.0.1-SNAPSHOT.jar app.jar
+COPY --from=build --chown=10001:10001 /workspace/target/classes/com/logitrack_atom/shipment_service/health/HealthProbe.class healthcheck/com/logitrack_atom/shipment_service/health/HealthProbe.class
+USER 10001:10001
 EXPOSE 8080
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "app.jar"]
+HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=3 \
+    CMD ["java", "-cp", "/app/healthcheck", "com.logitrack_atom.shipment_service.health.HealthProbe"]
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

@@ -15,3 +15,5 @@ El Compose general y la documentación de integración se mantienen en shipment-
 - [Evidencia y límites de integración](migracion/Evidencia_ensayo.md).
 
 - [Matriz de regresión y comandos de verificación](Regresion.md).
+
+- [Compose integrado y persistencia](Compose.md).
