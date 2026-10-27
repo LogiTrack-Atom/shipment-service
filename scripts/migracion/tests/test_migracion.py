@@ -33,6 +33,10 @@ class MigrationMySqlTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Provisiona únicamente dos contenedores efímeros, sin puertos ni volúmenes."""
+        frozen = Path(__file__).parent / 'fixtures/shipment-sprint01.sql'
+        provenance = json.loads(frozen.with_suffix('.json').read_text())
+        if hashlib.sha256(frozen.read_bytes()).hexdigest() != provenance['sha256']:
+            raise AssertionError('La instantánea de origen no corresponde al Sprint01 registrado.')
         cls.owned = []
         cls.probe_classpath = os.environ.get('COURIER_PROBE_CLASSPATH')
         cls.probe_password = uuid.uuid4().hex
@@ -72,7 +76,7 @@ class MigrationMySqlTest(unittest.TestCase):
                 time.sleep(1)
             else:
                 raise AssertionError('MySQL de ensayo no inició.')
-        cls.root(cls.source_name, 'USE ' + SOURCE_DB + ';\n' + (REPO / 'docker/mysql/init/001-schema.sql').read_text())
+        cls.root(cls.source_name, 'USE ' + SOURCE_DB + ';\n' + (REPO / 'scripts/migracion/tests/fixtures/shipment-sprint01.sql').read_text())
         cls.root(cls.target_name, 'USE ' + TARGET_DB + ';\n' + (Path(__file__).parent / 'fixtures/courier-contract.sql').read_text()
                  + '\n' + (REPO / 'docker/mysql/migrations/001-migration-ledger.sql').read_text())
         cls.root(cls.source_name, "REVOKE ALL PRIVILEGES, GRANT OPTION FROM 'migration_reader'@'%'; GRANT SELECT ON " + SOURCE_DB + ".* TO 'migration_reader'@'%';")

@@ -4,18 +4,23 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
-import com.logitrack_atom.shipment_service.dto.request.RepartidorRequest;
 import com.logitrack_atom.shipment_service.enums.EstadoEnvio;
 import com.logitrack_atom.shipment_service.logging.BusinessLog;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import java.util.UUID;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import static com.logitrack_atom.shipment_service.integration.IntegrationFixtures.solicitud;
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * Comprueba logs únicamente después de confirmar transacciones locales.
+ * @author MaxDz
+ * @version 0.2.0
+ */
 class BusinessLogIT extends MySqlIntegrationSupport {
     private Logger logger;
     private Level previousLevel;
@@ -59,23 +64,21 @@ class BusinessLogIT extends MySqlIntegrationSupport {
     @Test
     void registraCambiosConfirmadosConUuidYEstadosSinVolcarLosDatos() {
         var envio = shipmentService.registrar(solicitud("privado@example.test"));
-        var repartidor = repartidorService.registrar(new RepartidorRequest("Repartidor privado", "VEHICULO_PRIVADO"));
-        shipmentService.asignarRepartidor(envio.id(), repartidor.id());
+        UUID repartidor = UUID.randomUUID();
+        shipmentService.asignarRepartidor(envio.id(), repartidor);
         shipmentService.cambiarEstado(envio.id(), EstadoEnvio.EN_RUTA);
         shipmentService.cambiarEstado(envio.id(), EstadoEnvio.ENTREGADO);
         var cancelado = shipmentService.registrar(solicitud("privado@example.test"));
         shipmentService.cancelar(cancelado.id());
 
-        assertThat(appender.list).hasSize(7).allSatisfy(event -> {
+        assertThat(appender.list).hasSize(6).allSatisfy(event -> {
             assertThat(event.getLevel()).isEqualTo(Level.INFO);
             assertThat(event.getFormattedMessage()).doesNotContain("privado@example.test", "Ana Pérez",
                     "Belgrano", "Alvear", "Repartidor privado", "VEHICULO_PRIVADO");
         });
         var messages = appender.list.stream().map(ILoggingEvent::getFormattedMessage).toList();
         assertThat(messages).anySatisfy(message -> assertThat(message)
-                .contains("repartidor.registrado", repartidor.id().toString(), "ACTIVO"));
-        assertThat(messages).anySatisfy(message -> assertThat(message)
-                .contains("envio.repartidor_asignado", envio.id().toString(), repartidor.id().toString()));
+                .contains("envio.repartidor_asignado", envio.id().toString(), repartidor.toString()));
         assertThat(messages).anySatisfy(message -> assertThat(message)
                 .contains("envio.estado_cambiado", envio.id().toString(), "anterior=EN_RUTA", "nuevo=ENTREGADO"));
         assertThat(messages).anySatisfy(message -> assertThat(message)

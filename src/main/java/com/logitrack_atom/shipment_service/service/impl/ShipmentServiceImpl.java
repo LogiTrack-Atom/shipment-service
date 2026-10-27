@@ -1,14 +1,13 @@
 package com.logitrack_atom.shipment_service.service.impl;
 
+import com.logitrack_atom.shipment_service.client.CourierClient;
 import com.logitrack_atom.shipment_service.dto.request.EnvioRequest;
 import com.logitrack_atom.shipment_service.dto.response.EnvioResponse;
 import com.logitrack_atom.shipment_service.dto.response.HistorialEstadoEnvioResponse;
 import com.logitrack_atom.shipment_service.entity.Cliente;
 import com.logitrack_atom.shipment_service.entity.Envio;
 import com.logitrack_atom.shipment_service.entity.HistorialEstadoEnvio;
-import com.logitrack_atom.shipment_service.entity.Repartidor;
 import com.logitrack_atom.shipment_service.enums.EstadoEnvio;
-import com.logitrack_atom.shipment_service.enums.EstadoRepartidor;
 import com.logitrack_atom.shipment_service.exception.RecursoNoEncontradoException;
 import com.logitrack_atom.shipment_service.exception.ReglaNegocioException;
 import com.logitrack_atom.shipment_service.exception.TransicionEstadoInvalidaException;
@@ -19,7 +18,6 @@ import com.logitrack_atom.shipment_service.mapper.HistorialEstadoEnvioMapper;
 import com.logitrack_atom.shipment_service.repository.ClienteRepository;
 import com.logitrack_atom.shipment_service.repository.EnvioRepository;
 import com.logitrack_atom.shipment_service.repository.HistorialEstadoEnvioRepository;
-import com.logitrack_atom.shipment_service.repository.RepartidorRepository;
 import com.logitrack_atom.shipment_service.service.ShipmentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +28,16 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Gestiona el agregado de envíos y su historial dentro de transacciones locales.
+ *
+ * <p>La asignación y el inicio de ruta exigen disponibilidad mediante
+ * {@link CourierClient}. Las lecturas no consultan servicios remotos.</p>
+ *
+ * @author MaxDz
+ * @version 0.2.0
+ * @see ShipmentService
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -37,12 +45,13 @@ public class ShipmentServiceImpl implements ShipmentService {
 
     private final EnvioRepository envioRepository;
     private final ClienteRepository clienteRepository;
-    private final RepartidorRepository repartidorRepository;
+    private final CourierClient courierClient;
     private final HistorialEstadoEnvioRepository historialRepository;
     private final EnvioMapper envioMapper;
     private final ClienteMapper clienteMapper;
     private final HistorialEstadoEnvioMapper historialMapper;
 
+    /** {@inheritDoc} */
     @Override
     @Transactional
     public EnvioResponse registrar(EnvioRequest request) {
@@ -57,12 +66,14 @@ public class ShipmentServiceImpl implements ShipmentService {
         return envioMapper.toResponse(envio);
     }
 
+    /** {@inheritDoc} */
     @Override
     @Transactional(readOnly = true)
     public EnvioResponse obtenerPorId(UUID id) {
         return envioMapper.toResponse(buscarEnvio(id));
     }
 
+    /** {@inheritDoc} */
     @Override
     @Transactional(readOnly = true)
     public EnvioResponse obtenerPorCodigoSeguimiento(String codigoSeguimiento) {
@@ -71,6 +82,7 @@ public class ShipmentServiceImpl implements ShipmentService {
         return envioMapper.toResponse(envio);
     }
 
+    /** {@inheritDoc} */
     @Override
     @Transactional(readOnly = true)
     public List<EnvioResponse> listarPorEstado(EstadoEnvio estado) {
@@ -81,12 +93,14 @@ public class ShipmentServiceImpl implements ShipmentService {
         return envios.stream().map(envioMapper::toResponse).toList();
     }
 
+    /** {@inheritDoc} */
     @Override
     @Transactional
     public EnvioResponse cancelar(UUID id) {
         return cambiarEstado(id, EstadoEnvio.CANCELADO);
     }
 
+    /** {@inheritDoc} */
     @Override
     @Transactional
     public EnvioResponse cambiarEstado(UUID id, EstadoEnvio nuevoEstado) {
@@ -109,6 +123,7 @@ public class ShipmentServiceImpl implements ShipmentService {
         return envioMapper.toResponse(envio);
     }
 
+    /** {@inheritDoc} */
     @Override
     @Transactional
     public EnvioResponse asignarRepartidor(UUID envioId, UUID repartidorId) {
@@ -118,21 +133,16 @@ public class ShipmentServiceImpl implements ShipmentService {
             throw new ReglaNegocioException("Solo se puede asignar repartidor a un envío PENDIENTE");
         }
 
-        Repartidor repartidor = repartidorRepository.findById(repartidorId)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Repartidor", repartidorId));
-        if (repartidor.getEstado() != EstadoRepartidor.ACTIVO) {
-            log.warn("envio.asignacion_rechazada envioId={} repartidorId={} estadoRepartidor={}",
-                    envioId, repartidorId, repartidor.getEstado());
-            throw new ReglaNegocioException("El repartidor no está activo");
-        }
+        courierClient.verificarDisponible(repartidorId);
 
-        envio.setRepartidor(repartidor);
+        envio.setRepartidorId(repartidorId);
         envioRepository.save(envio);
-        BusinessLog.repartidorAsignado(envio.getId(), repartidor.getId());
+        BusinessLog.repartidorAsignado(envio.getId(), repartidorId);
 
         return envioMapper.toResponse(envio);
     }
 
+    /** {@inheritDoc} */
     @Override
     @Transactional(readOnly = true)
     public List<HistorialEstadoEnvioResponse> obtenerHistorial(UUID id) {
@@ -148,16 +158,12 @@ public class ShipmentServiceImpl implements ShipmentService {
     }
 
     private void validarRepartidorAsignado(Envio envio) {
-        Repartidor repartidor = envio.getRepartidor();
-        if (repartidor == null) {
+        UUID repartidorId = envio.getRepartidorId();
+        if (repartidorId == null) {
             log.warn("envio.en_ruta_rechazado envioId={} motivo=sin_repartidor", envio.getId());
             throw new ReglaNegocioException("El envío no tiene repartidor asignado");
         }
-        if (repartidor.getEstado() != EstadoRepartidor.ACTIVO) {
-            log.warn("envio.en_ruta_rechazado envioId={} repartidorId={} estadoRepartidor={}",
-                    envio.getId(), repartidor.getId(), repartidor.getEstado());
-            throw new ReglaNegocioException("El repartidor asignado no está activo");
-        }
+        courierClient.verificarDisponible(repartidorId);
     }
 
     private void registrarHistorial(Envio envio, EstadoEnvio anterior, EstadoEnvio nuevo) {

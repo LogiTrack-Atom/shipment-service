@@ -17,9 +17,18 @@ import org.springframework.http.HttpStatus;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Publica los contratos de envíos y ejemplos de errores del Sprint02.
+ * @author MaxDz
+ * @version 0.2.0
+ */
 @Configuration
 public class OpenApiConfig {
 
+    /**
+     * Construye la documentación pública sin componentes de administración de courier.
+     * @return especificación de la API local
+     */
     @Bean
     public OpenAPI shipmentServiceOpenApi() {
         Components components = new Components();
@@ -38,8 +47,6 @@ public class OpenApiConfig {
                 "Envio no encontrado: 00000000-0000-0000-0000-000000000001"));
         components.addResponses("TrackingNoEncontrado", error(404, "No existe el código de seguimiento indicado.",
                 "Envio no encontrado: LT-NO-EXISTE"));
-        components.addResponses("RepartidorNoEncontrado", error(404, "No existe el repartidor indicado.",
-                "Repartidor no encontrado: 00000000-0000-0000-0000-000000000001"));
         components.addResponses("AsignacionNoEncontrada", error(404, "No existe el envío o el repartidor indicado.",
                 "Repartidor no encontrado: 00000000-0000-0000-0000-000000000001"));
         components.addResponses("TransicionInvalida", error(422,
@@ -54,10 +61,18 @@ public class OpenApiConfig {
                 "Una restricción de integridad, longitud o unicidad impide persistir la operación.",
                 "La operación viola una restricción de datos, por ejemplo un valor duplicado"));
 
+        components.addResponses("CourierNoDisponible", error(503,
+                "No se pudo comprobar disponibilidad; no se modifica asignación, estado ni historial.",
+                "No se pudo verificar la disponibilidad del repartidor"));
+
         return new OpenAPI().components(components).info(new Info()
                 .title("shipment-service API").version("v1")
                 .description("""
-                        Gestión de envíos y repartidores de LogiTrack Atom — Sprint 01.
+                        Gestión de envíos de LogiTrack Atom — Sprint 02.
+                        repartidorId nullable reemplaza el objeto repartidor del Sprint01.
+                        La administración de repartidores se trasladó a courier-service (8081).
+                        Las lecturas usan solo datos locales. Integración REST pendiente en #24;
+                        las operaciones que necesitan disponibilidad responden 503 hasta completarla.
                         Cada envío se registra PENDIENTE con historial inicial. PENDIENTE permite
                         EN_RUTA (con repartidor activo) o CANCELADO; EN_RUTA permite ENTREGADO.
                         ENTREGADO y CANCELADO son terminales. Las escrituras y su historial son atómicos.

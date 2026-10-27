@@ -12,7 +12,7 @@
 	<artifactId>shipment-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>shipment-service</name>
-	<description>Microservicio de envíos y repartidores de LogiTrack</description>
+	<description>Microservicio de envíos de LogiTrack</description>
 	<properties>
 		<java.version>25</java.version>
 	</properties>

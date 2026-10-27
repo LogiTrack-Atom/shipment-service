@@ -1,18 +1,16 @@
 package com.logitrack_atom.shipment_service.service;
 
+import com.logitrack_atom.shipment_service.client.CourierClient;
 import com.logitrack_atom.shipment_service.dto.request.ClienteRequest;
 import com.logitrack_atom.shipment_service.dto.request.DireccionRequest;
 import com.logitrack_atom.shipment_service.dto.request.EnvioRequest;
 import com.logitrack_atom.shipment_service.dto.response.ClienteResponse;
 import com.logitrack_atom.shipment_service.dto.response.EnvioResponse;
 import com.logitrack_atom.shipment_service.dto.response.HistorialEstadoEnvioResponse;
-import com.logitrack_atom.shipment_service.dto.response.RepartidorResponse;
 import com.logitrack_atom.shipment_service.entity.Cliente;
 import com.logitrack_atom.shipment_service.entity.Envio;
 import com.logitrack_atom.shipment_service.entity.HistorialEstadoEnvio;
-import com.logitrack_atom.shipment_service.entity.Repartidor;
 import com.logitrack_atom.shipment_service.enums.EstadoEnvio;
-import com.logitrack_atom.shipment_service.enums.EstadoRepartidor;
 import com.logitrack_atom.shipment_service.exception.ReglaNegocioException;
 import com.logitrack_atom.shipment_service.exception.TransicionEstadoInvalidaException;
 import com.logitrack_atom.shipment_service.exception.RecursoNoEncontradoException;
@@ -22,7 +20,6 @@ import com.logitrack_atom.shipment_service.mapper.HistorialEstadoEnvioMapper;
 import com.logitrack_atom.shipment_service.repository.ClienteRepository;
 import com.logitrack_atom.shipment_service.repository.EnvioRepository;
 import com.logitrack_atom.shipment_service.repository.HistorialEstadoEnvioRepository;
-import com.logitrack_atom.shipment_service.repository.RepartidorRepository;
 import com.logitrack_atom.shipment_service.service.impl.ShipmentServiceImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -64,7 +61,7 @@ public class ShipmentServiceTest {
     @Mock
     private ClienteRepository clienteRepository;
     @Mock
-    private RepartidorRepository repartidorRepository;
+    private CourierClient courierClient;
     @Mock
     private HistorialEstadoEnvioRepository historialRepository;
     @Mock
@@ -106,7 +103,7 @@ public class ShipmentServiceTest {
         verificarRegistro(request, clienteExistente, envio, resultado);
         verify(clienteRepository).findByEmail(request.cliente().email());
         verify(clienteRepository, never()).save(any());
-        verifyNoInteractions(clienteMapper, repartidorRepository, historialMapper);
+        verifyNoInteractions(clienteMapper, courierClient, historialMapper);
         assertAll(
                 () -> assertEquals("Nombre conservado", clienteExistente.getNombre()),
                 () -> assertEquals("telefono conservado", clienteExistente.getTelefono()));
@@ -148,7 +145,7 @@ public class ShipmentServiceTest {
         assertSame(clienteMapeado, clienteCaptor.getValue());
         verify(clienteMapper).toEntity(request.cliente());
         verificarRegistro(request, clienteGuardado, envio, resultado);
-        verifyNoInteractions(repartidorRepository, historialMapper);
+        verifyNoInteractions(courierClient, historialMapper);
     }
 
     /**
@@ -325,8 +322,8 @@ public class ShipmentServiceTest {
     void testMatrizCambiarEstado(EstadoEnvio estadoActual, EstadoEnvio estadoNuevo, boolean esPermitida) {
         // Arrange: la matriz aísla la máquina de estados de la condición extra del repartidor.
         Envio envio = envioEnEstado(estadoActual);
-        Repartidor repartidor = repartidorEnEstado(EstadoRepartidor.ACTIVO);
-        envio.setRepartidor(repartidor);
+        UUID repartidor = repartidorEnEstado(EstadoRepartidor.ACTIVO);
+        envio.setRepartidorId(repartidor);
         when(envioRepository.findById(envio.getId())).thenReturn(Optional.of(envio));
 
         // Act / Assert
@@ -334,13 +331,13 @@ public class ShipmentServiceTest {
             prepararRespuestaDeEnvio(envio);
             EnvioResponse resultado = shipmentService.cambiarEstado(envio.getId(), estadoNuevo);
             assertEquals(estadoNuevo, resultado.estado());
-            assertSame(repartidor, envio.getRepartidor());
+            assertSame(repartidor, envio.getRepartidorId());
             verificarTransicionGuardada(envio, estadoActual, estadoNuevo);
         } else {
             assertThrowsExactly(TransicionEstadoInvalidaException.class,
                     () -> shipmentService.cambiarEstado(envio.getId(), estadoNuevo));
             assertEquals(estadoActual, envio.getEstado());
-            assertSame(repartidor, envio.getRepartidor());
+            assertSame(repartidor, envio.getRepartidorId());
             verify(envioRepository).findById(envio.getId());
             verificarRechazoSinEscrituras();
         }
@@ -378,8 +375,8 @@ public class ShipmentServiceTest {
     void testCambiarAEnRutaSegunRepartidor(EstadoRepartidor estadoRepartidor) {
         // Arrange: null representa ausencia de repartidor, no un estado válido de este.
         Envio envio = envioEnEstado(EstadoEnvio.PENDIENTE);
-        Repartidor asignado = estadoRepartidor == null ? null : repartidorEnEstado(estadoRepartidor);
-        envio.setRepartidor(asignado);
+        UUID asignado = estadoRepartidor == null ? null : repartidorEnEstado(estadoRepartidor);
+        envio.setRepartidorId(asignado);
         when(envioRepository.findById(envio.getId())).thenReturn(Optional.of(envio));
 
         // Act / Assert
@@ -392,8 +389,9 @@ public class ShipmentServiceTest {
             assertThrowsExactly(ReglaNegocioException.class,
                     () -> shipmentService.cambiarEstado(envio.getId(), EstadoEnvio.EN_RUTA));
             assertEquals(EstadoEnvio.PENDIENTE, envio.getEstado());
-            assertSame(asignado, envio.getRepartidor());
+            assertSame(asignado, envio.getRepartidorId());
             verify(envioRepository).findById(envio.getId());
+            if (asignado != null) verify(courierClient).verificarDisponible(asignado);
             verificarRechazoSinEscrituras();
         }
     }
@@ -419,25 +417,25 @@ public class ShipmentServiceTest {
         // Arrange
         Envio envio = envioEnEstado(EstadoEnvio.PENDIENTE);
         if (teniaRepartidor) {
-            envio.setRepartidor(repartidorEnEstado(EstadoRepartidor.ACTIVO));
+            envio.setRepartidorId(repartidorEnEstado(EstadoRepartidor.ACTIVO));
         }
-        Repartidor nuevo = repartidorEnEstado(EstadoRepartidor.ACTIVO);
+        UUID nuevo = repartidorEnEstado(EstadoRepartidor.ACTIVO);
         when(envioRepository.findById(envio.getId())).thenReturn(Optional.of(envio));
-        when(repartidorRepository.findById(nuevo.getId())).thenReturn(Optional.of(nuevo));
         prepararRespuestaDeEnvio(envio);
 
         // Act
-        EnvioResponse resultado = shipmentService.asignarRepartidor(envio.getId(), nuevo.getId());
+        EnvioResponse resultado = shipmentService.asignarRepartidor(envio.getId(), nuevo);
 
         // Assert
         ArgumentCaptor<Envio> guardado = ArgumentCaptor.forClass(Envio.class);
         verify(envioRepository).save(guardado.capture());
         assertSame(envio, guardado.getValue());
-        assertSame(nuevo, guardado.getValue().getRepartidor());
+        assertEquals(nuevo, guardado.getValue().getRepartidorId());
+        verify(courierClient).verificarDisponible(nuevo);
         assertEquals(EstadoEnvio.PENDIENTE, envio.getEstado());
-        assertEquals(nuevo.getId(), resultado.repartidor().id());
+        assertEquals(nuevo, resultado.repartidorId());
         assertEquals(EstadoEnvio.PENDIENTE, resultado.estado());
-        verify(repartidorRepository, never()).save(any());
+
         verifyNoInteractions(clienteRepository, historialRepository, clienteMapper, historialMapper);
     }
 
@@ -446,19 +444,18 @@ public class ShipmentServiceTest {
     void testAsignarRepartidorInactivo() {
         // Arrange
         Envio envio = envioEnEstado(EstadoEnvio.PENDIENTE);
-        Repartidor anterior = repartidorEnEstado(EstadoRepartidor.ACTIVO);
-        envio.setRepartidor(anterior);
-        Repartidor inactivo = repartidorEnEstado(EstadoRepartidor.INACTIVO);
+        UUID anterior = repartidorEnEstado(EstadoRepartidor.ACTIVO);
+        envio.setRepartidorId(anterior);
+        UUID inactivo = repartidorEnEstado(EstadoRepartidor.INACTIVO);
         when(envioRepository.findById(envio.getId())).thenReturn(Optional.of(envio));
-        when(repartidorRepository.findById(inactivo.getId())).thenReturn(Optional.of(inactivo));
 
         // Act / Assert
         assertThrowsExactly(ReglaNegocioException.class,
-                () -> shipmentService.asignarRepartidor(envio.getId(), inactivo.getId()));
+                () -> shipmentService.asignarRepartidor(envio.getId(), inactivo));
         assertEquals(EstadoEnvio.PENDIENTE, envio.getEstado());
-        assertSame(anterior, envio.getRepartidor());
+        assertSame(anterior, envio.getRepartidorId());
         verify(envioRepository).findById(envio.getId());
-        verify(repartidorRepository).findById(inactivo.getId());
+        verify(courierClient).verificarDisponible(inactivo);
         verificarRechazoSinEscrituras();
     }
 
@@ -467,20 +464,21 @@ public class ShipmentServiceTest {
     void testAsignarRepartidorInexistente() {
         // Arrange
         Envio envio = envioEnEstado(EstadoEnvio.PENDIENTE);
-        Repartidor anterior = repartidorEnEstado(EstadoRepartidor.ACTIVO);
-        envio.setRepartidor(anterior);
+        UUID anterior = repartidorEnEstado(EstadoRepartidor.ACTIVO);
+        envio.setRepartidorId(anterior);
         UUID repartidorId = UUID.randomUUID();
         when(envioRepository.findById(envio.getId())).thenReturn(Optional.of(envio));
-        when(repartidorRepository.findById(repartidorId)).thenReturn(Optional.empty());
+        doThrow(new RecursoNoEncontradoException("Repartidor", repartidorId))
+                .when(courierClient).verificarDisponible(repartidorId);
 
         // Act / Assert
         RecursoNoEncontradoException error = assertThrowsExactly(RecursoNoEncontradoException.class,
                 () -> shipmentService.asignarRepartidor(envio.getId(), repartidorId));
         assertTrue(error.getMessage().contains(repartidorId.toString()));
         assertEquals(EstadoEnvio.PENDIENTE, envio.getEstado());
-        assertSame(anterior, envio.getRepartidor());
+        assertSame(anterior, envio.getRepartidorId());
         verify(envioRepository).findById(envio.getId());
-        verify(repartidorRepository).findById(repartidorId);
+        verify(courierClient).verificarDisponible(repartidorId);
         verificarRechazoSinEscrituras();
     }
 
@@ -505,8 +503,8 @@ public class ShipmentServiceTest {
     void testAsignarRepartidorAEnvioNoPendiente(EstadoEnvio estado) {
         // Arrange
         Envio envio = envioEnEstado(estado);
-        Repartidor anterior = repartidorEnEstado(EstadoRepartidor.ACTIVO);
-        envio.setRepartidor(anterior);
+        UUID anterior = repartidorEnEstado(EstadoRepartidor.ACTIVO);
+        envio.setRepartidorId(anterior);
         UUID nuevoId = UUID.randomUUID();
         when(envioRepository.findById(envio.getId())).thenReturn(Optional.of(envio));
 
@@ -514,7 +512,7 @@ public class ShipmentServiceTest {
         assertThrowsExactly(ReglaNegocioException.class,
                 () -> shipmentService.asignarRepartidor(envio.getId(), nuevoId));
         assertEquals(estado, envio.getEstado());
-        assertSame(anterior, envio.getRepartidor());
+        assertSame(anterior, envio.getRepartidorId());
         verify(envioRepository).findById(envio.getId());
         verificarRechazoSinEscrituras();
     }
@@ -541,15 +539,15 @@ public class ShipmentServiceTest {
     void testCancelarEnvioNoPendiente(EstadoEnvio estado) {
         // Arrange
         Envio envio = envioEnEstado(estado);
-        Repartidor asignado = repartidorEnEstado(EstadoRepartidor.ACTIVO);
-        envio.setRepartidor(asignado);
+        UUID asignado = repartidorEnEstado(EstadoRepartidor.ACTIVO);
+        envio.setRepartidorId(asignado);
         when(envioRepository.findById(envio.getId())).thenReturn(Optional.of(envio));
 
         // Act / Assert
         assertThrowsExactly(TransicionEstadoInvalidaException.class,
                 () -> shipmentService.cancelar(envio.getId()));
         assertEquals(estado, envio.getEstado());
-        assertSame(asignado, envio.getRepartidor());
+        assertSame(asignado, envio.getRepartidorId());
         verify(envioRepository).findById(envio.getId());
         verificarRechazoSinEscrituras();
     }
@@ -667,21 +665,23 @@ public class ShipmentServiceTest {
         return envio;
     }
 
-    private static Repartidor repartidorEnEstado(EstadoRepartidor estado) {
-        Repartidor repartidor = new Repartidor();
-        ReflectionTestUtils.setField(repartidor, "id", UUID.randomUUID());
-        repartidor.setEstado(estado);
-        return repartidor;
+    /** Estados del doble remoto, sin entidad persistida en shipment. */
+    private enum EstadoRepartidor { ACTIVO, INACTIVO }
+
+    private UUID repartidorEnEstado(EstadoRepartidor estado) {
+        UUID id = UUID.randomUUID();
+        if (estado == EstadoRepartidor.INACTIVO) {
+            doThrow(new ReglaNegocioException("El repartidor no está activo"))
+                    .when(courierClient).verificarDisponible(id);
+        }
+        return id;
     }
 
     private static EnvioResponse respuesta(Envio envio) {
         Cliente cliente = envio.getCliente();
         ClienteResponse clienteResponse = cliente == null ? null : new ClienteResponse(cliente.getId(),
                 cliente.getNombre(), cliente.getEmail(), cliente.getTelefono());
-        Repartidor repartidor = envio.getRepartidor();
-        RepartidorResponse repartidorResponse = repartidor == null ? null : new RepartidorResponse(
-                repartidor.getId(), repartidor.getNombre(), repartidor.getTipoVehiculo(), repartidor.getEstado());
-        return new EnvioResponse(envio.getId(), envio.getCodigoSeguimiento(), clienteResponse, repartidorResponse,
+        return new EnvioResponse(envio.getId(), envio.getCodigoSeguimiento(), clienteResponse, envio.getRepartidorId(),
                 envio.getPesoKg(), envio.getAnchoCm(), envio.getAltoCm(), envio.getLargoCm(), envio.getEstado(),
                 null, null, envio.getCreatedAt(), envio.getUpdatedAt());
     }
@@ -725,7 +725,9 @@ public class ShipmentServiceTest {
         assertSame(envio, envioCaptor.getValue());
         assertEquals(nuevo, envioCaptor.getValue().getEstado());
         verificarHistorialGuardado(envio, anterior, nuevo);
-        verifyNoInteractions(clienteRepository, repartidorRepository);
+        verifyNoInteractions(clienteRepository);
+        if (nuevo == EstadoEnvio.EN_RUTA) verify(courierClient).verificarDisponible(envio.getRepartidorId());
+        else verifyNoInteractions(courierClient);
     }
 
     private void verificarHistorialGuardado(Envio envio, EstadoEnvio anterior, EstadoEnvio nuevo) {
@@ -743,13 +745,12 @@ public class ShipmentServiceTest {
         verify(envioRepository, never()).save(any());
         verify(historialRepository, never()).save(any());
         verify(clienteRepository, never()).save(any());
-        verify(repartidorRepository, never()).save(any());
     }
 
     private void verificarRechazoSinEscrituras() {
         verificarSinEscrituras();
         // Las lecturas esperadas se verifican en cada caso: detecta escrituras o trabajo posterior extra.
-        verifyNoMoreInteractions(envioRepository, historialRepository, clienteRepository, repartidorRepository);
+        verifyNoMoreInteractions(envioRepository, historialRepository, clienteRepository, courierClient);
         verifyNoInteractions(envioMapper, clienteMapper, historialMapper);
     }
 

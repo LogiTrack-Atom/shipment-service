@@ -2,7 +2,9 @@
 
 Este procedimiento corresponde a [shipment-service#22](https://github.com/LogiTrack-Atom/shipment-service/issues/22).
 Prepara la separación de datos; **no cambia el modelo Java, la API, la tabla ni la FK
-del Sprint01**. El esquema de origen sigue en `docker/mysql/init/001-schema.sql`.
+del Sprint01**. El esquema de origen congelado está en
+`scripts/migracion/tests/fixtures/shipment-sprint01.sql` (procedencia y SHA-256
+en el JSON adyacente). El init actual corresponde a una instalación nueva del Sprint02.
 No se usa `ddl-auto=create`, no se reinicializa el volumen original y no se ejecuta
 la herramienta contra las bases del equipo.
 

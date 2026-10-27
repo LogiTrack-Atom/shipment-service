@@ -2,20 +2,31 @@ package com.logitrack_atom.shipment_service.mapper;
 
 import com.logitrack_atom.shipment_service.dto.request.EnvioRequest;
 import com.logitrack_atom.shipment_service.dto.response.EnvioResponse;
-import com.logitrack_atom.shipment_service.dto.response.RepartidorResponse;
 import com.logitrack_atom.shipment_service.entity.Cliente;
 import com.logitrack_atom.shipment_service.entity.Envio;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+/**
+ * Convierte envíos y DTOs utilizando únicamente datos del agregado local.
+ *
+ * @author MaxDz
+ * @version 0.2.0
+ */
 @Component
 @RequiredArgsConstructor
 public class EnvioMapper {
 
     private final ClienteMapper clienteMapper;
-    private final RepartidorMapper repartidorMapper;
     private final DireccionMapper direccionMapper;
 
+    /**
+     * Construye un envío pendiente sin asignación.
+     * @param request datos validados
+     * @param cliente cliente persistido
+     * @param codigoSeguimiento código único generado
+     * @return entidad nueva
+     */
     public Envio toEntity(EnvioRequest request, Cliente cliente, String codigoSeguimiento) {
         Envio envio = new Envio();
         envio.setCodigoSeguimiento(codigoSeguimiento);
@@ -29,16 +40,17 @@ public class EnvioMapper {
         return envio;
     }
 
+    /**
+     * Representa el envío sin realizar consultas remotas.
+     * @param envio entidad local
+     * @return DTO con UUID remoto nullable
+     */
     public EnvioResponse toResponse(Envio envio) {
-        RepartidorResponse repartidor = envio.getRepartidor() == null
-                ? null
-                : repartidorMapper.toResponse(envio.getRepartidor());
-
         return new EnvioResponse(
                 envio.getId(),
                 envio.getCodigoSeguimiento(),
                 clienteMapper.toResponse(envio.getCliente()),
-                repartidor,
+                envio.getRepartidorId(),
                 envio.getPesoKg(),
                 envio.getAnchoCm(),
                 envio.getAltoCm(),

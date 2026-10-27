@@ -1,9 +1,10 @@
 package com.logitrack_atom.shipment_service.integration;
 
 import com.jayway.jsonpath.JsonPath;
-import com.logitrack_atom.shipment_service.entity.Repartidor;
+import com.logitrack_atom.shipment_service.exception.RecursoNoEncontradoException;
+import com.logitrack_atom.shipment_service.exception.ReglaNegocioException;
+import static org.mockito.Mockito.doThrow;
 import com.logitrack_atom.shipment_service.enums.EstadoEnvio;
-import com.logitrack_atom.shipment_service.enums.EstadoRepartidor;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -25,25 +26,23 @@ import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/** Web real de Spring (MockMvc) con servicios, repositorios y MySQL sin reemplazos. */
+/**
+ * HTTP de shipment con servicios y MySQL reales; courier se sustituye en su frontera.
+ * @author MaxDz
+ * @version 0.2.0
+ */
 class ShipmentApiIT extends MySqlIntegrationSupport {
 
     @Test
     void completaEntregaYCancelacionIndependienteConHistorialPersistido() throws Exception {
         String envio = registrarEnvio();
         String codigo = shipmentService.obtenerPorId(UUID.fromString(envio)).codigoSeguimiento();
-        String repartidor = identificador(mvc.perform(post("/api/v1/repartidores")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"nombre":"Luis","tipoVehiculo":"MOTO"}
-                                """))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.estado").value("ACTIVO")));
+        String repartidor = UUID.randomUUID().toString();
         mvc.perform(put("/api/v1/envios/{id}/repartidor", envio)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"repartidorId\":\"" + repartidor + "\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.repartidor.id").value(repartidor));
+                .andExpect(jsonPath("$.repartidorId").value(repartidor));
         for (String estado : new String[]{"EN_RUTA", "ENTREGADO"}) {
             mvc.perform(patch("/api/v1/envios/{id}/estado", envio)
                             .contentType(MediaType.APPLICATION_JSON)
@@ -140,18 +139,17 @@ class ShipmentApiIT extends MySqlIntegrationSupport {
     @Test
     void noAsignaRepartidorInexistenteNiInactivo() throws Exception {
         String id = registrarEnvio();
+        UUID faltante = UUID.randomUUID();
+        doThrow(new RecursoNoEncontradoException("Repartidor", faltante)).when(courierClient).verificarDisponible(faltante);
         mvc.perform(put("/api/v1/envios/{id}/repartidor", id).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"repartidorId\":\"" + UUID.randomUUID() + "\"}"))
+                        .content("{\"repartidorId\":\"" + faltante + "\"}"))
                 .andExpect(status().isNotFound()).andExpect(jsonPath("$.status").value(404));
-        var repartidor = new Repartidor();
-        repartidor.setNombre("Luis");
-        repartidor.setTipoVehiculo("MOTO");
-        repartidor.setEstado(EstadoRepartidor.INACTIVO);
-        UUID repartidorId = repartidores.saveAndFlush(repartidor).getId();
+        UUID repartidorId = UUID.randomUUID();
+        doThrow(new ReglaNegocioException("El repartidor no está activo")).when(courierClient).verificarDisponible(repartidorId);
         mvc.perform(put("/api/v1/envios/{id}/repartidor", id).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"repartidorId\":\"" + repartidorId + "\"}"))
                 .andExpect(status().isUnprocessableContent()).andExpect(jsonPath("$.status").value(422));
-        assertThat(shipmentService.obtenerPorId(UUID.fromString(id)).repartidor()).isNull();
+        assertThat(shipmentService.obtenerPorId(UUID.fromString(id)).repartidorId()).isNull();
         assertThat(historiales.count()).isEqualTo(1);
     }
 
@@ -202,6 +200,6 @@ class ShipmentApiIT extends MySqlIntegrationSupport {
     private static Stream<String> rutasInexistentes() {
         String id = "00000000-0000-0000-0000-000000000001";
         return Stream.of("/api/v1/envios/" + id, "/api/v1/envios/seguimiento/NO-EXISTE",
-                "/api/v1/envios/" + id + "/historial", "/api/v1/repartidores/" + id);
+                "/api/v1/envios/" + id + "/historial");
     }
 }

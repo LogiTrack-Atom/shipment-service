@@ -6,6 +6,7 @@ import com.logitrack_atom.shipment_service.dto.response.HistorialEstadoEnvioResp
 import com.logitrack_atom.shipment_service.enums.EstadoEnvio;
 import com.logitrack_atom.shipment_service.exception.RecursoNoEncontradoException;
 import com.logitrack_atom.shipment_service.exception.ReglaNegocioException;
+import com.logitrack_atom.shipment_service.exception.CourierNoDisponibleException;
 import com.logitrack_atom.shipment_service.exception.TransicionEstadoInvalidaException;
 import org.springframework.dao.DataIntegrityViolationException;
 
@@ -16,6 +17,10 @@ import java.util.UUID;
  * Contrato del ciclo de vida de un envío. Recibe solicitudes previamente validadas por Bean Validation.
  * Las escrituras son transaccionales; si falla un evento de historial se revierte toda la operación.
  * Las consultas usan transacciones de solo lectura y devuelven DTO, nunca entidades JPA.
+ * La disponibilidad del repartidor se verifica en courier únicamente al mutar.
+ *
+ * @author MaxDz
+ * @version 0.2.0
  */
 public interface ShipmentService {
 
@@ -72,6 +77,7 @@ public interface ShipmentService {
      * @throws RecursoNoEncontradoException si no existe el envío
      * @throws TransicionEstadoInvalidaException si el salto no está permitido
      * @throws ReglaNegocioException si EN_RUTA no tiene repartidor asignado y activo
+     * @throws CourierNoDisponibleException si no se puede comprobar disponibilidad
      */
     EnvioResponse cambiarEstado(UUID id, EstadoEnvio nuevoEstado);
 
@@ -83,6 +89,7 @@ public interface ShipmentService {
      * @return envío con la asignación confirmada
      * @throws RecursoNoEncontradoException si no existe alguno de los dos recursos
      * @throws ReglaNegocioException si el envío no está PENDIENTE o el repartidor no está ACTIVO
+     * @throws CourierNoDisponibleException si no se puede comprobar disponibilidad
      */
     EnvioResponse asignarRepartidor(UUID envioId, UUID repartidorId);
 

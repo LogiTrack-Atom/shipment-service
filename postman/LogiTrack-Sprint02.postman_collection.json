@@ -1,0 +1,233 @@
+{
+  "info": {
+    "name": "LogiTrack Atom — Sprint02 — Extracción de repartidores",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Etapa #23. Ejecutar en orden con entorno Local. Comprueba el cambio repartidor -> repartidorId y el rechazo 503 del adaptador transitorio, que será reemplazado en #24. Crea un cliente, un envío cancelado y dos eventos; no elimina datos. No representa la entrega completa del Sprint02."
+  },
+  "item": [
+    {
+      "name": "01 - Registrar envío sin asignación",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"cliente\": {\n    \"nombre\": \"Ana Demo\",\n    \"email\": \"{{clienteEmail}}\"\n  },\n  \"origen\": {\n    \"calle\": \"Origen\",\n    \"numero\": \"1\",\n    \"ciudad\": \"Jujuy\",\n    \"codigoPostal\": \"4600\"\n  },\n  \"destino\": {\n    \"calle\": \"Destino\",\n    \"numero\": \"2\",\n    \"ciudad\": \"Salta\",\n    \"codigoPostal\": \"4400\"\n  },\n  \"pesoKg\": 1.25,\n  \"anchoCm\": 25.25,\n  \"altoCm\": 15.5,\n  \"largoCm\": 30.75\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.environment.set('clienteEmail','s02-'+pm.variables.replaceIn('{{$guid}}')+'@example.test');",
+              "['envioId','tracking','actualizadoAntes'].forEach(k=>pm.environment.unset(k));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('201', () => pm.response.to.have.status(201));",
+              "const b=pm.response.json();",
+              "pm.test('UUID nullable y sin objeto remoto', () => { pm.expect(b).to.have.property('repartidorId', null); pm.expect(b).not.to.have.property('repartidor'); });",
+              "pm.environment.set('envioId',b.id); pm.environment.set('tracking',b.codigoSeguimiento); pm.environment.set('actualizadoAntes',b.updatedAt);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Consultar UUID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envioId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 y referencia nula', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().repartidorId).to.equal(null); });",
+              "pm.environment.set('actualizadoAntes',pm.response.json().updatedAt);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Consultar tracking",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/seguimiento/{{tracking}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 y referencia nula', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().repartidorId).to.equal(null); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Sin transporte REST no se aprueba asignación (#24 pendiente)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envioId}}/repartidor",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"repartidorId\":\"00000000-0000-0000-0000-000000000001\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('503 sin disponibilidad comprobada',()=>{pm.response.to.have.status(503); pm.expect(pm.response.json().status).to.equal(503);});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Asignación, estado y auditoría intactos",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envioId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Sin mutación',()=>{pm.response.to.have.status(200);const b=pm.response.json();pm.expect(b.repartidorId).to.equal(null);pm.expect(b.estado).to.equal('PENDIENTE');pm.expect(b.updatedAt).to.equal(pm.environment.get('actualizadoAntes'));});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Historial inicial sin eventos extra",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envioId}}/historial"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Un evento inicial',()=>{pm.response.to.have.status(200);const b=pm.response.json();pm.expect(b).to.have.length(1);pm.expect(b[0].estadoNuevo).to.equal('PENDIENTE');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 - Cancelar envío pendiente",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envioId}}/cancelacion"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Cancelación local',()=>{pm.response.to.have.status(200);pm.expect(pm.response.json().estado).to.equal('CANCELADO');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 - Historial de cancelación",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envioId}}/historial"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Dos eventos confirmados',()=>{pm.response.to.have.status(200);pm.expect(pm.response.json().map(x=>x.estadoNuevo)).to.eql(['PENDIENTE','CANCELADO']);});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -14,16 +14,6 @@ CREATE TABLE clientes (
     CONSTRAINT uk_clientes_email UNIQUE (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-CREATE TABLE repartidores (
-    id BINARY(16) NOT NULL,
-    created_at DATETIME(6) NOT NULL,
-    updated_at DATETIME(6) NOT NULL,
-    nombre VARCHAR(255) NOT NULL,
-    tipo_vehiculo VARCHAR(255) NOT NULL,
-    estado ENUM('ACTIVO', 'INACTIVO') NOT NULL,
-    PRIMARY KEY (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
 CREATE TABLE envios (
     id BINARY(16) NOT NULL,
     created_at DATETIME(6) NOT NULL,
@@ -48,8 +38,7 @@ CREATE TABLE envios (
     CONSTRAINT uk_envios_codigo_seguimiento UNIQUE (codigo_seguimiento),
     KEY idx_envios_cliente (cliente_id),
     KEY idx_envios_repartidor (repartidor_id),
-    CONSTRAINT fk_envios_cliente FOREIGN KEY (cliente_id) REFERENCES clientes (id),
-    CONSTRAINT fk_envios_repartidor FOREIGN KEY (repartidor_id) REFERENCES repartidores (id)
+    CONSTRAINT fk_envios_cliente FOREIGN KEY (cliente_id) REFERENCES clientes (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE historial_estados_envio (

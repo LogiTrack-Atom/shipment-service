@@ -1,20 +1,25 @@
 package com.logitrack_atom.shipment_service.integration;
 
-import com.logitrack_atom.shipment_service.dto.request.RepartidorRequest;
 import com.logitrack_atom.shipment_service.enums.EstadoEnvio;
 import org.junit.jupiter.api.Test;
+import java.util.UUID;
 
 import static com.logitrack_atom.shipment_service.integration.IntegrationFixtures.solicitud;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+/**
+ * Comprueba rollback real cuando falla la persistencia del historial.
+ * @author MaxDz
+ * @version 0.2.0
+ */
 class ShipmentTransactionIT extends MySqlIntegrationSupport {
 
     @Test
     void revierteEstadoEHistorialCuandoMySqlRechazaElNuevoEvento() throws Exception {
         var envio = shipmentService.registrar(solicitud("rollback@example.test"));
-        var repartidor = repartidorService.registrar(new RepartidorRequest("Luis", "MOTO"));
-        shipmentService.asignarRepartidor(envio.id(), repartidor.id());
+        UUID repartidor = UUID.randomUUID();
+        shipmentService.asignarRepartidor(envio.id(), repartidor);
         var actualizadoAntes = shipmentService.obtenerPorId(envio.id()).updatedAt();
         crearFalloDeHistorial();
         try {
@@ -27,7 +32,7 @@ class ShipmentTransactionIT extends MySqlIntegrationSupport {
                 var recuperado = envios.findById(envio.id()).orElseThrow();
                 assertThat(recuperado.getEstado()).isEqualTo(EstadoEnvio.PENDIENTE);
                 assertThat(recuperado.getUpdatedAt()).isEqualTo(actualizadoAntes);
-                assertThat(recuperado.getRepartidor().getId()).isEqualTo(repartidor.id());
+                assertThat(recuperado.getRepartidorId()).isEqualTo(repartidor);
                 assertThat(historiales.findByEnvioIdOrderByFechaCambioAsc(envio.id()))
                         .extracting("estadoNuevo").containsExactly(EstadoEnvio.PENDIENTE);
                 return null;
