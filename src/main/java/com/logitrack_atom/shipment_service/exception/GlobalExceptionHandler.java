@@ -158,4 +158,6 @@ public class GlobalExceptionHandler {
                 Instant.now(), status.value(), status.getReasonPhrase(), mensaje, detalles);
         return ResponseEntity.status(status).body(cuerpo);
     }
+    /** Crea el traductor de errores públicos. */
+    public GlobalExceptionHandler() { }
 }

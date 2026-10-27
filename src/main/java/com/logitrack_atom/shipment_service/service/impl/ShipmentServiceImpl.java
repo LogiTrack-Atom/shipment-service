@@ -22,7 +22,6 @@ import com.logitrack_atom.shipment_service.repository.HistorialEstadoEnvioReposi
 import com.logitrack_atom.shipment_service.security.ShipmentAccess;
 import com.logitrack_atom.shipment_service.service.ShipmentService;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.security.access.AccessDeniedException;
@@ -46,7 +45,6 @@ import java.util.UUID;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class ShipmentServiceImpl implements ShipmentService {
 
     private final ShipmentAccess access;
@@ -90,6 +88,7 @@ public class ShipmentServiceImpl implements ShipmentService {
         Envio envio = envioMapper.toEntity(request, cliente, generarCodigoSeguimiento());
         envioRepository.save(envio);
         registrarHistorial(envio, null, EstadoEnvio.PENDIENTE);
+        envioRepository.flush();
         BusinessLog.envioRegistrado(envio.getId(), envio.getEstado());
 
         return envioMapper.toResponse(envio);
@@ -173,6 +172,7 @@ public class ShipmentServiceImpl implements ShipmentService {
         envio.setEstado(nuevoEstado);
         envioRepository.save(envio);
         registrarHistorial(envio, estadoActual, nuevoEstado);
+        envioRepository.flush();
         BusinessLog.estadoCambiado(envio.getId(), estadoActual, nuevoEstado);
 
         return envioMapper.toResponse(envio);
@@ -194,6 +194,7 @@ public class ShipmentServiceImpl implements ShipmentService {
 
         envio.setRepartidorId(repartidorId);
         envioRepository.save(envio);
+        envioRepository.flush();
         BusinessLog.repartidorAsignado(envio.getId(), repartidorId);
 
         return envioMapper.toResponse(envio);
@@ -249,5 +250,36 @@ public class ShipmentServiceImpl implements ShipmentService {
                                     .toUpperCase();
         } while (envioRepository.existsByCodigoSeguimiento(codigo));
         return codigo;
+    }
+
+    /**
+     * Recibe las dependencias mediante inyección por constructor.
+     *
+     * @param access evaluador de roles y pertenencia del usuario autenticado
+     * @param envioRepository persistencia y bloqueos de envíos
+     * @param clienteRepository persistencia y búsqueda de clientes asociados
+     * @param courierClient consulta de disponibilidad de repartidores
+     * @param historialRepository persistencia del historial en la transacción local
+     * @param envioMapper conversión del agregado y sus respuestas
+     * @param clienteMapper conversión de contactos de entrada
+     * @param historialMapper conversión de eventos autorizados
+     */
+    public ShipmentServiceImpl(
+            ShipmentAccess access,
+            EnvioRepository envioRepository,
+            ClienteRepository clienteRepository,
+            CourierClient courierClient,
+            HistorialEstadoEnvioRepository historialRepository,
+            EnvioMapper envioMapper,
+            ClienteMapper clienteMapper,
+            HistorialEstadoEnvioMapper historialMapper) {
+        this.access = access;
+        this.envioRepository = envioRepository;
+        this.clienteRepository = clienteRepository;
+        this.courierClient = courierClient;
+        this.historialRepository = historialRepository;
+        this.envioMapper = envioMapper;
+        this.clienteMapper = clienteMapper;
+        this.historialMapper = historialMapper;
     }
 }

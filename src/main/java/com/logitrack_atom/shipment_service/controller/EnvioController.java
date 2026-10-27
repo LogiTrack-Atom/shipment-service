@@ -15,7 +15,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -40,7 +39,6 @@ import java.util.UUID;
 @Tag(name = "Envíos")
 @RestController
 @RequestMapping("/api/v1/envios")
-@RequiredArgsConstructor
 public class EnvioController {
 
     private final ShipmentService shipmentService;
@@ -215,4 +213,9 @@ public class EnvioController {
                                            @Valid @RequestBody AsignarRepartidorRequest request) {
         return shipmentService.asignarRepartidor(id, request.repartidorId());
     }
+    /**
+     * Recibe el contrato de negocio de envíos.
+     * @param shipmentService operaciones de negocio autorizadas
+     */
+    public EnvioController(ShipmentService shipmentService) { this.shipmentService = shipmentService; }
 }
