@@ -27,6 +27,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
  * @author MaxDz
  * @version 0.2.0
  */
+@org.springframework.test.context.ActiveProfiles("test")
 @SpringBootTest
 class ShipmentSchemaMigrationIT {
     private static final MySQLContainer MYSQL = new MySQLContainer("mysql:8.4")

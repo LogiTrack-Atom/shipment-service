@@ -21,7 +21,7 @@ después de la consulta: se vuelve a comprobar al iniciar ruta.
 **Autorización (#25):** todas las operaciones de negocio requieren una única cabecera
 `Authorization: Bearer ...`, firma RS256 local, emisor, audiencia, UUID, roles y tiempos
 válidos. No se aceptan credenciales por query, formulario o cookies. Las lecturas no
-llaman a security ni a courier. Config Client y Compose general siguen en #26/#28.
+llaman a security ni a courier. Config Client se incorpora en #26; Compose general sigue en #28.
 
 | Operación | ADMIN | CLIENTE | REPARTIDOR |
 | --- | --- | --- | --- |
@@ -56,13 +56,13 @@ a mensajes públicos o logs de negocio.
 
 ## Ejecución y esquema
 
-Con Java 25, configurar `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `COURIER_SERVICE_URL`, `SECURITY_SERVICE_URL`
+Con Java 25, configurar `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `COURIER_SERVICE_URL`, `SECURITY_SERVICE_URL`, `CONFIG_SERVER_URL` y `CONFIG_LABEL`
 y `JWT_PUBLIC_KEY_LOCATION=file:/ruta/externa/jwt-public.pem` en el proceso.
 La clave debe ser pública RSA X.509 de al menos 2048 bits; no se versiona y no se
 requiere la clave privada del emisor. Un archivo ausente o inválido impide arrancar:
 
 ```sh
-bash mvnw spring-boot:run
+SPRING_PROFILES_ACTIVE=dev bash mvnw spring-boot:run
 ```
 
 La API escucha en 8080. Swagger UI: `/swagger-ui/index.html`; OpenAPI: `/v3/api-docs`.
@@ -91,6 +91,51 @@ No versionar `.env` ni eliminar el volumen del equipo para adaptar su esquema.
   retirada/restauración de FK sin modificar los datos iniciales.
 
 No se ha aplicado el ALTER ni la migración a la base compartida del equipo.
+
+## Configuración centralizada
+
+Java 25, Spring Boot 4.1.1 y BOM Spring Cloud 2025.1.4, con comprobación de compatibilidad
+activa. El perfil predeterminado es `dev`. `dev` y `prod` requieren Config Server mediante
+`spring.config.import=configserver:...`, sin `optional:` ni fallback operativo local.
+Config Server entrega puerto, datasource/JPA, JSON, JWT, URLs/timeouts, logging y salud.
+La configuración local de arranque conserva nombre, selección de perfil, import, label y
+límites de espera de Config Client (2 s / 3 s).
+
+| Variable | Uso |
+| --- | --- |
+| `SPRING_PROFILES_ACTIVE` | `dev` o `prod` para configuración centralizada |
+| `CONFIG_SERVER_URL` | URL del servidor; en Docker usar su DNS, por ejemplo `http://configserver:8085` |
+| `CONFIG_LABEL` | Rama o commit de configserver-ms; `develop` durante desarrollo, commit fijo para reproducir |
+| `SHIPMENT_SERVER_PORT` | Sobrescribe el puerto remoto 8080 mediante placeholder |
+| `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` | Credenciales del usuario exclusivo de shipment; sin defaults de secretos |
+| `JWT_PUBLIC_KEY_LOCATION` | Archivo público externo; la clave privada permanece en security |
+| `COURIER_SERVICE_URL`, `SECURITY_SERVICE_URL` | Orígenes de proveedores; DNS de servicios en Docker |
+| `SECURITY_CONNECT_TIMEOUT`, `SECURITY_READ_TIMEOUT` | Sobrescriben 2 s / 3 s administrativos dentro de los límites tipados |
+
+`logitrack.config.marker` se enlaza a un bean y se registra al arrancar, sin publicar
+propiedades ni endpoints de diagnóstico. Los marcadores son `shipment-service-dev` y
+`shipment-service-prod`. Credenciales, tokens y claves no se guardan en Git ni se registran.
+Actuator expone solo salud, sin detalles. Una clave ausente, contraseña inválida, etiqueta
+inexistente o Config Server inaccesible impide considerar válido el arranque.
+
+`local` permite ejecución explícita sin Config Server con las mismas variables externas:
+`SPRING_PROFILES_ACTIVE=local bash mvnw spring-boot:run`. `test` usa configuración aislada
+solo de pruebas. La configuración local no se activa al combinar `prod,local` o `dev,local`;
+ambos mantienen la importación remota obligatoria. No se usa `bootstrap.yml`: se conserva
+la importación de Config Data utilizada por los otros servicios.
+
+El Compose actual mantiene shipment y su MySQL, y requiere un Config Server externo
+accesible desde Docker. Las URLs entre contenedores usan DNS, por ejemplo
+`http://configserver:8085`, `http://courier-service:8081` y `http://security-service:8082`.
+`host.docker.internal` en `.env.example` sirve cuando los proveedores corren en el host;
+`localhost` dentro de shipment identifica su propio contenedor. La orquestación conjunta
+se completa en #28.
+
+`RemoteConfigurationIT` inicia un Config Server real con backend Git temporal y copias
+SHA-256 de un commit de configserver-ms. Comprueba consumo dev/prod, precedencia de variables,
+placeholders sin resolver en el servidor, compatibilidad y arranques rechazados. No necesita
+GitHub ni un servidor del equipo; MySQL es temporal. Config Server y JGit se incluyen solo
+como dependencias de pruebas, fuera del JAR de producción.
 
 ## Asociaciones de identidad
 

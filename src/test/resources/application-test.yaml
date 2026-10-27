@@ -1,0 +1,10 @@
+spring:
+  config:
+    import: classpath:application-local.yaml
+  cloud:
+    config:
+      enabled: false
+
+logitrack:
+  config:
+    marker: shipment-service-test

@@ -1,46 +1,21 @@
 spring:
   application:
     name: shipment-service
-  datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3307/shipment_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-  jackson:
-    deserialization:
-      fail-on-unknown-properties: true
-  jpa:
-    open-in-view: false
-    hibernate:
-      ddl-auto: ${JPA_DDL_AUTO:validate}
+  profiles:
+    default: dev
 
 springdoc:
-  # Cada operación declara sus errores pertinentes, sin respuestas globales indiscriminadas.
   override-with-generic-response: false
 
-# Solo se requiere la clave pública para validar los JWT de la API y del transporte.
-logitrack:
-  security:
-    issuer: ${JWT_ISSUER:logitrack-security}
-    audience: ${JWT_AUDIENCE:logitrack-api}
-    access-token-ttl: 900s
-    clock-skew: 60s
-    public-key-location: ${JWT_PUBLIC_KEY_LOCATION}
-clients:
-  security:
-    base-url: ${SECURITY_SERVICE_URL:http://localhost:8082}
-    connect-timeout: ${SECURITY_CONNECT_TIMEOUT:2s}
-    read-timeout: ${SECURITY_READ_TIMEOUT:3s}
-  courier:
-    base-url: ${COURIER_SERVICE_URL:http://localhost:8081}
-    connect-timeout: ${COURIER_CONNECT_TIMEOUT:2s}
-    read-timeout: ${COURIER_READ_TIMEOUT:3s}
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health
-  endpoint:
-    health:
-      show-details: never
-      show-components: never
+---
+spring:
+  config:
+    activate:
+      on-profile: dev | prod
+    import: configserver:${CONFIG_SERVER_URL:http://localhost:8085}
+  cloud:
+    config:
+      label: ${CONFIG_LABEL:develop}
+      fail-fast: true
+      request-connect-timeout: 2000
+      request-read-timeout: 3000

@@ -38,6 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * @author MaxDz
  * @version 0.2.0
  */
+@org.springframework.test.context.ActiveProfiles("test")
 @SpringBootTest
 @AutoConfigureMockMvc
 class CourierRestIT {
