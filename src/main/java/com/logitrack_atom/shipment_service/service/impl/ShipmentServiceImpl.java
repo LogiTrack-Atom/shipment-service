@@ -104,7 +104,7 @@ public class ShipmentServiceImpl implements ShipmentService {
     @Override
     @Transactional
     public EnvioResponse cambiarEstado(UUID id, EstadoEnvio nuevoEstado) {
-        Envio envio = buscarEnvio(id);
+        Envio envio = buscarEnvioParaModificar(id);
         EstadoEnvio estadoActual = envio.getEstado();
 
         if (!estadoActual.puedeTransicionarA(nuevoEstado)) {
@@ -127,7 +127,7 @@ public class ShipmentServiceImpl implements ShipmentService {
     @Override
     @Transactional
     public EnvioResponse asignarRepartidor(UUID envioId, UUID repartidorId) {
-        Envio envio = buscarEnvio(envioId);
+        Envio envio = buscarEnvioParaModificar(envioId);
         if (envio.getEstado() != EstadoEnvio.PENDIENTE) {
             log.warn("envio.asignacion_rechazada envioId={} estado={}", envioId, envio.getEstado());
             throw new ReglaNegocioException("Solo se puede asignar repartidor a un envío PENDIENTE");
@@ -154,6 +154,11 @@ public class ShipmentServiceImpl implements ShipmentService {
 
     private Envio buscarEnvio(UUID id) {
         return envioRepository.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Envio", id));
+    }
+
+    private Envio buscarEnvioParaModificar(UUID id) {
+        return envioRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Envio", id));
     }
 

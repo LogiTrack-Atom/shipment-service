@@ -1,6 +1,5 @@
 package com.logitrack_atom.shipment_service.integration;
 
-import com.logitrack_atom.shipment_service.client.CourierPendienteClient;
 import com.logitrack_atom.shipment_service.exception.CourierNoDisponibleException;
 import com.logitrack_atom.shipment_service.enums.EstadoEnvio;
 import jakarta.persistence.metamodel.EntityType;
@@ -57,8 +56,7 @@ class ShipmentCourierBoundaryIT extends MySqlIntegrationSupport {
         UUID anterior = UUID.randomUUID();
         nuevaTransaccion(() -> { envios.findById(creado.id()).orElseThrow().setRepartidorId(anterior); return null; });
         var antes = shipmentService.obtenerPorId(creado.id());
-        doAnswer(call -> { new CourierPendienteClient().verificarDisponible(call.getArgument(0)); return null; })
-                .when(courierClient).verificarDisponible(any());
+        doThrow(new CourierNoDisponibleException()).when(courierClient).verificarDisponible(any());
         mvc.perform(put("/api/v1/envios/{id}/repartidor", creado.id()).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"repartidorId\":\""+UUID.randomUUID()+"\"}"))
                 .andExpect(status().isServiceUnavailable()).andExpect(jsonPath("$.status").value(503))

@@ -13,3 +13,17 @@ spring:
 springdoc:
   # Cada operación declara sus errores pertinentes, sin respuestas globales indiscriminadas.
   override-with-generic-response: false
+
+# Solo se requiere la clave pública para verificar las credenciales del transporte.
+logitrack:
+  security:
+    issuer: ${JWT_ISSUER:logitrack-security}
+    audience: ${JWT_AUDIENCE:logitrack-api}
+    access-token-ttl: 900s
+    clock-skew: 60s
+    public-key-location: ${JWT_PUBLIC_KEY_LOCATION}
+clients:
+  courier:
+    base-url: ${COURIER_SERVICE_URL:http://localhost:8081}
+    connect-timeout: ${COURIER_CONNECT_TIMEOUT:2s}
+    read-timeout: ${COURIER_READ_TIMEOUT:3s}

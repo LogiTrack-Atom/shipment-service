@@ -12,16 +12,43 @@ incluyen `repartidorId`, también cuando es `null`. No se enriquecen respuestas 
 llamadas remotas: consulta por UUID, tracking, listado e historial funcionan sin courier.
 Los endpoints `/api/v1/repartidores` se trasladaron a courier, puerto 8081.
 
-La integración REST está pendiente en #24. En esta etapa, `CourierPendienteClient`
-responde 503 al asignar o iniciar EN_RUTA con UUID asignado. No aprueba disponibilidad
-ni modifica asignación, estado, auditoría o historial. Registrar, consultar, cancelar
-un PENDIENTE y completar EN_RUTA → ENTREGADO conservan sus reglas locales.
-La autorización de envíos, Config Client y Compose general siguen en #25, #26 y #28.
-Esta etapa no constituye una entrega integrada de todos los servicios.
+La integración REST (#24) comprueba disponibilidad al asignar y al entrar en EN_RUTA.
+Solo consulta `GET /api/v1/repartidores/{id}/disponibilidad`, con timeouts configurables
+(2 s de conexión y 3 s de lectura) y sin seguir redirecciones. No reserva repartidores,
+no escribe en courier ni aprueba operaciones ante fallas. La disponibilidad puede cambiar
+después de la consulta: se vuelve a comprobar al iniciar ruta.
+
+**Autorización de esta etapa:** antes de llamar a courier se exige una única cabecera
+Bearer, firma RS256 local, emisor/audiencia/UUID/roles y tiempos válidos, y rol ADMIN.
+El JWT validado se reenvía únicamente al origen configurado. No se acepta token por query
+ni formulario. La matriz completa de permisos y pertenencia de CLIENTE/REPARTIDOR,
+y el filtro general de la API, siguen en #25. Esta validación del transporte no protege
+todavía todos los endpoints de shipment. Config Client y Compose general siguen en #26/#28.
+
+| Situación al verificar disponibilidad | HTTP local |
+| --- | --- |
+| JWT ausente/inválido o sin ADMIN | 401 / 403, sin llamada remota |
+| INACTIVO (`200`, disponible false) | 422 |
+| Repartidor inexistente (`404`) | 404 |
+| Conexión, timeout, `429` o `5xx` | 503 |
+| JSON/identidad/estado incoherente, redirección u otro HTTP inesperado (incluido `401/403`) | 502 |
+
+Las asignaciones, cancelaciones y cambios de estado bloquean la fila del envío
+hasta confirmar o revertir la transacción. Esto impide que una escritura concurrente
+sobrescriba estado/asignación mientras se comprueba disponibilidad por REST; el límite
+de espera remoto sigue siendo finito. No se realiza una transacción distribuida.
+
+Ante rechazo no cambian asignación, estado, auditoría ni historial. Solo se aceptan los
+tres campos acordados con tipos correctos, un UUID coincidente y estado/disponibilidad
+coherentes; el cuerpo está limitado a 64 KiB. No se vuelcan tokens ni respuestas remotas
+a mensajes públicos o logs de negocio.
 
 ## Ejecución y esquema
 
-Con Java 25, configurar `DB_URL`, `DB_USERNAME` y `DB_PASSWORD` en el proceso:
+Con Java 25, configurar `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `COURIER_SERVICE_URL`
+y `JWT_PUBLIC_KEY_LOCATION=file:/ruta/externa/jwt-public.pem` en el proceso.
+La clave debe ser pública RSA X.509 de al menos 2048 bits; no se versiona y no se
+requiere la clave privada del emisor. Un archivo ausente o inválido impide arrancar:
 
 ```sh
 bash mvnw spring-boot:run
@@ -30,7 +57,11 @@ bash mvnw spring-boot:run
 La API escucha en 8080. Swagger UI: `/swagger-ui/index.html`; OpenAPI: `/v3/api-docs`.
 `ddl-auto=validate` comprueba el esquema, sin crearlo ni modificarlo.
 El Compose existente arranca shipment y su MySQL; todavía no orquesta el Sprint02.
-Usar `.env.example`, completar contraseñas locales y ejecutar `docker compose up --build -d`.
+Usar `.env.example`, completar contraseñas, `JWT_PUBLIC_KEY_FILE` (archivo público
+externo legible por el contenedor) y `COURIER_SERVICE_URL` accesible desde Docker.
+Luego ejecutar `docker compose up --build -d`. La clave se monta solo lectura, no se
+incluye en la imagen. Para MySQL únicamente: `docker compose up -d mysql` también
+requiere definir esas variables porque Compose valida el archivo completo.
 No versionar `.env` ni eliminar el volumen del equipo para adaptar su esquema.
 
 - **Base nueva:** `docker/mysql/init/001-schema.sql` crea clientes, envios e historial.
@@ -57,7 +88,7 @@ No se ha aplicado el ALTER ni la migración a la base compartida del equipo.
 | GET | `/api/v1/envios/{id}` | DTO con `repartidorId` nullable |
 | GET | `/api/v1/envios/seguimiento/{codigoSeguimiento}` | Consulta por tracking |
 | GET | `/api/v1/envios/{id}/historial` | Eventos por fecha ascendente |
-| PUT | `/api/v1/envios/{id}/repartidor` | Asignación pendiente de integración REST (#24) |
+| PUT | `/api/v1/envios/{id}/repartidor` | Solo PENDIENTE, ADMIN y disponibilidad REST comprobada |
 | PATCH | `/api/v1/envios/{id}/estado` | Máquina de estados; EN_RUTA exige disponibilidad |
 | PATCH | `/api/v1/envios/{id}/cancelacion` | Solo PENDIENTE → CANCELADO |
 
@@ -85,11 +116,24 @@ ALTER y comprueba con JPA `validate` asignaciones nulas/repetidas e historial si
 El ensayo Python conserva la copia/exportación/importación y su verificación contra courier;
 la comprobación JPA del proveedor requiere las variables documentadas en su guía.
 
-[Colección Sprint02](postman/LogiTrack-Sprint02.postman_collection.json): registro,
-lecturas con UUID nullable, rechazo 503 sin mutación y cancelación. Usa el
-[entorno de ejemplo](postman/LogiTrack-Local.postman_environment.json).
-La colección Sprint01 se conserva como antecedente y requiere su versión del código;
-no corresponde ejecutarla contra esta API.
+[Colección Sprint02](postman/LogiTrack-Sprint02.postman_collection.json): ejecutar
+completa y en orden con shipment y courier disponibles, la misma clave pública
+configurada en ambos y un JWT ADMIN vigente emitido por security. Importar el
+[entorno de ejemplo](postman/LogiTrack-Local.postman_environment.json), configurar
+`baseUrl`, `courierBaseUrl` y `adminToken` localmente. No exportar tokens ni credenciales.
+No hace falta copiar UUID: se capturan desde las respuestas de ambos servicios.
+
+```sh
+npx --yes --package=newman@6.2.3 newman run postman/LogiTrack-Sprint02.postman_collection.json \
+  -e /ruta/a/entorno-local-no-versionado.json --bail
+```
+
+La colección comprueba el rechazo sin token, inexistente e inactivo, las consultas,
+la auditoría sin cambios ante rechazo, la reactivación y la entrega con tres eventos.
+Crea un cliente, un envío y un repartidor; no elimina datos. La colección Sprint01
+se conserva como antecedente y requiere su versión del código. Los fallos de red,
+protocolo, contrato, JWT y rollback se reproducen además en `CourierRestIT` mediante
+servidor HTTP controlado, validador JWT y MySQL reales, sin mocks de shipment.
 
 ## Plan y antecedentes
 

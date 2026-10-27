@@ -39,9 +39,9 @@ class OpenApiIT extends MySqlIntegrationSupport {
             Map.entry("get /api/v1/envios/{id}", Set.of("200", "400", "404")),
             Map.entry("get /api/v1/envios/seguimiento/{codigoSeguimiento}", Set.of("200", "404")),
             Map.entry("get /api/v1/envios/{id}/historial", Set.of("200", "400", "404")),
-            Map.entry("patch /api/v1/envios/{id}/estado", Set.of("200", "400", "404", "422", "503")),
+            Map.entry("patch /api/v1/envios/{id}/estado", Set.of("200", "400", "404", "422", "401", "403", "502", "503")),
             Map.entry("patch /api/v1/envios/{id}/cancelacion", Set.of("200", "400", "404", "422")),
-            Map.entry("put /api/v1/envios/{id}/repartidor", Set.of("200", "400", "404", "409", "422", "503")));
+            Map.entry("put /api/v1/envios/{id}/repartidor", Set.of("200", "400", "404", "409", "422", "401", "403", "502", "503")));
 
     @Test
     void publicaOchoOperacionesConRespuestasTipadasYErroresPertinentes() throws Exception {
