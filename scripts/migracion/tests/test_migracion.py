@@ -1,4 +1,5 @@
 """Pruebas reales de migración en MySQL 8.4; nunca usan Compose ni volúmenes del equipo."""
+import hashlib
 import importlib.util
 import json
 import os
@@ -33,6 +34,18 @@ class MigrationMySqlTest(unittest.TestCase):
     def setUpClass(cls):
         """Provisiona únicamente dos contenedores efímeros, sin puertos ni volúmenes."""
         cls.owned = []
+        cls.probe_classpath = os.environ.get('COURIER_PROBE_CLASSPATH')
+        cls.probe_password = uuid.uuid4().hex
+        schema = Path(__file__).parent / 'fixtures/courier-contract.sql'
+        origin = json.loads((schema.parent / 'courier-source.json').read_text())
+        if hashlib.sha256(schema.read_bytes()).hexdigest() != origin['sha256']:
+            raise AssertionError('La instantánea SQL no corresponde al proveedor registrado.')
+        source_dir = os.environ.get('COURIER_SOURCE_DIR')
+        if source_dir:
+            source_dir = Path(source_dir).resolve()
+            revision = execute(['git','-C',str(source_dir),'rev-parse','HEAD'],text=True).stdout.strip()
+            if revision != origin['commit'] or (source_dir/origin['path']).read_bytes() != schema.read_bytes():
+                raise AssertionError('El checkout real de courier difiere de la procedencia fijada.')
         cls.addClassCleanup(cls.cleanup)
         cls.environment_before = {key: os.environ.get(key) for key in ['MIGRATION_SOURCE_PASSWORD', 'MIGRATION_TARGET_PASSWORD']}
         os.environ['MIGRATION_SOURCE_PASSWORD'] = uuid.uuid4().hex
@@ -46,7 +59,8 @@ class MigrationMySqlTest(unittest.TestCase):
             env = {**os.environ, 'MYSQL_ROOT_PASSWORD': cls.root_passwords[name], 'MYSQL_DATABASE': db,
                    'MYSQL_USER': user, 'MYSQL_PASSWORD': os.environ[variable]}
             cls.owned.append(name)
-            execute(['docker', 'run', '--detach', '--name', name, '--label', migration.LABEL + '=true',
+            publish = ['--publish','127.0.0.1::3306'] if name == cls.target_name and cls.probe_classpath else []
+            execute(['docker', 'run', '--detach', '--name', name, *publish, '--label', migration.LABEL + '=true',
                      '--env', 'MYSQL_ROOT_PASSWORD', '--env', 'MYSQL_DATABASE', '--env', 'MYSQL_USER',
                      '--env', 'MYSQL_PASSWORD', 'mysql:8.4.11'], env=env)
         for name in cls.owned:
@@ -63,6 +77,9 @@ class MigrationMySqlTest(unittest.TestCase):
                  + '\n' + (REPO / 'docker/mysql/migrations/001-migration-ledger.sql').read_text())
         cls.root(cls.source_name, "REVOKE ALL PRIVILEGES, GRANT OPTION FROM 'migration_reader'@'%'; GRANT SELECT ON " + SOURCE_DB + ".* TO 'migration_reader'@'%';")
         cls.root(cls.target_name, "REVOKE ALL PRIVILEGES, GRANT OPTION FROM 'migration_writer'@'%'; GRANT SELECT,INSERT,DELETE,CREATE TEMPORARY TABLES ON " + TARGET_DB + ".* TO 'migration_writer'@'%';")
+        if cls.probe_classpath:
+            cls.root(cls.target_name, "CREATE USER 'courier_probe'@'%' IDENTIFIED BY '" + cls.probe_password
+                     + "'; GRANT SELECT ON " + TARGET_DB + ".* TO 'courier_probe'@'%';")
         cls.source = migration.Database(cls.source_name, SOURCE_DB, 'migration_reader', 'MIGRATION_SOURCE_PASSWORD')
         cls.target = migration.Database(cls.target_name, TARGET_DB, 'migration_writer', 'MIGRATION_TARGET_PASSWORD')
 
@@ -314,6 +331,28 @@ class MigrationMySqlTest(unittest.TestCase):
         restored = migration.Database(self.source_name, restored_db, 'migration_reader', 'MIGRATION_SOURCE_PASSWORD')
         self.assertEqual(self.before, migration.read_tables(restored, migration.TABLES))
         self.root(self.source_name, 'DROP DATABASE ' + restored_db + ';')
+
+
+def probe_importacion_jpa(self):
+    """El courier real lee el lote del migrador sin regenerar UUID/fechas tras dos arranques."""
+    self.export_apply()
+    before = migration.read_tables(self.target, {'repartidores': migration.TARGET_COLUMNS})
+    port = execute(['docker','port',self.target_name,'3306/tcp'],text=True).stdout.strip().rsplit(':',1)[1]
+    env = {**os.environ, 'DB_URL':'jdbc:mysql://127.0.0.1:'+port+'/'+TARGET_DB+'?serverTimezone=UTC',
+           'DB_USERNAME':'courier_probe','DB_PASSWORD':self.probe_password}
+    result = execute(['java','-cp',self.probe_classpath,
+        'com.logitrack_atom.courier_service.support.ImportedCourierProbe',str(self.folder/'source.json')],
+        text=True,env=env)
+    self.assertIn('MIGRATION_JPA_VERIFIED=3;RESTARTS=2',result.stdout)
+    self.assertNotIn(self.probe_password,result.stdout+result.stderr)
+    self.assertEqual(before,migration.read_tables(self.target, {'repartidores': migration.TARGET_COLUMNS}))
+    self.assertEqual(self.before,migration.read_tables(self.source,migration.TABLES))
+
+
+# La suite SQL se puede ejecutar sola. El modo integrado exige el classpath real
+# y agrega una prueba efectiva, sin marcar como aprobada una prueba omitida.
+if os.environ.get('COURIER_PROBE_CLASSPATH'):
+    MigrationMySqlTest.test_lote_importado_leido_por_jpa_tras_reiniciar = probe_importacion_jpa
 
 
 if __name__ == '__main__':

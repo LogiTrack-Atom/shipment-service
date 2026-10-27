@@ -6,19 +6,24 @@ del Sprint01**. El esquema de origen sigue en `docker/mysql/init/001-schema.sql`
 No se usa `ddl-auto=create`, no se reinicializa el volumen original y no se ejecuta
 la herramienta contra las bases del equipo.
 
-## Estado y límite de integración
+## Proveedor real y alcance del ensayo
 
-La herramienta y el ensayo usan el contrato acordado para courier: `BINARY(16)`,
-`DATETIME(6)`, datos actuales y `usuario_id` nullable y único. El archivo
-`scripts/migracion/tests/fixtures/courier-contract.sql` es **un fixture**, no la
-implementación de courier. Para cerrar esta issue hay que repetir la comprobación
-contra el SQL y la persistencia JPA entregados en
-[courier-service#1](https://github.com/LogiTrack-Atom/courier-service/issues/1), registrar
-su commit y actualizar la evidencia. Mientras ese proveedor no esté integrado, el
-PR permanece en borrador y la issue En curso.
+[courier-service#1](https://github.com/LogiTrack-Atom/courier-service/issues/1) quedó
+integrada mediante [PR #7](https://github.com/LogiTrack-Atom/courier-service/pull/7).
+El ensayo fija el commit `ed47e891f262f74ff7aa7f684842b80c409f39e6` de ese proveedor, integrado en develop
+`3d1350ded441345f8a7df1dae1f3004823d91350`. Su SQL se conserva byte a byte en
+`scripts/migracion/tests/fixtures/courier-contract.sql`; `courier-source.json`
+registra repositorio, revisión, ruta y SHA-256. Es una instantánea del SQL entregado,
+no un esquema supuesto para un servicio todavía inexistente.
 
-Las pruebas publicadas utilizan datos sintéticos y el esquema original de Sprint01.
-No representan una migración de datos reales del equipo.
+El modo integrado compara esa instantánea con el checkout real fijado y añade una
+prueba: aplica el lote con el CLI y lee sus tres repartidores usando la entidad y
+el repositorio JPA reales de courier. Inicia/cierra la aplicación dos veces y exige
+UUID, texto, estado y auditoría idénticos. El lector de esa prueba tiene solamente
+SELECT sobre la copia destino; tampoco se modifican las filas por leerlas.
+
+Se mantienen datos sintéticos y copias descartables. Este resultado acredita la
+preparación de la migración, no un corte sobre los datos del equipo.
 
 ## Qué se conserva
 
@@ -50,7 +55,7 @@ Un repartidor INACTIVO conserva su estado y las referencias de sus envíos hist�
 - Origen restaurado desde una copia autorizada y completa de Sprint01. Conservar
   el respaldo original fuera de Git. Para las pruebas automáticas se crea un
   dataset sintético; no se conecta al entorno del equipo.
-- Destino con el esquema de courier y el registro operativo de
+- Destino con el esquema versionado de courier y el registro operativo de
   `docker/mysql/migrations/001-migration-ledger.sql`. Este SQL se aplica únicamente
   sobre la copia destino, separado del init de shipment. No forma una relación JPA
   ni una FK entre servicios.
@@ -171,22 +176,39 @@ manualmente el registro para forzar la reversión.
 python3 -m unittest discover -s scripts/migracion/tests -p 'test_*.py' -v
 ```
 
-El test crea dos MySQL 8.4.11 sin puertos publicados ni volúmenes del equipo,
-aplica el SQL original y el fixture explícito de courier, prepara usuarios limitados
-y datos sintéticos. Retira sus propios contenedores y volúmenes anónimos al finalizar.
+El modo SQL ejecuta 18 pruebas con dos MySQL 8.4.11 sin puertos publicados ni
+volúmenes del equipo, usando el SQL original y la instantánea del proveedor real.
+El modo integrado ejecuta 19 pruebas: publica únicamente el MySQL destino en un
+puerto efímero de loopback para que la utilidad JPA del proveedor pueda leerlo.
+Las credenciales son aleatorias y se prepara un usuario adicional de solo lectura.
+No se publica el MySQL de origen ni se reutiliza un volumen del equipo. Retira sus propios contenedores y volúmenes anónimos al finalizar.
 Los artefactos y contraseñas son temporales. No utiliza docker compose down -v.
 
-Los resultados, versión de los scripts y límite del fixture se registran en
-[Evidencia del ensayo](Evidencia_ensayo.md). Una prueba aprobada de este contrato no
-acredita que courier-service ya haya implementado o validado su entidad.
+Para reproducir las 19 pruebas, obtener courier en la revisión fijada en
+`courier-source.json` y compilar en ese checkout:
+
+```bash
+./mvnw -B -ntp -DskipTests test-compile dependency:build-classpath -Dmdep.outputFile=target/migration-classpath.txt
+```
+
+Al ejecutar la suite de shipment, definir `COURIER_SOURCE_DIR` con su checkout y
+`COURIER_PROBE_CLASSPATH` con sus rutas absolutas target/test-classes, target/classes
+y el contenido de migration-classpath.txt, separadas por el separador de classpath.
+El workflow `.github/workflows/migracion.yml` documenta y ejecuta estos pasos,
+con checkout por commit inmutable, Java 25 y permisos de lectura, sin secretos.
+
+La utilidad ImportedCourierProbe está en src/test de courier; no integra la API
+ni el JAR de producción. Los resultados, versiones y hashes se registran en
+[Evidencia del ensayo](Evidencia_ensayo.md).
 
 ## Condición antes de retirar tabla o FK
 
 Este PR no ejecuta el corte de datos. Antes de shipment-service#23 y de la entrega:
 
-1. Integrar courier-service#1 y registrar su commit y SQL; ensayar contra ese esquema.
-2. Verificar mediante JPA/API de courier que los UUID y fechas importados se conservan,
-   también después de reiniciar; usuario_id continúa sin inferencias automáticas.
+1. Mantener fija y registrada la versión del proveedor. El SQL real y su lectura JPA
+   ya se ensayaron; repetir si una revisión posterior cambia entidad o esquema.
+2. Conservar la prueba de lectura tras reiniciar y sin inferencia de usuario_id.
+   La aceptación de este ensayo no habilita escrituras o corte en el entorno del equipo.
 3. Obtener backup autorizado y verificable del entorno de entrega y congelar escrituras
    en una ventana acordada. El CLI de ensayo conserva deliberadamente sus guardas
    de copias y no se habilita sobre bases reales cambiando los nombres por defecto.

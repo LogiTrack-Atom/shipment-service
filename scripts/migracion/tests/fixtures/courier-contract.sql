@@ -1,5 +1,6 @@
--- CONTRATO DE ENSAYO: no es el esquema entregado por courier-service#1.
--- Se reemplaza/verifica contra ese proveedor antes del cierre de shipment-service#22.
+-- Esquema propietario de courier-service para MySQL 8.4.
+-- Base vacía; UUID BINARY(16) y auditoría DATETIME(6) compatibles con Sprint01.
+-- usuario_id es opcional y único; no hay FK a security ni a shipment.
 CREATE TABLE repartidores (
     id BINARY(16) NOT NULL,
     created_at DATETIME(6) NOT NULL,
