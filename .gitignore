@@ -32,3 +32,8 @@ target/
 
 # Entorno
 .env
+
+# Artefactos locales del ensayo de migración
+__pycache__/
+*.pyc
+.migration/

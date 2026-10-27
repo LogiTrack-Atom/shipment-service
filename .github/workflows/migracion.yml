@@ -1,0 +1,56 @@
+name: Ensayo de migración
+
+on:
+  pull_request:
+    branches: [develop]
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: migracion-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  migracion:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Obtener código
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Obtener proveedor courier verificado
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          repository: LogiTrack-Atom/courier-service
+          ref: ed47e891f262f74ff7aa7f684842b80c409f39e6
+          path: .courier-verification
+      - name: Preparar Java 25
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+          cache-dependency-path: .courier-verification/pom.xml
+      - name: Compilar utilidad JPA del proveedor
+        working-directory: .courier-verification
+        run: ./mvnw -B -ntp -DskipTests test-compile dependency:build-classpath -Dmdep.outputFile=target/migration-classpath.txt
+      - name: Preparar conexión del ensayo al proveedor
+        run: |
+          python3 - <<'PYTHON'
+          import os
+          from pathlib import Path
+          root = Path('.courier-verification').resolve()
+          classpath = os.pathsep.join([str(root/'target/test-classes'), str(root/'target/classes'), (root/'target/migration-classpath.txt').read_text().strip()])
+          with Path(os.environ['GITHUB_ENV']).open('a') as output:
+              output.write('COURIER_SOURCE_DIR='+str(root)+'\n')
+              output.write('COURIER_PROBE_CLASSPATH='+classpath+'\n')
+          PYTHON
+      - name: Comprobar herramientas del runner
+        run: |
+          python3 --version
+          docker version --format '{{.Server.Version}}'
+      - name: Ensayar migración con MySQL aislados
+        run: python3 -m unittest discover -s scripts/migracion/tests -p 'test_*.py' -v
