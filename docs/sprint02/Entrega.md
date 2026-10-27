@@ -51,6 +51,7 @@ La colección de regresión anterior permanece disponible para estados, disponib
 
 - Cuatro referencias de imágenes retiradas localmente y recuperadas desde Docker Hub mediante pull sin credenciales. Se reutilizaron capas ya presentes; no se presenta como descarga de todas las capas en una máquina vacía.
 - Siete contenedores saludables, sin construcción local y con secretos efímeros externos.
+- Colección integrada de Postman ejecutada con Newman: 15 solicitudes y 20 aserciones aprobadas.
 - 36 solicitudes: registro/login real, CLIENTE y REPARTIDOR, asociación administrativa verificada, envío, asignación, EN_RUTA, ENTREGADO e historial.
 - Acceso ajeno 403; ausencia de token, firma alterada y token vencido 401; courier detenido produce 503 al asignar y conserva el envío sin cambios.
 - Seis respuestas de configuración dev/prod con revisión, fuentes, marcadores y placeholders; aplicaciones ejecutadas primero en dev y después en prod.
