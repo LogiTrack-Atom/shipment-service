@@ -1,8 +1,8 @@
 {
   "info": {
-    "name": "LogiTrack Atom — Sprint02 — Integración REST con courier",
+    "name": "LogiTrack Atom — Sprint02 — Regresión de envíos",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Etapa #24. Ejecutar en orden con shipment, courier y JWT ADMIN vigente. Los UUID se capturan automáticamente. Comprueba activo/inactivo, inexistente, falta de token, no mutación y entrega. Crea un cliente, un repartidor y un envío; no elimina datos. La autorización completa por pertenencia se implementa en #25."
+    "description": "Regresión REST Sprint02 (#27). Ejecutar en orden con shipment, courier y JWT ADMIN vigente. UUID remotos, errores ApiError, disponibilidad, auditoría DATETIME(6) e historial. La API completa exige JWT y pertenencia; los escenarios de dos clientes/dos repartidores y JWT inválidos se ejecutan en ShipmentSecurityIT. Crea datos de prueba, no elimina registros. Usar un entorno privado y separado de los datos del equipo."
   },
   "auth": {
     "type": "bearer",
@@ -44,7 +44,8 @@
             "exec": [
               "if (!pm.environment.get('adminToken')) throw new Error('Configurar adminToken vigente en un entorno local privado');",
               "pm.environment.set('clienteEmail','s02-'+pm.variables.replaceIn('{{$guid}}')+'@example.test');",
-              "['envioId','tracking','repartidorId','actualizadoAntes'].forEach(k=>pm.environment.unset(k));"
+              "['envioId','tracking','repartidorId','actualizadoAntes'].forEach(k=>pm.environment.unset(k));",
+              "pm.environment.unset('ultimaRespuestaEnvio');"
             ]
           }
         },
@@ -523,6 +524,26 @@
           }
         }
       ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const body = pm.response.json();",
+          "if (pm.response.code >= 400) {",
+          "  pm.test('Error uniforme ApiError', () => { pm.expect(body).to.have.all.keys('timestamp','status','error','mensaje','detalles'); pm.expect(body.status).to.equal(pm.response.code); pm.expect(body.detalles).to.be.an('array'); });",
+          "}",
+          "if (body && body.codigoSeguimiento && pm.response.code < 300) {",
+          "  pm.test('Auditoría UTC con precisión DATETIME(6)', () => { ['createdAt','updatedAt'].forEach(k => pm.expect(body[k]).to.match(/^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(?:\\.\\d{1,6})?Z$/)); });",
+          "  const previous = pm.environment.get('ultimaRespuestaEnvio');",
+          "  if (pm.request.method === 'GET' && previous) { const written=JSON.parse(previous); if(written.id === body.id) pm.test('Respuesta de escritura coincide con lectura confirmada', () => { pm.expect(body.createdAt).to.equal(written.createdAt); pm.expect(body.updatedAt).to.equal(written.updatedAt); }); }",
+          "  if (pm.request.method !== 'GET') pm.environment.set('ultimaRespuestaEnvio', JSON.stringify({id:body.id,createdAt:body.createdAt,updatedAt:body.updatedAt}));",
+          "}"
+        ]
+      }
     }
   ]
 }

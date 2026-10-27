@@ -4,7 +4,7 @@ import com.logitrack_atom.shipment_service.dto.request.EnvioRequest;
 import com.logitrack_atom.shipment_service.dto.response.EnvioResponse;
 import com.logitrack_atom.shipment_service.entity.Cliente;
 import com.logitrack_atom.shipment_service.entity.Envio;
-import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Component;
 
 /**
@@ -14,7 +14,6 @@ import org.springframework.stereotype.Component;
  * @version 0.2.0
  */
 @Component
-@RequiredArgsConstructor
 public class EnvioMapper {
 
     private final ClienteMapper clienteMapper;
@@ -22,6 +21,7 @@ public class EnvioMapper {
 
     /**
      * Construye un envío pendiente sin asignación.
+     *
      * @param request datos validados
      * @param cliente cliente persistido
      * @param codigoSeguimiento código único generado
@@ -42,6 +42,7 @@ public class EnvioMapper {
 
     /**
      * Representa el envío sin realizar consultas remotas.
+     *
      * @param envio entidad local
      * @return DTO con UUID remoto nullable
      */
@@ -60,5 +61,16 @@ public class EnvioMapper {
                 direccionMapper.toResponse(envio.getDestino()),
                 envio.getCreatedAt(),
                 envio.getUpdatedAt());
+    }
+
+    /**
+     * Recibe las dependencias mediante inyección por constructor.
+     *
+     * @param clienteMapper conversión de contactos de entrada
+     * @param direccionMapper conversión de direcciones locales
+     */
+    public EnvioMapper(ClienteMapper clienteMapper, DireccionMapper direccionMapper) {
+        this.clienteMapper = clienteMapper;
+        this.direccionMapper = direccionMapper;
     }
 }

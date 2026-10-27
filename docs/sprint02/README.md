@@ -13,3 +13,5 @@ El Compose general y la documentación de integración se mantienen en shipment-
 
 - [Ensayo y procedimiento de migración de repartidores](migracion/README.md).
 - [Evidencia y límites de integración](migracion/Evidencia_ensayo.md).
+
+- [Matriz de regresión y comandos de verificación](Regresion.md).

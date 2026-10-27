@@ -51,6 +51,8 @@ public record EnvioResponse(
         EstadoEnvio estado,
         DireccionResponse origen,
         DireccionResponse destino,
+        @Schema(description = "Fecha UTC de creación, con precisión DATETIME(6). Se conserva al actualizar.")
         Instant createdAt,
+        @Schema(description = "Fecha UTC persistida al hacer flush dentro de la transacción, con precisión DATETIME(6). Coincide con la lectura posterior de una escritura confirmada.")
         Instant updatedAt) {
 }

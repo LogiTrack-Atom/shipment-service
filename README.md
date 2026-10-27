@@ -186,7 +186,10 @@ Consultar [la decisión arquitectónica](docs/sprint02/ADR-001-identidad-local.m
 Peso positivo DECIMAL(10,3), dimensiones positivas DECIMAL(10,2).
 Errores uniformes `ApiError`: timestamp, status, error, mensaje, detalles.
 La asignación no cambia estado ni agrega historial. Estado e historial se confirman
-juntos; un error de persistencia revierte ambos. Los logs de éxito se emiten tras commit.
+juntos; un error de persistencia revierte ambos. Antes de construir el DTO de una escritura,
+se hace flush dentro de la misma transacción: `createdAt` y `updatedAt` coinciden con
+la lectura confirmada y respetan DATETIME(6), sin nanosegundos adicionales. El flush no
+es un commit; el rollback sigue revirtiendo toda la operación. Los logs de éxito se emiten tras commit.
 
 ## Pruebas y Postman
 
@@ -194,7 +197,7 @@ juntos; un error de persistencia revierte ambos. Los logs de éxito se emiten tr
 # Sin Docker ni credenciales externas.
 bash mvnw clean test
 # Unitarias y Spring/MySQL aislados, con Docker disponible.
-bash mvnw clean verify
+bash mvnw clean verify javadoc:javadoc
 # Migración sobre dos MySQL temporales, conservando el origen Sprint01.
 python3 -m unittest discover -s scripts/migracion/tests -p 'test_*.py' -v
 ```
@@ -235,3 +238,12 @@ servidor HTTP controlado, validador JWT y MySQL reales, sin mocks de shipment.
 - [Guía histórica Sprint01](docs/sprint01/README.md), con pruebas y autorías de esa etapa.
 - Integración por PR hacia `develop`; `main` mantiene su función actual.
 - Todas las issues se siguen en el [Project común](https://github.com/orgs/LogiTrack-Atom/projects/1).
+
+## Regresión integrada del Sprint02
+
+La [matriz de regresión](docs/sprint02/Regresion.md) relaciona reglas y contratos con
+las pruebas que los verifican. Los resultados del Sprint01 son antecedentes; cada cierre
+registra sus comandos y resultados actuales. La generación JavaDoc usa doclint completo
+y falla ante advertencias, sin ocultarlas. Los constructores están documentados explícitamente
+y se conservan getters/setters de Lombok. La colección Postman comprueba ApiError y
+compara la auditoría de escrituras con sus lecturas posteriores.

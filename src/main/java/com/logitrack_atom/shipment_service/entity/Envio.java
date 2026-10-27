@@ -13,7 +13,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
@@ -33,7 +32,6 @@ import java.util.UUID;
 @Table(name = "envios")
 @Getter
 @Setter
-@NoArgsConstructor
 public class Envio extends BaseEntity {
 
     @Column(name = "codigo_seguimiento", nullable = false, unique = true, updatable = false)
@@ -79,4 +77,6 @@ public class Envio extends BaseEntity {
             @AttributeOverride(name = "codigoPostal", column = @Column(name = "destino_codigo_postal", nullable = false))
     })
     private Direccion destino;
+    /** Crea un envío PENDIENTE sin UUID de repartidor. */
+    public Envio() { }
 }

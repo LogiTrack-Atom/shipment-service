@@ -107,4 +107,6 @@ public class OpenApiConfig {
                 new MediaType().schema(new Schema<>().$ref("#/components/schemas/ApiError"))
                         .addExamples("ejemplo", new Example().value(example))));
     }
+    /** Crea la publicación del contrato OpenAPI. */
+    public OpenApiConfig() { }
 }
