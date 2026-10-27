@@ -1,0 +1,29 @@
+name: Ensayo de migración
+
+on:
+  pull_request:
+    branches: [develop]
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: migracion-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  migracion:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Obtener código
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Comprobar herramientas del runner
+        run: |
+          python3 --version
+          docker version --format '{{.Server.Version}}'
+      - name: Ensayar migración con MySQL aislados
+        run: python3 -m unittest discover -s scripts/migracion/tests -p 'test_*.py' -v
