@@ -6,6 +6,7 @@ contiene resultados y versiones; no contiene cuerpos de autenticación ni secret
 """
 from __future__ import annotations
 
+import io
 import json
 import os
 import secrets
@@ -13,6 +14,7 @@ import shutil
 import socket
 import subprocess
 import tempfile
+import tarfile
 import urllib.error
 import urllib.request
 import uuid
@@ -20,6 +22,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG_COMMIT = 'b40bd4d0eecd5eff6e5ef0a7b23d0a106a39ba13'
+SOURCE_COMMIT = '938496bae144d559187fa59368e155eea2525af9'
 VERSION = 'sprint02-1.0.0'
 
 
@@ -54,6 +57,7 @@ class Baseline:
         self.directory = directory
         self.project = 'lt-s02-baseline-' + uuid.uuid4().hex[:12]
         self.env_file = directory / 'baseline.env'
+        self.source = directory / 'source'
         self.password = secrets.token_urlsafe(24)
         self.admin_email = 'admin-' + uuid.uuid4().hex + '@example.test'
         self.ports = dict(zip(['shipment', 'courier', 'security', 'config'], reserve_ports()))
@@ -63,12 +67,28 @@ class Baseline:
     def compose(self, *args: str, capture: bool = False) -> str:
         """Opera exclusivamente sobre el proyecto y archivo de entorno de este ensayo."""
         return command(['docker', 'compose', '--env-file', str(self.env_file),
-                        '--project-name', self.project, '--file', str(ROOT / 'docker-compose.yaml'),
+                        '--project-name', self.project, '--file', str(self.source / 'docker-compose.yaml'),
                         *args], capture=capture)
 
     def prepare(self) -> None:
         """Genera claves y configuración privadas para las imágenes históricas fijadas."""
         os.chmod(self.directory, 0o750)
+        archive = subprocess.run(['git', 'archive', SOURCE_COMMIT, 'docker-compose.yaml', 'docker/mysql'],
+                                 cwd=ROOT, capture_output=True, check=True).stdout
+        self.source.mkdir()
+        with tarfile.open(fileobj=io.BytesIO(archive)) as bundle:
+            for member in bundle.getmembers():
+                destination = (self.source / member.name).resolve()
+                if not destination.is_relative_to(self.source.resolve()):
+                    raise RuntimeError('Ruta de snapshot fuera del directorio de prueba.')
+                if member.isdir():
+                    destination.mkdir(parents=True, exist_ok=True)
+                elif member.isfile():
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    with bundle.extractfile(member) as source, destination.open('wb') as target:
+                        shutil.copyfileobj(source, target)
+                else:
+                    raise RuntimeError('El snapshot contiene un tipo de archivo no permitido.')
         private_key, public_key = self.directory / 'private.pem', self.directory / 'public.pem'
         command(['openssl', 'genpkey', '-quiet', '-algorithm', 'RSA', '-pkeyopt',
                  'rsa_keygen_bits:2048', '-out', str(private_key)], capture=True)
@@ -208,7 +228,8 @@ class Baseline:
         assert persisted['id'] == shipment_id and persisted['estado'] == 'ENTREGADO'
         assert persisted['repartidorId'] == courier_id
         assert self.request('historial tras recreación', 'shipment', 'GET', path + '/historial', 200, token=customer) == history
-        return {'version': VERSION, 'config_commit': CONFIG_COMMIT, 'contenedores': 7,
+        return {'version': VERSION, 'source_commit': SOURCE_COMMIT,
+                'config_commit': CONFIG_COMMIT, 'contenedores': 7,
                 'solicitudes': self.results, 'resultado': 'aprobado',
                 'asignacion_real': True, 'rechazos_sin_mutacion': True,
                 'recuperacion_courier': True, 'persistencia_tras_recreacion': True}

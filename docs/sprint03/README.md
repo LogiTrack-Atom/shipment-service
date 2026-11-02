@@ -79,7 +79,11 @@ acreditar la regresión integrada de asignación y sus rechazos sin mutación.
 La comprobación entre servicios reales se ejecuta con
 `python3 scripts/verificacion/sprint02_baseline.py`, también disponible en el workflow
 **Regresión integrada de la base Sprint02**. Requiere Docker Compose y OpenSSL.
-Descarga las cuatro imágenes históricas y crea un proyecto con siete contenedores,
+Descarga las cuatro imágenes históricas y usa Compose/esquemas del commit fijo
+938496bae144d559187fa59368e155eea2525af9, aunque la infraestructura actual evolucione.
+Si falta ese objeto Git localmente, recuperarlo con
+`git fetch --no-tags --depth=1 origin 938496bae144d559187fa59368e155eea2525af9`.
+Crea un proyecto con siete contenedores,
 claves y credenciales efímeras. Comprueba asignación, inexistencia/inactividad,
 caída y recuperación de courier, roles/pertenencia, entrega e historial persistente
 tras recrear el stack. Solo retira los volúmenes creados para ese proyecto de prueba.

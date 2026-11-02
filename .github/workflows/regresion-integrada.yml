@@ -22,5 +22,7 @@ jobs:
     steps:
       - name: Obtener código
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Obtener snapshot inmutable de Compose y esquemas de Sprint02
+        run: git fetch --no-tags --depth=1 origin 938496bae144d559187fa59368e155eea2525af9
       - name: Verificar imágenes publicadas, asignación, recuperación y persistencia
         run: python3 scripts/verificacion/sprint02_baseline.py
