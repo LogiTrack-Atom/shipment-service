@@ -76,6 +76,15 @@ disponible en el entorno de inicio. La auditoría del 27/10 es evidencia histór
 no se presenta como una ejecución nueva. La issue de base permanece abierta hasta
 acreditar la regresión integrada de asignación y sus rechazos sin mutación.
 
+La comprobación entre servicios reales se ejecuta con
+`python3 scripts/verificacion/sprint02_baseline.py`, también disponible en el workflow
+**Regresión integrada de la base Sprint02**. Requiere Docker Compose y OpenSSL.
+Descarga las cuatro imágenes históricas y crea un proyecto con siete contenedores,
+claves y credenciales efímeras. Comprueba asignación, inexistencia/inactividad,
+caída y recuperación de courier, roles/pertenencia, entrega e historial persistente
+tras recrear el stack. Solo retira los volúmenes creados para ese proyecto de prueba.
+El informe sanitizado se guarda en target/sprint02-baseline.json y en el log del job.
+
 ## Contratos y aceptación
 
 Los acuerdos técnicos figuran en [Contratos_tecnicos.md](Contratos_tecnicos.md).
