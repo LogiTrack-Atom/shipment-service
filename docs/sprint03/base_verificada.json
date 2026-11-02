@@ -1,0 +1,51 @@
+{
+  "fecha": "2026-11-02",
+  "tipo": "Pruebas unitarias y JavaDoc; no integración Docker",
+  "comando": "JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64 bash mvnw -B -ntp -o test javadoc:javadoc",
+  "componentes": {
+    "shipment-service": {
+      "commit_develop": "938496bae144d559187fa59368e155eea2525af9",
+      "pruebas_unitarias": {
+        "tests": 132,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "javadoc": "aprobado"
+    },
+    "courier-service": {
+      "commit_develop": "33ffdd06441b7cd0c5d4972a37b565fc20e75a88",
+      "pruebas_unitarias": {
+        "tests": 69,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "javadoc": "aprobado"
+    },
+    "security-service": {
+      "commit_develop": "9d29a30ef320536567f3e4621c8b95db2bc05e22",
+      "pruebas_unitarias": {
+        "tests": 91,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "javadoc": "aprobado"
+    },
+    "configserver": {
+      "commit_develop": "4d7b1fb484e3546a853bbd1dbd2ed04e24e78bd5",
+      "pruebas_unitarias": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "javadoc": "aprobado"
+    }
+  },
+  "integracion": {
+    "estado": "pendiente",
+    "motivo": "Docker Engine no está disponible; no existen sockets del contexto desktop-linux ni default."
+  }
+}
