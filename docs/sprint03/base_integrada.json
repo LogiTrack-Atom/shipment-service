@@ -1,0 +1,186 @@
+{
+  "version": "sprint02-1.0.0",
+  "source_commit": "938496bae144d559187fa59368e155eea2525af9",
+  "config_commit": "b40bd4d0eecd5eff6e5ef0a7b23d0a106a39ba13",
+  "contenedores": 7,
+  "solicitudes": [
+    {
+      "escenario": "salud shipment",
+      "http": 200,
+      "esperado": 200
+    },
+    {
+      "escenario": "salud courier",
+      "http": 200,
+      "esperado": 200
+    },
+    {
+      "escenario": "salud security",
+      "http": 200,
+      "esperado": 200
+    },
+    {
+      "escenario": "salud config",
+      "http": 200,
+      "esperado": 200
+    },
+    {
+      "escenario": "login",
+      "http": 200,
+      "esperado": 200
+    },
+    {
+      "escenario": "registro CLIENTE",
+      "http": 201,
+      "esperado": 201
+    },
+    {
+      "escenario": "login",
+      "http": 200,
+      "esperado": 200
+    },
+    {
+      "escenario": "alta de repartidor",
+      "http": 201,
+      "esperado": 201
+    },
+    {
+      "escenario": "alta de envío",
+      "http": 201,
+      "esperado": 201
+    },
+    {
+      "escenario": "repartidor inexistente",
+      "http": 404,
+      "esperado": 404
+    },
+    {
+      "escenario": "desactivar repartidor",
+      "http": 200,
+      "esperado": 200
+    },
+    {
+      "escenario": "rechazo de repartidor inactivo",
+      "http": 422,
+      "esperado": 422
+    },
+    {
+      "escenario": "rechazos sin mutación",
+      "http": 200,
+      "esperado": 200
+    },
+    {
+      "escenario": "caída real de courier",
+      "http": 503,
+      "esperado": 503
+    },
+    {
+      "escenario": "caída sin mutación",
+      "http": 200,
+      "esperado": 200
+    },
+    {
+      "escenario": "reactivar repartidor",
+      "http": 200,
+      "esperado": 200
+    },
+    {
+      "escenario": "asignación tras recuperación",
+      "http": 200,
+      "esperado": 200
+    },
+    {
+      "escenario": "asignación sin evento de estado",
+      "http": 200,
+      "esperado": 200
+    },
+    {
+      "escenario": "acceso anónimo",
+      "http": 401,
+      "esperado": 401
+    },
+    {
+      "escenario": "JWT alterado",
+      "http": 401,
+      "esperado": 401
+    },
+    {
+      "escenario": "CLIENTE no asigna",
+      "http": 403,
+      "esperado": 403
+    },
+    {
+      "escenario": "registro de otro cliente",
+      "http": 201,
+      "esperado": 201
+    },
+    {
+      "escenario": "login",
+      "http": 200,
+      "esperado": 200
+    },
+    {
+      "escenario": "recurso ajeno",
+      "http": 403,
+      "esperado": 403
+    },
+    {
+      "escenario": "alta de cuenta REPARTIDOR",
+      "http": 201,
+      "esperado": 201
+    },
+    {
+      "escenario": "identidad en courier",
+      "http": 200,
+      "esperado": 200
+    },
+    {
+      "escenario": "asociación verificada en shipment",
+      "http": 200,
+      "esperado": 200
+    },
+    {
+      "escenario": "login",
+      "http": 200,
+      "esperado": 200
+    },
+    {
+      "escenario": "transición EN_RUTA",
+      "http": 200,
+      "esperado": 200
+    },
+    {
+      "escenario": "transición ENTREGADO",
+      "http": 200,
+      "esperado": 200
+    },
+    {
+      "escenario": "historial de entrega",
+      "http": 200,
+      "esperado": 200
+    },
+    {
+      "escenario": "login",
+      "http": 200,
+      "esperado": 200
+    },
+    {
+      "escenario": "envío tras recreación",
+      "http": 200,
+      "esperado": 200
+    },
+    {
+      "escenario": "historial tras recreación",
+      "http": 200,
+      "esperado": 200
+    }
+  ],
+  "resultado": "aprobado",
+  "asignacion_real": true,
+  "rechazos_sin_mutacion": true,
+  "recuperacion_courier": true,
+  "persistencia_tras_recreacion": true,
+  "run_url": "https://github.com/LogiTrack-Atom/shipment-service/actions/runs/41543166031",
+  "script_commit": "35e947c78328057c9d56076d459f9422eadca4f0",
+  "fecha": "2026-11-02"
+}
