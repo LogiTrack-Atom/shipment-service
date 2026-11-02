@@ -65,16 +65,24 @@ Las preparaciones aisladas pueden realizarse con fixtures; no acreditan integrac
 | S03-19 | [shipment-service#49](https://github.com/LogiTrack-Atom/shipment-service/issues/49) | docs: coordinar ensayo y video de Sprint03 | JMatiasF | Media |
 | S03-20 | [shipment-service#50](https://github.com/LogiTrack-Atom/shipment-service/issues/50) | chore: cerrar entrega técnica y registrar versiones de Sprint03 | MaxDZ-10 | Alta |
 
-## Base comprobada y pendientes
+## Base comprobada
 
 Las pruebas unitarias y JavaDoc se ejecutaron sobre los commits identificados en
 [base_verificada.json](base_verificada.json): shipment 132, courier 69, security 91
 y Config Server 1; total 293, sin fallos, errores ni omisiones.
 
-No se ejecutó nuevamente la integración con MySQL/Compose porque Docker Engine no está
-disponible en el entorno de inicio. La auditoría del 27/10 es evidencia histórica y
-no se presenta como una ejecución nueva. La issue de base permanece abierta hasta
-acreditar la regresión integrada de asignación y sus rechazos sin mutación.
+La integración con siete contenedores se ejecutó en GitHub Actions, porque Docker Engine
+no está disponible localmente. La [evidencia integrada](base_integrada.json) registra
+34 solicitudes aprobadas contra servicios reales, rechazos sin mutación, recuperación
+de courier y persistencia tras recrear el stack. La auditoría del 27/10 permanece como
+antecedente histórico separado.
+
+Las suites completas de Java de Sprint02 también aprobaron en ejecuciones nuevas:
+[shipment: 283](https://github.com/LogiTrack-Atom/shipment-service/actions/runs/41541364294),
+[courier: 183](https://github.com/LogiTrack-Atom/courier-service/actions/runs/41541368729) y
+[security: 182](https://github.com/LogiTrack-Atom/security-service/actions/runs/41541373459).
+Con la prueba local de Config Server, son 649 pruebas Java. La validación corresponde
+a los commits y escenarios identificados; no acredita una entrega de Sprint03 completa.
 
 La comprobación entre servicios reales se ejecuta con
 `python3 scripts/verificacion/sprint02_baseline.py`, también disponible en el workflow
