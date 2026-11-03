@@ -90,7 +90,8 @@ python3 scripts/demo/verify_demo.py
 
 El workflow **Demo reproducible y restablecimiento aislado** ejecuta ambos comandos.
 La aceptación usa las APIs y contenedores reales: carga repetida sin duplicados,
-recuperación tras interrupción, persistencia al detener/recrear, cambios de negocio que
+recuperación tras interrupción, persistencia al detener/recrear con perfiles dev y prod
+sobre las mismas bases descartables, cambios de negocio que
 exigen reset, recreación del catálogo y rotación de claves/contraseñas. Mantiene un volumen
 de control ajeno durante el reset y rechaza un volumen con nombre esperado y etiquetas
 de otro proyecto. Limpia solo sus recursos de prueba y escribe evidencia sin secretos

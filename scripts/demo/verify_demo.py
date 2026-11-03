@@ -5,6 +5,7 @@ import json
 import tempfile
 import uuid
 from pathlib import Path
+from unittest.mock import patch
 
 from manage import execute
 from runtime import DemoError, ROOT, Runtime, run, write_json
@@ -49,6 +50,20 @@ def verify() -> dict:
             execute('prepare', directory)
             require(Runtime(directory).state['resources'] == initial['resources'], 'No persistieron las identidades.')
 
+            # El perfil prod se comprueba sobre las mismas bases descartables, nunca sobre un entorno externo.
+            original_values = Runtime.values
+
+            def production_values(instance):
+                return {**original_values(instance), 'SPRING_PROFILES_ACTIVE': 'prod'}
+
+            execute('down', directory)
+            with patch.object(Runtime, 'values', production_values):
+                execute('prepare', directory)
+                require(Runtime(directory).state['resources'] == initial['resources'],
+                        'El arranque prod no conservó los datos preparados en dev.')
+                execute('down', directory)
+            execute('prepare', directory)
+
             run(['docker', 'volume', 'create', '--label', 'com.docker.compose.project=control-ajeno', control])
             marker(control, create=True)
             changed = Runtime(directory)
@@ -92,6 +107,7 @@ def verify() -> dict:
                     'El rechazo de propiedad modificó el estado privado.')
             run(['docker', 'volume', 'inspect', foreign])
             return {**result, 'idempotencia': True, 'recuperacion_carga': True, 'persistencia': True,
+                    'persistencia_dev_prod': True,
                     'rechazo_reparacion_implicita': True, 'reset': True, 'rotacion_claves_credenciales': True,
                     'volumen_control_conservado': True, 'rechazo_volumen_ajeno': True}
         finally:

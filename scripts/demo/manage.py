@@ -47,17 +47,21 @@ def locked_directory(directory: Path):
 
 def seed(runtime: Runtime) -> dict:
     """Completa la carga inicial; una demo lista solo recibe comprobaciones de lectura."""
-    if runtime.state['phase'] not in {'seeding', 'ready'}:
+    if runtime.state['phase'] not in {'seeding', 'finalizing', 'ready'}:
         raise DemoError('La infraestructura no está preparada; ejecutar prepare.')
     loader = Seed(runtime)
     if runtime.state['phase'] == 'seeding':
         runtime.state['resources'] = loader.provision()
         runtime.save()
-        result = loader.verify()
-        runtime.state['phase'] = 'ready'
+        loader.verify()
+        runtime.state['phase'] = 'finalizing'
         runtime.save()
+    if runtime.state['phase'] == 'finalizing':
+        result = loader.verify()
         # Deshabilitar bootstrap no cambia cuentas ni sus credenciales persistidas.
         runtime.compose('up', '-d', '--wait', '--wait-timeout', '120', 'security-service', capture=False)
+        runtime.state['phase'] = 'ready'
+        runtime.save()
     else:
         result = loader.verify()
     loader.export()

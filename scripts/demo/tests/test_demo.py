@@ -171,6 +171,22 @@ class RuntimeTest(unittest.TestCase):
 
 
 class SeedingTest(unittest.TestCase):
+    def test_interrupted_finalization_disables_bootstrap_before_ready(self):
+        instance = Mock()
+        instance.state = {'phase': 'finalizing', 'resources': {'existentes': True}}
+        with patch.object(manage, 'Seed') as factory:
+            instance.compose.side_effect = runtime.DemoError('Recreación interrumpida.')
+            with self.assertRaises(runtime.DemoError):
+                manage.seed(instance)
+            self.assertEqual(instance.state['phase'], 'finalizing')
+            factory.return_value.provision.assert_not_called()
+            factory.return_value.export.assert_not_called()
+            instance.compose.side_effect = None
+            manage.seed(instance)
+            self.assertEqual(instance.state['phase'], 'ready')
+            factory.return_value.provision.assert_not_called()
+            factory.return_value.export.assert_called_once()
+
     def test_ready_seed_is_read_only_for_business_data(self):
         instance = Mock()
         instance.state = {'phase': 'ready', 'resources': {'existentes': True}}

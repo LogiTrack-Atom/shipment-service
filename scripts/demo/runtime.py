@@ -119,7 +119,7 @@ class Runtime:
             valid = (data['format'] == 1 and re.fullmatch(r'[a-f0-9]{32}', data['demo_id'])
                      and data['directory'] == str(self.directory)
                      and data['source_commit'] == SOURCE_COMMIT
-                     and data['phase'] in {'initializing', 'seeding', 'ready', 'resetting'})
+                     and data['phase'] in {'initializing', 'seeding', 'finalizing', 'ready', 'resetting'})
             valid = valid and set(data['ports']) == {'shipment', 'courier', 'security', 'config'}
             valid = valid and all(type(value) is int and 1024 <= value <= 65535 for value in data['ports'].values())
             valid = valid and len(set(data['ports'].values())) == 4
