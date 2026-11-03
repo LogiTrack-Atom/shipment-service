@@ -4,7 +4,6 @@ import com.logitrack_atom.shipment_service.exception.CourierNoDisponibleExceptio
 import com.logitrack_atom.shipment_service.security.CourierBearerProvider;
 import com.logitrack_atom.courier_feign.CourierFeignConfiguration;
 import feign.Feign;
-import feign.FeignException;
 import feign.Request;
 import feign.Response;
 import feign.Retryer;
@@ -34,8 +33,7 @@ class FeignCourierClientTest {
         };
         try (var response=Response.builder().request(request).status(500).headers(Map.of()).body(body,null).build()) {
             var exception=new CourierFeignConfiguration().courierErrorDecoder().decode("consultar",response);
-            assertThat(exception).isInstanceOf(FeignException.class);
-            assertThat(((FeignException)exception).status()).isEqualTo(500);
+            assertThat(exception).isInstanceOf(CourierNoDisponibleException.class).hasCause(null);
         }
     }
 

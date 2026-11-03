@@ -6,6 +6,7 @@ import com.logitrack_atom.shipment_service.exception.RecursoNoEncontradoExceptio
 import com.logitrack_atom.shipment_service.exception.ReglaNegocioException;
 import com.logitrack_atom.shipment_service.security.CourierBearerProvider;
 import feign.FeignException;
+import feign.RetryableException;
 import org.springframework.stereotype.Component;
 import java.util.UUID;
 
@@ -41,11 +42,13 @@ public class FeignCourierClient implements CourierClient {
         DisponibilidadCourier availability;
         try {
             availability = api.consultar(repartidorId, "Bearer " + bearer);
+        } catch (RetryableException ex) {
+            // Conexión y lectura pueden fallar sin respuesta o después de cabeceras 200.
+            throw new CourierNoDisponibleException();
         } catch (FeignException ex) {
             int status = ex.status();
             if (status == 404) throw new RecursoNoEncontradoException("Repartidor", repartidorId);
-            if (status < 0 || status == 429 || (status >= 500 && status < 600))
-                throw new CourierNoDisponibleException();
+            if (status < 0) throw new CourierNoDisponibleException();
             throw new CourierRespuestaInvalidaException();
         }
         if (availability == null || !repartidorId.equals(availability.repartidorId())
