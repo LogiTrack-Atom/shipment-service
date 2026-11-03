@@ -99,6 +99,8 @@ El informe sanitizado se guarda en target/sprint02-baseline.json y en el log del
 
 ## Contratos y aceptación
 
+La preparación y el restablecimiento aislado de datos se describen en [Demo.md](Demo.md).
+
 Los acuerdos técnicos figuran en [Contratos_tecnicos.md](Contratos_tecnicos.md).
 Los criterios de cada issue son verificables y forman parte de su cierre. El ensayo
 y la constancia de entrega académica se registran separados del cierre técnico.
