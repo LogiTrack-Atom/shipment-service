@@ -89,7 +89,9 @@ python3 -m unittest discover -s scripts/compose/tests -p 'test_*.py' -v
 
 El script solo ejecuta `docker compose config --format json`, mantiene el modelo privado
 en memoria e imprime un resumen sin secretos. Valida los modos base/build/diagnóstico y
-sus contratos de aislamiento, referencias y arranque. `--build` comprueba el override,
+sus contratos de aislamiento, referencias y arranque. Acepta los formatos normalizados
+que omiten o conservan opciones booleanas false; el valor true de create_host_path sigue
+rechazándose para las claves. `--build` comprueba el override,
 sin construir imágenes ni verificar la existencia de los Dockerfiles de otros checkouts.
 
 El workflow **Validación del modelo Compose Sprint03** usa referencias sintéticas

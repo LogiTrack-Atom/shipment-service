@@ -74,6 +74,23 @@ class Sprint03ModelTest(unittest.TestCase):
         with self.assertRaises(ModelError):
             validate(model)
 
+    def test_accepts_normalized_json_that_omits_false_bind_options(self):
+        model = self.base()
+        for service in model['services'].values():
+            for mount in service.get('volumes', []):
+                if mount.get('bind', {}).get('create_host_path') is False:
+                    mount['bind'].pop('create_host_path')
+                    if not mount['bind']:
+                        mount.pop('bind')
+        self.assertEqual(validate(model)['resultado'], 'modelo válido')
+
+    def test_rejects_automatic_creation_of_key_paths(self):
+        model = self.base()
+        mount = model['services']['api-gateway']['volumes'][0]
+        mount.setdefault('bind', {})['create_host_path'] = True
+        with self.assertRaises(ModelError):
+            validate(model)
+
     def test_rejects_direct_domain_publication(self):
         model = self.base()
         model['services']['courier-service']['ports'] = [{'host_ip': '127.0.0.1', 'target': 8081, 'published': '8081', 'protocol': 'tcp'}]

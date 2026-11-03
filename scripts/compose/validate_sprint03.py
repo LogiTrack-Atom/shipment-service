@@ -62,7 +62,7 @@ def render(env_file: Path, *, build=False, diagnostics=False, environment=None) 
 
 
 def validate(model: dict, *, build=False, diagnostics=False) -> dict:
-    """Comprueba topología, entrada pública, secretos, revisiones y aislamiento declarado."""
+    """Comprueba el JSON normalizado por Compose; no admite YAML crudo como entrada."""
     services = model['services']
     project = model['name']
     databases = {name + '-mysql' for name in DOMAINS}
@@ -166,7 +166,10 @@ def validate(model: dict, *, build=False, diagnostics=False) -> dict:
             expected.add('/run/keys/private.pem')
         require(set(mounts) == expected, 'La privada se monta exclusivamente en security; solo los verificadores reciben la pública.')
         for mount in mounts.values():
-            require(mount['type'] == 'bind' and mount.get('read_only') and not mount.get('bind', {}).get('create_host_path', True),
+            # Solo JSON normalizado: Compose V2 omite el bool false con omitempty.
+            # Compose V5 lo conserva; el valor explícito true se rechaza en ambos formatos.
+            create_host_path = mount.get('bind', {}).get('create_host_path', False)
+            require(mount['type'] == 'bind' and mount.get('read_only') and create_host_path is False,
                     'Las claves externas requieren bind de solo lectura, sin creación implícita.')
         if name in CLIENTS:
             source = mounts['/run/keys/public.pem']['source']

@@ -26,4 +26,6 @@ jobs:
       - name: Obtener código
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Validar modelos y rechazos sin iniciar contenedores
-        run: python3 -m unittest discover -s scripts/compose/tests -p 'test_*.py' -v
+        run: |
+          docker compose version
+          python3 -m unittest discover -s scripts/compose/tests -p 'test_*.py' -v
