@@ -104,6 +104,8 @@ activa. El perfil predeterminado es `dev`. `dev` y `prod` requieren Config Serve
 Config Server entrega puerto, datasource/JPA, JSON, JWT, URLs/timeouts, logging y salud.
 La configuración local de arranque conserva nombre, selección de perfil, import, label y
 límites de espera de Config Client (2 s / 3 s).
+También fija las políticas de Feign: configuración tipada prioritaria y reintentos
+de LoadBalancer deshabilitados.
 
 | Variable | Uso |
 | --- | --- |

@@ -10,22 +10,25 @@ import com.logitrack_atom.shipment_service.support.CourierStub;
 import com.logitrack_atom.shipment_service.support.SecurityTestActors;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.WebApplicationType;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.cloud.client.DefaultServiceInstance;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import java.net.InetSocketAddress;
@@ -46,23 +49,30 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @author MaxDz
  * @version 0.3.0
  */
-@SpringBootTest(classes = CourierDiscoveryTest.TestApplication.class,
-        webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = {
-            "spring.config.name=courier-discovery-test", "spring.cloud.config.enabled=false",
-            "eureka.client.enabled=false", "spring.main.banner-mode=off",
-            "clients.courier.base-url=http://127.0.0.1:1",
-            "clients.courier.connect-timeout=500ms", "clients.courier.read-timeout=500ms",
-            "spring.cloud.openfeign.client.default-to-properties=false",
-            "spring.cloud.openfeign.client.config.courierAvailability.follow-redirects=true",
-            "spring.cloud.openfeign.client.config.courierAvailability.read-timeout=5000",
-            "spring.cloud.loadbalancer.retry.enabled=false", "spring.cloud.loadbalancer.cache.enabled=false"
-        })
 class CourierDiscoveryTest {
     private static final AtomicReference<ServiceInstance> TARGET = new AtomicReference<>();
-    @Autowired private CourierClient courier;
+    private static ConfigurableApplicationContext application;
+    private CourierClient courier;
+
+    @BeforeAll
+    static void startContext() {
+        application = new SpringApplicationBuilder(TestApplication.class).web(WebApplicationType.NONE).run(
+                "--spring.config.name=courier-discovery-test", "--spring.cloud.config.enabled=false",
+                "--eureka.client.enabled=false", "--spring.main.banner-mode=off",
+                "--clients.courier.base-url=http://127.0.0.1:1",
+                "--clients.courier.connect-timeout=500ms", "--clients.courier.read-timeout=500ms",
+                "--spring.cloud.openfeign.client.default-to-properties=false",
+                "--spring.cloud.openfeign.client.config.courierAvailability.follow-redirects=true",
+                "--spring.cloud.openfeign.client.config.courierAvailability.read-timeout=5000",
+                "--spring.cloud.loadbalancer.retry.enabled=false", "--spring.cloud.loadbalancer.cache.enabled=false");
+    }
+
+    @AfterAll
+    static void closeContext() { if (application != null) application.close(); }
 
     @BeforeEach
     void prepare() {
+        courier = application.getBean(CourierClient.class);
         CourierStub.reset();
         select(CourierStub.baseUrl());
         SecurityTestActors.admin();
@@ -178,13 +188,16 @@ class CourierDiscoveryTest {
     }
 
     /** Contexto mínimo sin base de datos, con descubrimiento controlado para Feign real. */
-    @Configuration(proxyBeanMethods = false)
+    @TestConfiguration(proxyBeanMethods = false)
     @EnableAutoConfiguration(exclude = DataSourceAutoConfiguration.class)
     @EnableFeignClients(clients = CourierAvailabilityApi.class)
     @EnableConfigurationProperties(CourierClientProperties.class)
     @Import({FeignCourierClient.class, CourierBearerProvider.class})
     static class TestApplication {
-        /** @return proveedor de instancias cuyo destino puede variar durante la ejecución */
+        /**
+         * Publica destinos controlados sin utilizar un registro remoto.
+         * @return proveedor de instancias cuyo destino puede variar durante la ejecución
+         */
         @Bean
         DiscoveryClient discoveryClient() {
             return new DiscoveryClient() {
