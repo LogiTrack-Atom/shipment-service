@@ -26,3 +26,4 @@ docker-compose.yaml
 .env.component.example
 docs/
 scripts/
+.logitrack-demo/

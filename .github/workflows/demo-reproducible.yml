@@ -1,0 +1,30 @@
+name: Demo reproducible y restablecimiento aislado
+
+on:
+  pull_request:
+    branches: [develop]
+    paths:
+      - scripts/demo/**
+      - .github/workflows/demo-reproducible.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: demo-reproducible-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  demo-reproducible:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Obtener código
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Obtener snapshot inmutable de Compose y esquemas
+        run: git fetch --no-tags --depth=1 origin 938496bae144d559187fa59368e155eea2525af9
+      - name: Verificar límites del administrador y carga idempotente
+        run: python3 -m unittest discover -s scripts/demo/tests -p 'test_*.py' -v
+      - name: Verificar APIs reales, persistencia, reset y volúmenes ajenos
+        run: python3 scripts/demo/verify_demo.py

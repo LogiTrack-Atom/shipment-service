@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "accounts": {
+    "cliente": {"role": "CLIENTE", "name": "Cliente principal"},
+    "otro_cliente": {"role": "CLIENTE", "name": "Otro cliente"},
+    "repartidor_activo": {"role": "REPARTIDOR", "name": "Repartidor activo"},
+    "repartidor_inactivo": {"role": "REPARTIDOR", "name": "Repartidor inactivo"}
+  },
+  "couriers": {
+    "activo": {"account": "repartidor_activo", "state": "ACTIVO", "vehicle": "Moto"},
+    "inactivo": {"account": "repartidor_inactivo", "state": "INACTIVO", "vehicle": "Bicicleta"}
+  },
+  "shipments": {
+    "asignable": {"account": "cliente", "courier": null},
+    "asignado": {"account": "cliente", "courier": "activo"},
+    "ajeno": {"account": "otro_cliente", "courier": null}
+  }
+}
