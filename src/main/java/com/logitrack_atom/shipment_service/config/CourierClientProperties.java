@@ -5,13 +5,16 @@ import java.net.URI;
 import java.time.Duration;
 
 /**
- * Configura el origen de consulta de disponibilidad y límites de espera finitos.
+ * Configura el origen administrativo de courier y los límites de espera finitos.
+ *
+ * <p>La disponibilidad Feign reutiliza únicamente los timeouts; su destino se resuelve
+ * mediante descubrimiento. La URL se conserva para verificar asociaciones de identidad.</p>
  *
  * @param baseUrl origen HTTP o HTTPS configurado, sin credenciales ni query
  * @param connectTimeout espera positiva de conexión, hasta diez segundos
  * @param readTimeout espera positiva de lectura, hasta treinta segundos
  * @author MaxDz
- * @version 0.2.0
+ * @version 0.3.0
  */
 @ConfigurationProperties("clients.courier")
 public record CourierClientProperties(URI baseUrl, Duration connectTimeout, Duration readTimeout) {

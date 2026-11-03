@@ -3,6 +3,14 @@ spring:
     name: shipment-service
   profiles:
     default: dev
+  cloud:
+    openfeign:
+      client:
+        # Prevalecen los límites validados, sin redirecciones ni registro de credenciales.
+        default-to-properties: false
+    loadbalancer:
+      retry:
+        enabled: false
 
 springdoc:
   override-with-generic-response: false
