@@ -60,6 +60,7 @@ def seed(runtime: Runtime) -> dict:
         result = loader.verify()
         # Deshabilitar bootstrap no cambia cuentas ni sus credenciales persistidas.
         runtime.compose('up', '-d', '--wait', '--wait-timeout', '120', 'security-service', capture=False)
+        runtime.wait_for_routes()
         runtime.state['phase'] = 'ready'
         runtime.save()
     else:

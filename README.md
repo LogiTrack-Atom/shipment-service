@@ -4,6 +4,10 @@ Servicio de envíos, clientes, direcciones e historial. La administración de re
 pertenece a [courier-service](https://github.com/LogiTrack-Atom/courier-service).
 Java 25, Spring Boot 4.1.1, MySQL 8.4 y Maven Wrapper.
 
+La preparación de la topología de seis aplicaciones y tres MySQL de Sprint03 está en
+[docs/sprint03/Compose.md](docs/sprint03/Compose.md). Su validación de modelo no acredita
+el arranque integrado; las dependencias y pruebas pendientes figuran en esa guía.
+
 ## Estado de la extracción del Sprint02
 
 La issue #23 reemplaza la relación JPA a repartidor por `repartidorId` (UUID nullable).

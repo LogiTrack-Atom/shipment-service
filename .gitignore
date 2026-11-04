@@ -32,6 +32,10 @@ target/
 
 # Entorno
 .env
+.env.*
+!.env.example
+!.env.component.example
+!.env.sprint03.example
 
 # Artefactos locales del ensayo de migración
 __pycache__/

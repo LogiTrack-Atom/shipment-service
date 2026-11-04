@@ -1,0 +1,26 @@
+# Solo desarrollo; requiere las implementaciones y Dockerfiles de los seis repositorios.
+services:
+  configserver:
+    build:
+      context: ../configserver
+      dockerfile: Dockerfile
+  eureka-server:
+    build:
+      context: ../eureka-server
+      dockerfile: Dockerfile
+  security-service:
+    build:
+      context: ../security-service
+      dockerfile: Dockerfile
+  courier-service:
+    build:
+      context: ../courier-service
+      dockerfile: Dockerfile
+  shipment-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+  api-gateway:
+    build:
+      context: ../api-gateway
+      dockerfile: Dockerfile
