@@ -1,0 +1,61 @@
+{
+  "images": {
+    "configserver": "maxdz10/configserver:sprint02-1.0.0@sha256:1658bc0e413f5519087ab00ef0e170de31cb20a17b6b84aef08ca17acf19874b",
+    "shipment-service": "maxdz10/shipment-service:sprint03-1.0.0@sha256:aa85d72dbb97bf0cc6c1c81d261fa892f312db922cee21e6cee086a8d4f81595",
+    "courier-service": "maxdz10/courier-service:sprint03-1.0.0@sha256:a226ba795cea75de3343db6b5a0a0a053b36262c7b6c1290e485e55c6e4abf3f",
+    "security-service": "maxdz10/security-service:sprint03-1.0.0@sha256:12353ae6ff6cdafc5f3b27de40da66587e5eaee893664a732e1a828e2c8095b8",
+    "eureka-server": "maxdz10/eureka-server:sprint03-1.0.0@sha256:70a31b326a036de44fcd57238b3bf65f9f1a26e11735108cce1e944fea9dcdcb",
+    "api-gateway": "maxdz10/api-gateway:sprint03-1.0.0@sha256:5c9496b6311b60f88382785093175ba92255a405f7a1036b8f1843f4e33663cf"
+  },
+  "commits": {
+    "shipment-service": "b2454e916332e4b0ec388782047fc63215f53da9",
+    "courier-service": "1cd721bea9c9897951c0b41fcceeb93ee8d88f59",
+    "security-service": "37bb9e3146010fc4f459fcca8a0ae970b5ce1c64",
+    "eureka-server": "b3795f7f5486e5b11667e5e77ba559bc1958a010",
+    "api-gateway": "736e69331e5faba956773d52f699b37847ac29f0"
+  },
+  "config_label": "a08f95ee8fa0bf412fb30f68776e9a8794f94110",
+  "source_commit": "5b52e886a597f1c34927c99bf9a4435882a14f8f",
+  "runtime_source_equivalence": {
+    "shipment-service": {
+      "build_commit": "b2454e916332e4b0ec388782047fc63215f53da9",
+      "develop_commit": "936f77e96a3c3467728b3e9f3cbb15f6cfd910a7",
+      "runtime_sources_equal": true
+    },
+    "courier-service": {
+      "build_commit": "1cd721bea9c9897951c0b41fcceeb93ee8d88f59",
+      "develop_commit": "003003d619d0479bc0577d839a580e61e51a8f0b",
+      "runtime_sources_equal": true
+    },
+    "security-service": {
+      "build_commit": "37bb9e3146010fc4f459fcca8a0ae970b5ce1c64",
+      "develop_commit": "37bb9e3146010fc4f459fcca8a0ae970b5ce1c64",
+      "runtime_sources_equal": true
+    },
+    "eureka-server": {
+      "build_commit": "b3795f7f5486e5b11667e5e77ba559bc1958a010",
+      "develop_commit": "49f5271e2075fc1c9b5b6192ed1f7cb0da5bf24b",
+      "runtime_sources_equal": true
+    },
+    "api-gateway": {
+      "build_commit": "736e69331e5faba956773d52f699b37847ac29f0",
+      "develop_commit": "283cbf80423705b3768787b77c8d35f9a0fd6305",
+      "runtime_sources_equal": true
+    }
+  },
+  "version": "sprint03-1.0.0",
+  "registry": "Docker Hub",
+  "publication_complete": true,
+  "fecha_verificacion": "2026-11-04",
+  "plataforma_imagenes": "linux/amd64",
+  "git_tag": "sprint03-1.0.0",
+  "entrega_tecnica": "verificada; evidencia en docs/sprint03/Aceptacion_final.md",
+  "entrega_academica": {
+    "estado": "pendiente de ensayo conjunto, grabación y constancia de entrega",
+    "issue": "https://github.com/LogiTrack-Atom/shipment-service/issues/49"
+  },
+  "configserver_reutilizado": {
+    "motivo": "aplicación sin cambios respecto de la imagen inmutable de Sprint02",
+    "referencia": "maxdz10/configserver:sprint02-1.0.0@sha256:1658bc0e413f5519087ab00ef0e170de31cb20a17b6b84aef08ca17acf19874b"
+  }
+}
