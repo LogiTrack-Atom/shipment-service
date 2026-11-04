@@ -1,8 +1,8 @@
 # Resiliencia de la consulta de disponibilidad
 
-Preparación de [shipment-service#42](https://github.com/LogiTrack-Atom/shipment-service/issues/42),
-dependiente de #41. La rama incorpora la preparación de OpenFeign para poder probarla;
-su PR tiene destino develop y permanece en borrador hasta integrar las dependencias.
+Implementación de [shipment-service#42](https://github.com/LogiTrack-Atom/shipment-service/issues/42),
+integrada mediante PR #55 después de OpenFeign. La evidencia de componentes y
+la prueba con Courier/Eureka reales se consolidan en [Aceptacion_final.md](Aceptacion_final.md).
 
 ## Clasificación de fallas
 
@@ -60,15 +60,17 @@ comprueba:
 3. Los errores de asignación y los escenarios de recuperación conservan ApiError y no
    exponen el Bearer, cuerpos privados ni detalles del transporte.
 
-La prueba HTTP de caída detiene un proveedor controlado; no representa todavía el
-microservicio courier del proyecto ni Eureka real. Docker Engine no está disponible
-localmente: la suite con MySQL se ejecuta en GitHub Actions.
+Las pruebas Java de HTTP controlado se distinguen de la aceptación del Courier de
+negocio. La suite completa con MySQL aprobó localmente y en GitHub Actions.
 
-## Cierre pendiente
+## Aceptación integrada
 
-Primero integrar y acreditar #41 con eureka-server#1, configserver-ms#13,
-courier-service#17 y shipment-service#40. Repetir después caída/recuperación de courier
-real en la red integrada, verificando los mismos errores y datos persistidos antes
-de cerrar #42. El Compose final y la aceptación integral corresponden a #44/#47.
+Con el Courier real detenido, asignación y EN_RUTA devolvieron 503 sin modificar UUID,
+estado, fechas ni historial. La recuperación utilizó otra instancia anunciada en Eureka,
+con DNS y puerto diferentes, sin reiniciar Shipment. Se completaron entrega, historial,
+recreación con persistencia y reset explícito del entorno de demo propio.
+
+Los 500, timeout y contratos malformados se verifican en la suite Java; no se afirma
+haber provocado un 500 de negocio artificial en el Courier del proyecto.
 
 Referencia: [configuración y manejo de errores de Spring Cloud OpenFeign 5.0.4](https://docs.spring.io/spring-cloud-openfeign/reference/spring-cloud-openfeign.html).

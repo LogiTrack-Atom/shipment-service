@@ -1,8 +1,8 @@
 # Consulta de disponibilidad con OpenFeign
 
-Preparación de [shipment-service#41](https://github.com/LogiTrack-Atom/shipment-service/issues/41).
-La integración con Eureka real requiere las issues de registro y configuración pendientes.
-Esta preparación no acredita todavía la arquitectura final de Sprint03.
+Implementación de [shipment-service#41](https://github.com/LogiTrack-Atom/shipment-service/issues/41),
+integrada mediante PR #54. La [aceptación final](Aceptacion_final.md) acredita la
+asignación y EN_RUTA con Eureka real y recuperación en otro DNS/puerto sin reiniciar Shipment.
 
 ## Flujo
 
@@ -14,7 +14,7 @@ La anotación y las propiedades operativas de Feign no fijan una URL.
 
 OpenFeign 5.0.4 y Feign 13.6.1 se obtienen del BOM Spring Cloud 2025.1.4.
 Se incorpora explícitamente LoadBalancer; la dependencia Eureka de shipment corresponde
-a #40. Cuando esté integrada, su DiscoveryClient suministrará las instancias de courier
+a #40, ya integrada. Su DiscoveryClient suministra las instancias de courier
 registradas en #17. El tráfico de negocio se dirige a la instancia elegida, sin atravesar
 Eureka. La aceptación con descubrimiento controlado demuestra cambio de destino sin
 reconstruir el cliente; no equivale a probar el registro real.
@@ -64,17 +64,16 @@ que la disponibilidad no la reutiliza.
 El segundo requiere Docker para las pruebas MySQL. `CourierFeignIT` conserva los
 escenarios existentes de asignación, reasignación, EN_RUTA, rechazo sin mutaciones,
 JWT firmado y concurrencia. Su SimpleDiscoveryClient se configura solo dentro del
-fixture; no representa Eureka real. Cuando se incorpore Eureka, aislar ese cliente en
+fixture; no representa Eureka real. Las suites aíslan ese cliente en
 pruebas mediante `eureka.client.enabled=false`, conservando descubrimiento en los
 fixtures Feign que lo necesitan.
 
-Antes de integrar y cerrar #41 deben estar disponibles las implementaciones de
-eureka-server#1, configserver-ms#13, courier-service#17 y shipment-service#40.
-Comprobar entonces asignación y EN_RUTA con courier real anunciado en Eureka, cambiar
-su destino anunciado y verificar que shipment continúe consultando sin recompilar.
-Actualizar las pruebas de configuración con la revisión nueva del repositorio remoto.
-El Compose e imágenes inmutables de Sprint02 se conservan como regresión histórica;
-el Compose final de Sprint03 se integra en #44.
+Las dependencias eureka-server#1, configserver-ms#13, courier-service#17 y
+shipment-service#40 están integradas. La aceptación Docker comprobó asignación y
+EN_RUTA, caída sin mutación y cambio del destino anunciado a otro DNS/puerto mientras
+Shipment conservó contenedor, imagen y proceso. Las pruebas de componente con
+proveedores controlados y la aceptación real se identifican por separado.
+El Compose e imágenes inmutables de Sprint02 se conservan como regresión histórica.
 
 Referencias de implementación: [Spring Cloud OpenFeign](https://docs.spring.io/spring-cloud-openfeign/reference/)
 y [Spring Cloud LoadBalancer](https://docs.spring.io/spring-cloud-commons/reference/spring-cloud-commons/loadbalancer.html).

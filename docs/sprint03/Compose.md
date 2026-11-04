@@ -8,7 +8,7 @@ La [aceptación final](Aceptacion_final.md) detalla las versiones, resultados y 
 
 ## Archivos y componentes
 
-`compose.sprint03.yaml` es el archivo candidato de Sprint03. El Compose y el ejemplo
+`compose.sprint03.yaml` es el archivo integrado de Sprint03. El Compose y el ejemplo
 de entorno históricos de Sprint02 permanecen disponibles para su regresión reproducible.
 El nombre predeterminado del nuevo proyecto es `logitrack-sprint03`; no reutilizar el
 proyecto ni los volúmenes del equipo para los ensayos.
@@ -125,7 +125,7 @@ puede invalidar una ruta y que el informe no copia secretos ni nombres de fuente
 El [ensayo de infraestructura del 03/11/2026](Integracion_previa.md) documenta la revisión
 probada y los bloqueos encontrados antes de construir el conjunto completo.
 
-## Ejecución, cuando estén listas las dependencias
+## Ejecución de la entrega
 
 Con imágenes ya publicadas y configuración verificada:
 
@@ -152,8 +152,8 @@ docker compose --env-file /ruta/privada/sprint03.env -f compose.sprint03.yaml do
 
 Los volúmenes son propios del proyecto y los SQL solo inicializan volúmenes nuevos.
 No se incluye borrado automático ni se aplican migraciones a bases del equipo. El reset
-de datos de #43 usa por ahora la infraestructura histórica fija; su conexión con esta
-topología y el entorno final de Postman se completa tras la integración.
+de datos final usa manage_sprint03.py; la modalidad histórica de #43 conserva su
+snapshot fijo. La guía Demo_Sprint03.md describe el entorno final de Postman.
 
 ## Resultado de integración
 

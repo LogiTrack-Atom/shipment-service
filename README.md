@@ -4,9 +4,9 @@ Servicio de envíos, clientes, direcciones e historial. La administración de re
 pertenece a [courier-service](https://github.com/LogiTrack-Atom/courier-service).
 Java 25, Spring Boot 4.1.1, MySQL 8.4 y Maven Wrapper.
 
-La preparación de la topología de seis aplicaciones y tres MySQL de Sprint03 está en
-[docs/sprint03/Compose.md](docs/sprint03/Compose.md). Su validación de modelo no acredita
-el arranque integrado; las dependencias y pruebas pendientes figuran en esa guía.
+La topología integrada de seis aplicaciones y tres MySQL de Sprint03 está en
+[docs/sprint03/Compose.md](docs/sprint03/Compose.md). La aceptación real, imágenes
+públicas y guías de demostración están enlazadas al final de este documento.
 
 ## Estado de la extracción del Sprint02
 
@@ -25,7 +25,7 @@ después de la consulta: se vuelve a comprobar al iniciar ruta.
 Sprint03 migra ese transporte a OpenFeign (#41), conservando la frontera CourierClient.
 La disponibilidad se resuelve por el nombre `courier-service` mediante LoadBalancer;
 la URL administrativa de courier permanece para verificar asociaciones de identidad.
-La preparación y las dependencias de descubrimiento figuran en [Feign.md](docs/sprint03/Feign.md).
+La implementación y verificación de descubrimiento figuran en [Feign.md](docs/sprint03/Feign.md).
 
 **Autorización (#25):** todas las operaciones de negocio requieren una única cabecera
 `Authorization: Bearer ...`, firma RS256 local, emisor, audiencia, UUID, roles y tiempos
@@ -185,7 +185,7 @@ Consultar [la decisión arquitectónica](docs/sprint02/ADR-001-identidad-local.m
 | GET | `/api/v1/envios/{id}` | DTO con `repartidorId` nullable |
 | GET | `/api/v1/envios/seguimiento/{codigoSeguimiento}` | Consulta por tracking |
 | GET | `/api/v1/envios/{id}/historial` | Eventos por fecha ascendente |
-| PUT | `/api/v1/envios/{id}/repartidor` | Solo PENDIENTE, ADMIN y disponibilidad REST comprobada |
+| PUT | `/api/v1/envios/{id}/repartidor` | Solo PENDIENTE, ADMIN y disponibilidad Feign comprobada |
 | PATCH | `/api/v1/envios/{id}/estado` | Máquina de estados; EN_RUTA exige disponibilidad |
 | PATCH | `/api/v1/envios/{id}/cancelacion` | ADMIN, solo PENDIENTE → CANCELADO |
 | PUT | `/api/v1/clientes/{id}/usuario` | Asociación administrativa CLIENTE |
