@@ -1,0 +1,64 @@
+name: Aceptación integral Sprint03
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aceptacion-sprint03-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  aceptar:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Obtener código y snapshots de la entrega
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - name: Verificar que la evidencia pública elimina secretos
+        run: python3 -m unittest discover -s scripts/verificacion/tests -p 'test_*.py' -v
+      - name: Preparar demo con imágenes públicas fijadas
+        run: python3 scripts/demo/manage_sprint03.py prepare --release-manifest docs/sprint03/entrega/versiones.json
+      - name: Verificar configuración final
+        run: |
+          python3 - <<'PY'
+          import subprocess, json
+          from pathlib import Path
+          state = json.loads(Path('.logitrack-demo/sprint03/runtime.json').read_text())
+          subprocess.run(['python3', 'scripts/compose/verify_remote_config.py',
+                          '--config-url', 'http://127.0.0.1:' + str(state['ports']['config']),
+                          '--config-label', state['release']['config_label'],
+                          '--output', 'target/public/configuracion.json'], check=True)
+          PY
+      - name: Verificar perfiles, Feign, recuperación, persistencia y reset
+        run: python3 scripts/verificacion/sprint03_acceptance.py --reset-after --output target/public/aceptacion.json
+      - name: Verificar aislamiento de bases
+        run: python3 scripts/verificacion/sprint03_databases.py --output target/public/bases.json
+      - name: Ejecutar Postman en serie
+        run: |
+          npx --yes --package=newman@6.2.3 newman run postman/LogiTrack-Sprint03-Rechazos.postman_collection.json -e .logitrack-demo/sprint03/postman_environment.json --bail --reporters json --reporter-json-export target/rechazos-private.json
+          npx --yes --package=newman@6.2.3 newman run postman/LogiTrack-Sprint03-Flujo.postman_collection.json -e .logitrack-demo/sprint03/postman_environment.json --bail --reporters json --reporter-json-export target/flujo-private.json
+      - name: Extraer métricas públicas de Postman
+        if: always()
+        run: |
+          if [ -f target/rechazos-private.json ] && [ -f target/flujo-private.json ]; then
+            python3 scripts/verificacion/newman_summary.py --report target/rechazos-private.json --report target/flujo-private.json --output target/public/postman.json
+          fi
+      - name: Publicar solo evidencia sanitizada
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: sprint03-evidencia-publica
+          path: target/public/
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Retirar exclusivamente los recursos propios de la demo
+        if: always()
+        run: |
+          if [ -f .logitrack-demo/sprint03/runtime.json ]; then
+            python3 scripts/demo/manage_sprint03.py destroy
+          fi

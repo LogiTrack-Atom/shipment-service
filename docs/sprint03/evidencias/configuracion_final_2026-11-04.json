@@ -1,0 +1,633 @@
+{
+  "fecha_utc": "2026-11-04T07:42:15.422907+00:00",
+  "config_label": "a08f95ee8fa0bf412fb30f68776e9a8794f94110",
+  "alcance": "respuestas reales de Config Server; no acredita consumo de los clientes",
+  "aprobado": true,
+  "resultados": [
+    {
+      "aplicacion": "eureka-server",
+      "perfil": "default",
+      "criterios": [
+        {
+          "criterio": "aplicación y perfil solicitados",
+          "aprobado": true
+        },
+        {
+          "criterio": "revisión Git exacta",
+          "aprobado": true
+        },
+        {
+          "criterio": "fuentes no vacías",
+          "aprobado": true
+        },
+        {
+          "criterio": "nombre de aplicación",
+          "aprobado": true
+        },
+        {
+          "criterio": "puerto interno acordado",
+          "aprobado": true
+        },
+        {
+          "criterio": "servidor autónomo: register-with-eureka",
+          "aprobado": true
+        },
+        {
+          "criterio": "servidor autónomo: fetch-registry",
+          "aprobado": true
+        }
+      ],
+      "aprobado": true
+    },
+    {
+      "aplicacion": "eureka-server",
+      "perfil": "dev",
+      "criterios": [
+        {
+          "criterio": "aplicación y perfil solicitados",
+          "aprobado": true
+        },
+        {
+          "criterio": "revisión Git exacta",
+          "aprobado": true
+        },
+        {
+          "criterio": "fuentes no vacías",
+          "aprobado": true
+        },
+        {
+          "criterio": "nombre de aplicación",
+          "aprobado": true
+        },
+        {
+          "criterio": "puerto interno acordado",
+          "aprobado": true
+        },
+        {
+          "criterio": "precedencia del marcador de perfil",
+          "aprobado": true
+        },
+        {
+          "criterio": "servidor autónomo: register-with-eureka",
+          "aprobado": true
+        },
+        {
+          "criterio": "servidor autónomo: fetch-registry",
+          "aprobado": true
+        }
+      ],
+      "aprobado": true
+    },
+    {
+      "aplicacion": "eureka-server",
+      "perfil": "prod",
+      "criterios": [
+        {
+          "criterio": "aplicación y perfil solicitados",
+          "aprobado": true
+        },
+        {
+          "criterio": "revisión Git exacta",
+          "aprobado": true
+        },
+        {
+          "criterio": "fuentes no vacías",
+          "aprobado": true
+        },
+        {
+          "criterio": "nombre de aplicación",
+          "aprobado": true
+        },
+        {
+          "criterio": "puerto interno acordado",
+          "aprobado": true
+        },
+        {
+          "criterio": "precedencia del marcador de perfil",
+          "aprobado": true
+        },
+        {
+          "criterio": "servidor autónomo: register-with-eureka",
+          "aprobado": true
+        },
+        {
+          "criterio": "servidor autónomo: fetch-registry",
+          "aprobado": true
+        }
+      ],
+      "aprobado": true
+    },
+    {
+      "aplicacion": "api-gateway",
+      "perfil": "default",
+      "criterios": [
+        {
+          "criterio": "aplicación y perfil solicitados",
+          "aprobado": true
+        },
+        {
+          "criterio": "revisión Git exacta",
+          "aprobado": true
+        },
+        {
+          "criterio": "fuentes no vacías",
+          "aprobado": true
+        },
+        {
+          "criterio": "nombre de aplicación",
+          "aprobado": true
+        },
+        {
+          "criterio": "puerto interno acordado",
+          "aprobado": true
+        },
+        {
+          "criterio": "placeholder Eureka compartido",
+          "aprobado": true
+        },
+        {
+          "criterio": "duración JWT acordada",
+          "aprobado": true
+        },
+        {
+          "criterio": "tres rutas explícitas Gateway 5",
+          "aprobado": true
+        },
+        {
+          "criterio": "sin rutas bajo la clave anterior",
+          "aprobado": true
+        },
+        {
+          "criterio": "ruta pública de security-service",
+          "aprobado": true
+        },
+        {
+          "criterio": "ruta pública de courier-service",
+          "aprobado": true
+        },
+        {
+          "criterio": "ruta pública de shipment-service",
+          "aprobado": true
+        }
+      ],
+      "aprobado": true
+    },
+    {
+      "aplicacion": "api-gateway",
+      "perfil": "dev",
+      "criterios": [
+        {
+          "criterio": "aplicación y perfil solicitados",
+          "aprobado": true
+        },
+        {
+          "criterio": "revisión Git exacta",
+          "aprobado": true
+        },
+        {
+          "criterio": "fuentes no vacías",
+          "aprobado": true
+        },
+        {
+          "criterio": "nombre de aplicación",
+          "aprobado": true
+        },
+        {
+          "criterio": "puerto interno acordado",
+          "aprobado": true
+        },
+        {
+          "criterio": "precedencia del marcador de perfil",
+          "aprobado": true
+        },
+        {
+          "criterio": "placeholder Eureka compartido",
+          "aprobado": true
+        },
+        {
+          "criterio": "duración JWT acordada",
+          "aprobado": true
+        },
+        {
+          "criterio": "tres rutas explícitas Gateway 5",
+          "aprobado": true
+        },
+        {
+          "criterio": "sin rutas bajo la clave anterior",
+          "aprobado": true
+        },
+        {
+          "criterio": "ruta pública de security-service",
+          "aprobado": true
+        },
+        {
+          "criterio": "ruta pública de courier-service",
+          "aprobado": true
+        },
+        {
+          "criterio": "ruta pública de shipment-service",
+          "aprobado": true
+        }
+      ],
+      "aprobado": true
+    },
+    {
+      "aplicacion": "api-gateway",
+      "perfil": "prod",
+      "criterios": [
+        {
+          "criterio": "aplicación y perfil solicitados",
+          "aprobado": true
+        },
+        {
+          "criterio": "revisión Git exacta",
+          "aprobado": true
+        },
+        {
+          "criterio": "fuentes no vacías",
+          "aprobado": true
+        },
+        {
+          "criterio": "nombre de aplicación",
+          "aprobado": true
+        },
+        {
+          "criterio": "puerto interno acordado",
+          "aprobado": true
+        },
+        {
+          "criterio": "precedencia del marcador de perfil",
+          "aprobado": true
+        },
+        {
+          "criterio": "placeholder Eureka compartido",
+          "aprobado": true
+        },
+        {
+          "criterio": "duración JWT acordada",
+          "aprobado": true
+        },
+        {
+          "criterio": "tres rutas explícitas Gateway 5",
+          "aprobado": true
+        },
+        {
+          "criterio": "sin rutas bajo la clave anterior",
+          "aprobado": true
+        },
+        {
+          "criterio": "ruta pública de security-service",
+          "aprobado": true
+        },
+        {
+          "criterio": "ruta pública de courier-service",
+          "aprobado": true
+        },
+        {
+          "criterio": "ruta pública de shipment-service",
+          "aprobado": true
+        }
+      ],
+      "aprobado": true
+    },
+    {
+      "aplicacion": "shipment-service",
+      "perfil": "default",
+      "criterios": [
+        {
+          "criterio": "aplicación y perfil solicitados",
+          "aprobado": true
+        },
+        {
+          "criterio": "revisión Git exacta",
+          "aprobado": true
+        },
+        {
+          "criterio": "fuentes no vacías",
+          "aprobado": true
+        },
+        {
+          "criterio": "nombre de aplicación",
+          "aprobado": true
+        },
+        {
+          "criterio": "puerto interno acordado",
+          "aprobado": true
+        },
+        {
+          "criterio": "placeholder Eureka compartido",
+          "aprobado": true
+        },
+        {
+          "criterio": "duración JWT acordada",
+          "aprobado": true
+        }
+      ],
+      "aprobado": true
+    },
+    {
+      "aplicacion": "shipment-service",
+      "perfil": "dev",
+      "criterios": [
+        {
+          "criterio": "aplicación y perfil solicitados",
+          "aprobado": true
+        },
+        {
+          "criterio": "revisión Git exacta",
+          "aprobado": true
+        },
+        {
+          "criterio": "fuentes no vacías",
+          "aprobado": true
+        },
+        {
+          "criterio": "nombre de aplicación",
+          "aprobado": true
+        },
+        {
+          "criterio": "puerto interno acordado",
+          "aprobado": true
+        },
+        {
+          "criterio": "precedencia del marcador de perfil",
+          "aprobado": true
+        },
+        {
+          "criterio": "placeholder Eureka compartido",
+          "aprobado": true
+        },
+        {
+          "criterio": "duración JWT acordada",
+          "aprobado": true
+        }
+      ],
+      "aprobado": true
+    },
+    {
+      "aplicacion": "shipment-service",
+      "perfil": "prod",
+      "criterios": [
+        {
+          "criterio": "aplicación y perfil solicitados",
+          "aprobado": true
+        },
+        {
+          "criterio": "revisión Git exacta",
+          "aprobado": true
+        },
+        {
+          "criterio": "fuentes no vacías",
+          "aprobado": true
+        },
+        {
+          "criterio": "nombre de aplicación",
+          "aprobado": true
+        },
+        {
+          "criterio": "puerto interno acordado",
+          "aprobado": true
+        },
+        {
+          "criterio": "precedencia del marcador de perfil",
+          "aprobado": true
+        },
+        {
+          "criterio": "placeholder Eureka compartido",
+          "aprobado": true
+        },
+        {
+          "criterio": "duración JWT acordada",
+          "aprobado": true
+        }
+      ],
+      "aprobado": true
+    },
+    {
+      "aplicacion": "courier-service",
+      "perfil": "default",
+      "criterios": [
+        {
+          "criterio": "aplicación y perfil solicitados",
+          "aprobado": true
+        },
+        {
+          "criterio": "revisión Git exacta",
+          "aprobado": true
+        },
+        {
+          "criterio": "fuentes no vacías",
+          "aprobado": true
+        },
+        {
+          "criterio": "nombre de aplicación",
+          "aprobado": true
+        },
+        {
+          "criterio": "puerto interno acordado",
+          "aprobado": true
+        },
+        {
+          "criterio": "placeholder Eureka compartido",
+          "aprobado": true
+        },
+        {
+          "criterio": "duración JWT acordada",
+          "aprobado": true
+        }
+      ],
+      "aprobado": true
+    },
+    {
+      "aplicacion": "courier-service",
+      "perfil": "dev",
+      "criterios": [
+        {
+          "criterio": "aplicación y perfil solicitados",
+          "aprobado": true
+        },
+        {
+          "criterio": "revisión Git exacta",
+          "aprobado": true
+        },
+        {
+          "criterio": "fuentes no vacías",
+          "aprobado": true
+        },
+        {
+          "criterio": "nombre de aplicación",
+          "aprobado": true
+        },
+        {
+          "criterio": "puerto interno acordado",
+          "aprobado": true
+        },
+        {
+          "criterio": "precedencia del marcador de perfil",
+          "aprobado": true
+        },
+        {
+          "criterio": "placeholder Eureka compartido",
+          "aprobado": true
+        },
+        {
+          "criterio": "duración JWT acordada",
+          "aprobado": true
+        }
+      ],
+      "aprobado": true
+    },
+    {
+      "aplicacion": "courier-service",
+      "perfil": "prod",
+      "criterios": [
+        {
+          "criterio": "aplicación y perfil solicitados",
+          "aprobado": true
+        },
+        {
+          "criterio": "revisión Git exacta",
+          "aprobado": true
+        },
+        {
+          "criterio": "fuentes no vacías",
+          "aprobado": true
+        },
+        {
+          "criterio": "nombre de aplicación",
+          "aprobado": true
+        },
+        {
+          "criterio": "puerto interno acordado",
+          "aprobado": true
+        },
+        {
+          "criterio": "precedencia del marcador de perfil",
+          "aprobado": true
+        },
+        {
+          "criterio": "placeholder Eureka compartido",
+          "aprobado": true
+        },
+        {
+          "criterio": "duración JWT acordada",
+          "aprobado": true
+        }
+      ],
+      "aprobado": true
+    },
+    {
+      "aplicacion": "security-service",
+      "perfil": "default",
+      "criterios": [
+        {
+          "criterio": "aplicación y perfil solicitados",
+          "aprobado": true
+        },
+        {
+          "criterio": "revisión Git exacta",
+          "aprobado": true
+        },
+        {
+          "criterio": "fuentes no vacías",
+          "aprobado": true
+        },
+        {
+          "criterio": "nombre de aplicación",
+          "aprobado": true
+        },
+        {
+          "criterio": "puerto interno acordado",
+          "aprobado": true
+        },
+        {
+          "criterio": "placeholder Eureka compartido",
+          "aprobado": true
+        },
+        {
+          "criterio": "duración JWT acordada",
+          "aprobado": true
+        }
+      ],
+      "aprobado": true
+    },
+    {
+      "aplicacion": "security-service",
+      "perfil": "dev",
+      "criterios": [
+        {
+          "criterio": "aplicación y perfil solicitados",
+          "aprobado": true
+        },
+        {
+          "criterio": "revisión Git exacta",
+          "aprobado": true
+        },
+        {
+          "criterio": "fuentes no vacías",
+          "aprobado": true
+        },
+        {
+          "criterio": "nombre de aplicación",
+          "aprobado": true
+        },
+        {
+          "criterio": "puerto interno acordado",
+          "aprobado": true
+        },
+        {
+          "criterio": "precedencia del marcador de perfil",
+          "aprobado": true
+        },
+        {
+          "criterio": "placeholder Eureka compartido",
+          "aprobado": true
+        },
+        {
+          "criterio": "duración JWT acordada",
+          "aprobado": true
+        }
+      ],
+      "aprobado": true
+    },
+    {
+      "aplicacion": "security-service",
+      "perfil": "prod",
+      "criterios": [
+        {
+          "criterio": "aplicación y perfil solicitados",
+          "aprobado": true
+        },
+        {
+          "criterio": "revisión Git exacta",
+          "aprobado": true
+        },
+        {
+          "criterio": "fuentes no vacías",
+          "aprobado": true
+        },
+        {
+          "criterio": "nombre de aplicación",
+          "aprobado": true
+        },
+        {
+          "criterio": "puerto interno acordado",
+          "aprobado": true
+        },
+        {
+          "criterio": "precedencia del marcador de perfil",
+          "aprobado": true
+        },
+        {
+          "criterio": "placeholder Eureka compartido",
+          "aprobado": true
+        },
+        {
+          "criterio": "duración JWT acordada",
+          "aprobado": true
+        }
+      ],
+      "aprobado": true
+    }
+  ]
+}

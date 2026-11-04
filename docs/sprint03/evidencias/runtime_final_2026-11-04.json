@@ -1,0 +1,98 @@
+{
+  "aprobado": true,
+  "config_label": "a08f95ee8fa0bf412fb30f68776e9a8794f94110",
+  "componentes": [
+    {
+      "servicio": "api-gateway",
+      "salud": "healthy",
+      "imagen_publicada_coincide": true
+    },
+    {
+      "servicio": "configserver",
+      "salud": "healthy",
+      "imagen_publicada_coincide": true
+    },
+    {
+      "servicio": "courier-mysql",
+      "salud": "healthy",
+      "imagen_publicada_coincide": null
+    },
+    {
+      "servicio": "courier-service",
+      "salud": "healthy",
+      "imagen_publicada_coincide": true
+    },
+    {
+      "servicio": "eureka-server",
+      "salud": "healthy",
+      "imagen_publicada_coincide": true
+    },
+    {
+      "servicio": "security-mysql",
+      "salud": "healthy",
+      "imagen_publicada_coincide": null
+    },
+    {
+      "servicio": "security-service",
+      "salud": "healthy",
+      "imagen_publicada_coincide": true
+    },
+    {
+      "servicio": "shipment-mysql",
+      "salud": "healthy",
+      "imagen_publicada_coincide": null
+    },
+    {
+      "servicio": "shipment-service",
+      "salud": "healthy",
+      "imagen_publicada_coincide": true
+    }
+  ],
+  "eureka": [
+    {
+      "aplicacion": "API-GATEWAY",
+      "instancias": [
+        {
+          "host": "api-gateway",
+          "puerto": 8066,
+          "estado": "UP"
+        }
+      ]
+    },
+    {
+      "aplicacion": "SECURITY-SERVICE",
+      "instancias": [
+        {
+          "host": "security-service",
+          "puerto": 8082,
+          "estado": "UP"
+        },
+        {
+          "host": "security-service",
+          "puerto": 8082,
+          "estado": "DOWN"
+        }
+      ]
+    },
+    {
+      "aplicacion": "COURIER-SERVICE",
+      "instancias": [
+        {
+          "host": "courier-service",
+          "puerto": 8081,
+          "estado": "UP"
+        }
+      ]
+    },
+    {
+      "aplicacion": "SHIPMENT-SERVICE",
+      "instancias": [
+        {
+          "host": "shipment-service",
+          "puerto": 8080,
+          "estado": "UP"
+        }
+      ]
+    }
+  ]
+}
