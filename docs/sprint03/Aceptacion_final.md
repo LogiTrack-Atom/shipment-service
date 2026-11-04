@@ -42,7 +42,8 @@ Git de configuración y las referencias públicas por digest. No se presenta el 
 parcial del 03/11 como prueba de una versión posterior.
 
 Los logs y reportes privados permanecen fuera de Git. Los JSON públicos contienen
-criterios, estados HTTP, métricas y versiones; no incluyen JWT, claves, contraseñas,+cabeceras Authorization ni cuerpos de autenticación.
+criterios, estados HTTP, métricas y versiones; no incluyen JWT, claves, contraseñas,
+cabeceras Authorization ni cuerpos de autenticación.
 
 ## Repetición
 
