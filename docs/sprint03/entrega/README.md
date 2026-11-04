@@ -19,7 +19,9 @@ indicado en `source_commit` si el CLI informa que falta el objeto Git:
 git fetch --no-tags --depth=1 origin <source_commit-del-manifiesto>
 ```
 
-El tag Git `sprint03-1.0.0` identifica el cierre de cada repositorio. En Shipment el
+El tag Git `sprint03-1.0.1` identifica el cierre final de cada repositorio.
+La revisión 1.0.1 amplía los escenarios de prueba; las imágenes siguen en 1.0.0
+con los mismos digests. El tag 1.0.0 se conserva inmutable. En Shipment el
 manifiesto necesariamente fija un commit anterior para el snapshot de topología;
 no intenta referenciar el hash del mismo commit que lo contiene.
 

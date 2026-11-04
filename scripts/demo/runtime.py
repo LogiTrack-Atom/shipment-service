@@ -324,7 +324,7 @@ class Runtime:
         self.save()
         self.generate_keys()
         self.write_env()
-        for name in ['manifest.json', 'postman_environment.json']:
+        for name in ['manifest.json', 'postman_environment.json', 'postman_security_environment.json']:
             path = self.directory / name
             if path.is_symlink():
                 raise DemoError('Un archivo de salida es un enlace simbólico.')

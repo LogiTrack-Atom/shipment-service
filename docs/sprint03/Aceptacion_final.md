@@ -10,10 +10,10 @@ por separado; no quedan acreditadas por estas pruebas.
 | Verificación | Resultado | Evidencia |
 | --- | --- | --- |
 | Java + JavaDoc | Shipment 324, Courier 184, Security 182, Gateway 145, Eureka 3, Config Server 1; total 839 | Suites locales por componente y CI de PR vinculadas |
-| Python | Demo 23, modelo/configuración 24, sanitización Newman 2; total 49 | Suites correspondientes en scripts/demo, scripts/compose y scripts/verificacion |
+| Python | Demo 25, modelo/configuración 24, sanitización Newman 2; total 51 | Suites correspondientes en scripts/demo, scripts/compose y scripts/verificacion |
 | Migración histórica | 19 pruebas aprobadas con MySQL | Workflow de migración de Shipment |
 | Arquitectura real | 20 escenarios aprobados | [Aceptación](evidencias/aceptacion_2026-11-04.json) |
-| Postman final | 35 pedidos, 61 aserciones, cero fallos | [Postman](evidencias/postman_final_2026-11-04.json) |
+| Postman final | 65 pedidos, 117 aserciones, cero fallos | [Postman](evidencias/postman_final_2026-11-04.json) |
 | Config Server final | 15 combinaciones default/dev/prod aprobadas | [Configuración](evidencias/configuracion_final_2026-11-04.json) |
 | Aislamiento MySQL | 3 accesos propios y 6 rechazos cruzados ERROR 1045 | [Bases](evidencias/aislamiento_mysql_2026-11-04.json) |
 | Imágenes públicas | 6 referencias descargadas sin credenciales | [Descarga](evidencias/imagenes_publicas_2026-11-04.json) |
@@ -30,9 +30,13 @@ nueve contenedores saludables, cuatro registros, Courier detenido con 503 sin mu
 otra instancia con DNS/puerto distintos sin reiniciar Shipment, entrega/historial,
 recreación con persistencia y reset con rotación de claves/credenciales.
 
+La revisión complementaria añade JWT vencido con firma válida, un envío CANCELADO
+no asignable y lecturas tras cada rechazo. La firma del fixture se verifica fuera de
+Postman y sus credenciales permanecen privadas.
+
 La configuración final `a08f95ee8fa0bf412fb30f68776e9a8794f94110` agrega únicamente la
 reescritura de Location en las tres rutas. Esa diferencia se verificó con la suite de
-Gateway y el Postman final: 17 pedidos y 30 aserciones del flujo, más 18 y 31 de rechazos.
+Gateway y el Postman final: 17 pedidos y 30 aserciones del flujo, más 48 y 87 de rechazos.
 Las quince consultas de Config Server y el aislamiento de bases se repitieron sobre
 la demo que ejecuta los digests publicados y esa configuración final.
 

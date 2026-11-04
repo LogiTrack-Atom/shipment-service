@@ -1,0 +1,8 @@
+{
+  "aprobado": true,
+  "firma_rs256_verificada": true,
+  "ttl_segundos": 900,
+  "vencimiento_supera_tolerancia": true,
+  "envio_auxiliar": "CANCELADO",
+  "alcance": "fixture privado; la clave permanece fuera de Postman y Git"
+}

@@ -38,9 +38,11 @@ jobs:
         run: python3 scripts/verificacion/sprint03_acceptance.py --reset-after --output target/public/aceptacion.json
       - name: Verificar aislamiento de bases
         run: python3 scripts/verificacion/sprint03_databases.py --output target/public/bases.json
+      - name: Preparar JWT vencido y envío no asignable
+        run: python3 scripts/demo/security_fixture.py --output target/public/security-fixture.json
       - name: Ejecutar Postman en serie
         run: |
-          npx --yes --package=newman@6.2.3 newman run postman/LogiTrack-Sprint03-Rechazos.postman_collection.json -e .logitrack-demo/sprint03/postman_environment.json --bail --reporters json --reporter-json-export target/rechazos-private.json
+          npx --yes --package=newman@6.2.3 newman run postman/LogiTrack-Sprint03-Rechazos.postman_collection.json -e .logitrack-demo/sprint03/postman_security_environment.json --bail --reporters json --reporter-json-export target/rechazos-private.json
           npx --yes --package=newman@6.2.3 newman run postman/LogiTrack-Sprint03-Flujo.postman_collection.json -e .logitrack-demo/sprint03/postman_environment.json --bail --reporters json --reporter-json-export target/flujo-private.json
       - name: Extraer métricas públicas de Postman
         if: always()
