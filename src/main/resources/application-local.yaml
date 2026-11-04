@@ -59,3 +59,7 @@ management:
     health:
       show-details: never
       show-components: never
+
+eureka:
+  client:
+    enabled: false
