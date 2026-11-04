@@ -27,7 +27,7 @@ class Api:
         self.opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
 
     def url(self, service: str) -> str:
-        return f'http://127.0.0.1:{self.runtime.state["ports"][service]}'
+        return self.runtime.api_url(service)
 
     def request(self, service: str, method: str, path: str, *, token=None, body=None, expected=(200,)):
         """Valida HTTP sin incluir datos de autenticación en errores o registros."""

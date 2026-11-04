@@ -103,6 +103,28 @@ class Runtime:
         if self.state_path.exists() or self.state_path.is_symlink():
             self.load()
 
+    services = SERVICES
+
+    def snapshot(self) -> dict[str, bytes]:
+        """Obtiene los archivos inmutables de la modalidad de demo seleccionada."""
+        return snapshot()
+
+    def compose_files(self) -> list[Path]:
+        """Identifica los archivos Compose cuya propiedad se comprueba antes de operar."""
+        return [self.source / 'docker-compose.yaml']
+
+    def api_url(self, service: str) -> str:
+        """Resuelve una API del stack histórico administrado."""
+        return f'http://127.0.0.1:{self.state["ports"][service]}'
+
+    def new_state(self) -> dict:
+        """Genera una identidad y credenciales exclusivas para un entorno nuevo."""
+        return {'format': 1, 'demo_id': uuid.uuid4().hex, 'directory': str(self.directory),
+                'source_commit': SOURCE_COMMIT, 'phase': 'initializing', 'ports': ports(),
+                'key_fingerprint': None,
+                'credentials': {'admin_password': secrets.token_urlsafe(24),
+                                'test_password': secrets.token_urlsafe(24)}, 'resources': {}}
+
     @property
     def project(self) -> str:
         """Deriva el nombre Docker de la identidad propia; no acepta nombres externos."""
@@ -143,14 +165,10 @@ class Runtime:
             remaining = [p for p in self.directory.iterdir() if p.name != '.lock']
             if remaining:
                 raise DemoError('Se requiere un directorio vacío o una demo administrada existente.')
-            self.state = {'format': 1, 'demo_id': uuid.uuid4().hex, 'directory': str(self.directory),
-                          'source_commit': SOURCE_COMMIT, 'phase': 'initializing', 'ports': ports(),
-                          'key_fingerprint': None,
-                          'credentials': {'admin_password': secrets.token_urlsafe(24),
-                                          'test_password': secrets.token_urlsafe(24)}, 'resources': {}}
+            self.state = self.new_state()
             self.save()
         os.chmod(self.directory, 0o700)
-        expected = snapshot()
+        expected = self.snapshot()
         if self.source.is_symlink():
             raise DemoError('El snapshot no puede ser un enlace simbólico.')
         if not self.source.exists():
@@ -173,7 +191,7 @@ class Runtime:
         """Comprueba nombres y contenido para impedir usar un Compose modificado."""
         if self.source.is_symlink() or not self.source.is_dir():
             raise DemoError('Falta un snapshot de demo válido.')
-        expected = snapshot() if expected is None else expected
+        expected = self.snapshot() if expected is None else expected
         actual = {}
         for path in self.source.rglob('*'):
             if path.is_symlink():
@@ -248,8 +266,9 @@ class Runtime:
         self.verify_snapshot()
         self.write_env()
         environment = {**os.environ, **self.values()}
+        files = [argument for path in self.compose_files() for argument in ['--file', str(path)]]
         return run(['docker', 'compose', '--project-name', self.project, '--env-file', str(self.env_file),
-                    '--file', str(self.source / 'docker-compose.yaml'), *args], capture=capture, env=environment)
+                    *files, *args], capture=capture, env=environment)
 
     def guard_resources(self) -> None:
         """Rechaza contenedores, redes o volúmenes que no pertenezcan al proyecto generado."""
@@ -266,9 +285,9 @@ class Runtime:
         if containers:
             for container in json.loads(run(['docker', 'inspect', *containers])):
                 labels = container['Config'].get('Labels') or {}
-                expected_file = str(self.source / 'docker-compose.yaml')
+                expected_file = ','.join(str(path) for path in self.compose_files())
                 if (labels.get('com.docker.compose.project') != self.project
-                        or labels.get('com.docker.compose.service') not in SERVICES
+                        or labels.get('com.docker.compose.service') not in self.services
                         or labels.get('com.docker.compose.project.config_files') != expected_file):
                     raise DemoError('Un contenedor no coincide con la demo administrada.')
         network = self.project + '_logitrack-net'
