@@ -43,12 +43,12 @@
       "runtime_sources_equal": true
     }
   },
-  "version": "sprint03-1.0.0",
+  "version": "sprint03-1.0.1",
   "registry": "Docker Hub",
   "publication_complete": true,
   "fecha_verificacion": "2026-11-04",
   "plataforma_imagenes": "linux/amd64",
-  "git_tag": "sprint03-1.0.0",
+  "git_tag": "sprint03-1.0.1",
   "entrega_tecnica": "verificada; evidencia en docs/sprint03/Aceptacion_final.md",
   "entrega_academica": {
     "estado": "pendiente de ensayo conjunto, grabación y constancia de entrega",
@@ -57,5 +57,7 @@
   "configserver_reutilizado": {
     "motivo": "aplicación sin cambios respecto de la imagen inmutable de Sprint02",
     "referencia": "maxdz10/configserver:sprint02-1.0.0@sha256:1658bc0e413f5519087ab00ef0e170de31cb20a17b6b84aef08ca17acf19874b"
-  }
+  },
+  "application_image_version": "sprint03-1.0.0",
+  "cambio_1_0_1": "Amplía pruebas de JWT vencido y envío no asignable, con lecturas tras cada rechazo; binarios, digests y configuración sin cambios."
 }

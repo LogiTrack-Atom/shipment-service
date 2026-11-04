@@ -44,12 +44,13 @@ negocio y el aprovisionamiento usan exclusivamente Gateway. MySQL no publica pue
 
 Importar las colecciones de Sprint03 y la copia privada de
 `.logitrack-demo/sprint03-final/postman_environment.json`. Ejecutar primero los rechazos,
-que conservan el catálogo, y después el flujo, que crea recursos nuevos:
+con su fixture controlado, y después el flujo, que crea recursos nuevos:
 
 ```bash
+python3 scripts/demo/security_fixture.py --state-dir .logitrack-demo/sprint03-final
 npx --yes --package=newman@6.2.3 newman run \
   postman/LogiTrack-Sprint03-Rechazos.postman_collection.json \
-  -e .logitrack-demo/sprint03-final/postman_environment.json --bail
+  -e .logitrack-demo/sprint03-final/postman_security_environment.json --bail
 npx --yes --package=newman@6.2.3 newman run \
   postman/LogiTrack-Sprint03-Flujo.postman_collection.json \
   -e .logitrack-demo/sprint03-final/postman_environment.json --bail
@@ -102,3 +103,9 @@ La opción `--reset-after` solicita deliberadamente el reset de sus recursos pro
 No ejecutar Postman simultáneamente con la aceptación automatizada: ambos modifican
 el catálogo de la misma demo. La ruta explícita permite identificar la demo final de
 esta máquina; en un entorno nuevo puede usarse el directorio predeterminado del CLI.
+
+El generador de seguridad conserva los claims de una credencial ADMIN real, cambia
+solo iat/exp al pasado y verifica la firma RS256 con la pública de la demo. La privada
+no se exporta a Postman. También prepara un envío auxiliar CANCELADO; por eso la
+demo necesita reset después de las pruebas. Cada rechazo va seguido de lecturas de
+comprobación del envío e historial pertinentes. El reset invalida ambos entornos privados.

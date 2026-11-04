@@ -163,7 +163,7 @@ La versión sprint03-1.0.0 conserva el Config Server inmutable de Sprint02 y pub
 las cinco aplicaciones modificadas. Se comprobaron nueve contenedores saludables,
 cuatro registros, caída sin mutación, recuperación y persistencia.
 
-Las pruebas Postman finales acreditan 35 pedidos y 61 aserciones; las respuestas 201
+Las pruebas Postman finales acreditan 65 pedidos y 117 aserciones; las respuestas 201
 conservan Location pública. La evidencia, diagnóstico dev/prod y aislamiento de las
 bases se describen en [Aceptacion_final.md](Aceptacion_final.md).
 

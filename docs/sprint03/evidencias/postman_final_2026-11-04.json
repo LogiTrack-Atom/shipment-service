@@ -3,8 +3,8 @@
   "resultados": [
     {
       "coleccion": "LogiTrack Sprint03 — Seguridad y negocio",
-      "pedidos": 18,
-      "aserciones": 31,
+      "pedidos": 48,
+      "aserciones": 87,
       "fallos": 0,
       "aprobado": true,
       "ejecuciones": [
@@ -29,44 +29,164 @@
           "http": 200
         },
         {
+          "nombre": "Guardar beforeOther envío",
+          "http": 200
+        },
+        {
+          "nombre": "Guardar beforeOther historial",
+          "http": 200
+        },
+        {
+          "nombre": "Guardar beforeUnassignable envío",
+          "http": 200
+        },
+        {
+          "nombre": "Guardar beforeUnassignable historial",
+          "http": 200
+        },
+        {
           "nombre": "Anónimo sin acceso",
           "http": 401
+        },
+        {
+          "nombre": "Anónimo sin acceso / verificar envío",
+          "http": 200
+        },
+        {
+          "nombre": "Anónimo sin acceso / verificar historial",
+          "http": 200
         },
         {
           "nombre": "CLIENTE no asigna repartidor",
           "http": 403
         },
         {
+          "nombre": "CLIENTE no asigna repartidor / verificar envío",
+          "http": 200
+        },
+        {
+          "nombre": "CLIENTE no asigna repartidor / verificar historial",
+          "http": 200
+        },
+        {
           "nombre": "CLIENTE no lee envío ajeno",
           "http": 403
+        },
+        {
+          "nombre": "CLIENTE no lee envío ajeno / verificar envío",
+          "http": 200
+        },
+        {
+          "nombre": "CLIENTE no lee envío ajeno / verificar historial",
+          "http": 200
         },
         {
           "nombre": "CLIENTE no administra Courier",
           "http": 403
         },
         {
+          "nombre": "CLIENTE no administra Courier / verificar envío",
+          "http": 200
+        },
+        {
+          "nombre": "CLIENTE no administra Courier / verificar historial",
+          "http": 200
+        },
+        {
           "nombre": "CLIENTE sin diagnóstico",
           "http": 403
+        },
+        {
+          "nombre": "CLIENTE sin diagnóstico / verificar envío",
+          "http": 200
+        },
+        {
+          "nombre": "CLIENTE sin diagnóstico / verificar historial",
+          "http": 200
         },
         {
           "nombre": "REPARTIDOR sin diagnóstico",
           "http": 403
         },
         {
+          "nombre": "REPARTIDOR sin diagnóstico / verificar envío",
+          "http": 200
+        },
+        {
+          "nombre": "REPARTIDOR sin diagnóstico / verificar historial",
+          "http": 200
+        },
+        {
           "nombre": "Repartidor inexistente",
           "http": 404
+        },
+        {
+          "nombre": "Repartidor inexistente / verificar envío",
+          "http": 200
+        },
+        {
+          "nombre": "Repartidor inexistente / verificar historial",
+          "http": 200
         },
         {
           "nombre": "Repartidor INACTIVO",
           "http": 422
         },
         {
+          "nombre": "Repartidor INACTIVO / verificar envío",
+          "http": 200
+        },
+        {
+          "nombre": "Repartidor INACTIVO / verificar historial",
+          "http": 200
+        },
+        {
           "nombre": "Transición no permitida",
           "http": 422
         },
         {
+          "nombre": "Transición no permitida / verificar envío",
+          "http": 200
+        },
+        {
+          "nombre": "Transición no permitida / verificar historial",
+          "http": 200
+        },
+        {
           "nombre": "JWT manipulado",
           "http": 401
+        },
+        {
+          "nombre": "JWT manipulado / verificar envío",
+          "http": 200
+        },
+        {
+          "nombre": "JWT manipulado / verificar historial",
+          "http": 200
+        },
+        {
+          "nombre": "JWT vencido con firma válida",
+          "http": 401
+        },
+        {
+          "nombre": "JWT vencido con firma válida / verificar envío",
+          "http": 200
+        },
+        {
+          "nombre": "JWT vencido con firma válida / verificar historial",
+          "http": 200
+        },
+        {
+          "nombre": "Envío CANCELADO no asignable",
+          "http": 422
+        },
+        {
+          "nombre": "Envío CANCELADO no asignable / verificar envío",
+          "http": 200
+        },
+        {
+          "nombre": "Envío CANCELADO no asignable / verificar historial",
+          "http": 200
         },
         {
           "nombre": "Diagnóstico no expone Environment",
