@@ -5,6 +5,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -68,6 +69,23 @@ class Sprint03RuntimeTest(unittest.TestCase):
                 release['images'].pop('eureka-server')
             with self.assertRaises(DemoError):
                 validate_release(release)
+
+    def test_waits_for_gateway_routes_after_registry_is_available(self):
+        runtime = Sprint03Runtime(self.directory, self.release)
+        runtime.initialize()
+        attempts = []
+
+        def request(api, service, method, path, **kwargs):
+            if service == 'security':
+                return 200, {'accessToken': 'token-sintetico-sin-credenciales'}
+            if service == 'shipment':
+                attempts.append(service)
+                return (503, {}) if len(attempts) == 1 else (200, [])
+            return 200, {}
+
+        with patch('seed.Api.request', request), patch('runtime_sprint03.time.sleep'):
+            runtime.wait_for_routes()
+        self.assertEqual(attempts, ['shipment', 'shipment'])
 
 
 if __name__ == '__main__':

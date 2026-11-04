@@ -171,8 +171,31 @@ class Sprint03Runtime(Runtime):
                 healthy = {app['name'] for app in applications
                            if any(i.get('status') == 'UP' for i in app.get('instance', []))}
                 if CLIENTS <= healthy:
+                    self.wait_for_routes()
                     return
             except (OSError, ValueError, KeyError, TypeError):
                 pass
             time.sleep(2)
         raise DemoError('No aparecen los cuatro clientes saludables en Eureka dentro del tiempo previsto.')
+
+    def wait_for_routes(self) -> None:
+        """Espera propagación al Gateway; el registro no implica una caché ya actualizada."""
+        from seed import Api
+        api = Api(self)
+        deadline = time.monotonic() + 180
+        while time.monotonic() < deadline:
+            try:
+                status, login = api.request('security', 'POST', '/api/v1/auth/login',
+                                            body={'email': self.email('admin'),
+                                                  'password': self.state['credentials']['admin_password']},
+                                            expected=(200, 401, 503))
+                if status == 200:
+                    token = login['accessToken']
+                    shipment, _ = api.request('shipment', 'GET', '/api/v1/envios', token=token, expected=(200, 503))
+                    courier, _ = api.request('courier', 'GET', '/api/v1/admin/configuracion', token=token, expected=(200, 503))
+                    if shipment == courier == 200:
+                        return
+            except (DemoError, OSError, ValueError, KeyError, TypeError):
+                pass
+            time.sleep(2)
+        raise DemoError('Gateway no alcanza las tres APIs después de propagar el registro de Eureka.')
