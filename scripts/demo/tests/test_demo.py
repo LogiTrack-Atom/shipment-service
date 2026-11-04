@@ -184,6 +184,7 @@ class SeedingTest(unittest.TestCase):
             instance.compose.side_effect = None
             manage.seed(instance)
             self.assertEqual(instance.state['phase'], 'ready')
+            instance.wait_for_routes.assert_called_once()
             factory.return_value.provision.assert_not_called()
             factory.return_value.export.assert_called_once()
 

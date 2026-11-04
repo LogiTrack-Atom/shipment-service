@@ -117,6 +117,9 @@ class Runtime:
         """Resuelve una API del stack histórico administrado."""
         return f'http://127.0.0.1:{self.state["ports"][service]}'
 
+    def wait_for_routes(self) -> None:
+        """La demo histórica usa puertos directos, sin propagación en Gateway."""
+
     def new_state(self) -> dict:
         """Genera una identidad y credenciales exclusivas para un entorno nuevo."""
         return {'format': 1, 'demo_id': uuid.uuid4().hex, 'directory': str(self.directory),
