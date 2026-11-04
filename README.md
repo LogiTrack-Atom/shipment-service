@@ -16,11 +16,16 @@ incluyen `repartidorId`, también cuando es `null`. No se enriquecen respuestas 
 llamadas remotas: consulta por UUID, tracking, listado e historial funcionan sin courier.
 Los endpoints `/api/v1/repartidores` se trasladaron a courier, puerto 8081.
 
-La integración REST (#24) comprueba disponibilidad al asignar y al entrar en EN_RUTA.
+La integración inicial (#24) comprueba disponibilidad al asignar y al entrar en EN_RUTA.
 Solo consulta `GET /api/v1/repartidores/{id}/disponibilidad`, con timeouts configurables
 (2 s de conexión y 3 s de lectura) y sin seguir redirecciones. No reserva repartidores,
 no escribe en courier ni aprueba operaciones ante fallas. La disponibilidad puede cambiar
 después de la consulta: se vuelve a comprobar al iniciar ruta.
+
+Sprint03 migra ese transporte a OpenFeign (#41), conservando la frontera CourierClient.
+La disponibilidad se resuelve por el nombre `courier-service` mediante LoadBalancer;
+la URL administrativa de courier permanece para verificar asociaciones de identidad.
+La preparación y las dependencias de descubrimiento figuran en [Feign.md](docs/sprint03/Feign.md).
 
 **Autorización (#25):** todas las operaciones de negocio requieren una única cabecera
 `Authorization: Bearer ...`, firma RS256 local, emisor, audiencia, UUID, roles y tiempos
@@ -50,7 +55,7 @@ Conocer el tracking o enviar UUID ajenos por cuerpo/query no concede acceso.
 
 Las asignaciones, cancelaciones y cambios de estado bloquean la fila del envío
 hasta confirmar o revertir la transacción. Esto impide que una escritura concurrente
-sobrescriba estado/asignación mientras se comprueba disponibilidad por REST; el límite
+sobrescriba estado/asignación mientras se comprueba disponibilidad por HTTP; el límite
 de espera remoto sigue siendo finito. No se realiza una transacción distribuida.
 
 Ante rechazo no cambian asignación, estado, auditoría ni historial. Solo se aceptan los
@@ -103,6 +108,8 @@ activa. El perfil predeterminado es `dev`. `dev` y `prod` requieren Config Serve
 Config Server entrega puerto, datasource/JPA, JSON, JWT, URLs/timeouts, logging y salud.
 La configuración local de arranque conserva nombre, selección de perfil, import, label y
 límites de espera de Config Client (2 s / 3 s).
+También fija las políticas de Feign: configuración tipada prioritaria y reintentos
+de LoadBalancer deshabilitados.
 
 | Variable | Uso |
 | --- | --- |
@@ -112,7 +119,7 @@ límites de espera de Config Client (2 s / 3 s).
 | `SHIPMENT_SERVER_PORT` | Sobrescribe el puerto remoto 8080 mediante placeholder |
 | `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` | Credenciales del usuario exclusivo de shipment; sin defaults de secretos |
 | `JWT_PUBLIC_KEY_LOCATION` | Archivo público externo; la clave privada permanece en security |
-| `COURIER_SERVICE_URL`, `SECURITY_SERVICE_URL` | Orígenes de proveedores; DNS de servicios en Docker |
+| `COURIER_SERVICE_URL`, `SECURITY_SERVICE_URL` | Orígenes de verificaciones administrativas de identidad; DNS en Docker |
 | `SECURITY_CONNECT_TIMEOUT`, `SECURITY_READ_TIMEOUT` | Sobrescriben 2 s / 3 s administrativos dentro de los límites tipados |
 
 `logitrack.config.marker` se enlaza a un bean y se registra al arrancar, sin publicar
@@ -204,7 +211,7 @@ python3 -m unittest discover -s scripts/migracion/tests -p 'test_*.py' -v
 ```
 
 Las IT usan MySQL real aislada y JWT RS256 firmados con claves efímeras. Las regresiones
-de dominio usan un doble del puerto `CourierClient`; `CourierRestIT` usa HTTP real contra
+de dominio usan un doble del puerto `CourierClient`; `CourierFeignIT` usa HTTP real contra
 un proveedor controlado. `ShipmentIdentityIT` verifica por HTTP las asociaciones y los
 rechazos de proveedores. `ShipmentSecurityIT` no reemplaza filtros, decoder ni pertenencia.
 No se sustituyen repositorios, transacciones ni MySQL. Comprueban las 16 transiciones, precisión,
@@ -230,7 +237,7 @@ La colección comprueba el rechazo sin token, inexistente e inactivo, las consul
 la auditoría sin cambios ante rechazo, la reactivación y la entrega con tres eventos.
 Crea un cliente, un envío y un repartidor; no elimina datos. La colección Sprint01
 se conserva como antecedente y requiere su versión del código. Los fallos de red,
-protocolo, contrato, JWT y rollback se reproducen además en `CourierRestIT` mediante
+protocolo, contrato, JWT y rollback se reproducen además en `CourierFeignIT` mediante
 servidor HTTP controlado, validador JWT y MySQL reales, sin mocks de shipment.
 
 ## Plan y antecedentes

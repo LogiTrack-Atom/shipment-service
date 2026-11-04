@@ -102,6 +102,9 @@ El informe sanitizado se guarda en target/sprint02-baseline.json y en el log del
 La preparación y el restablecimiento aislado de datos se describen en [Demo.md](Demo.md).
 La topología candidata de nueve contenedores y su validación de modelo se describen
 en [Compose.md](Compose.md).
+La migración del transporte de disponibilidad y su aceptación pendiente con Eureka
+se describen en [Feign.md](Feign.md).
+La clasificación de fallas y la aceptación de recuperación se detallan en [Resiliencia.md](Resiliencia.md).
 
 Los acuerdos técnicos figuran en [Contratos_tecnicos.md](Contratos_tecnicos.md).
 Los criterios de cada issue son verificables y forman parte de su cierre. El ensayo
