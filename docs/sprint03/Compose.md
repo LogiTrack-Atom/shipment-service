@@ -1,9 +1,10 @@
-# Preparación del Compose integrado de Sprint03
+# Compose integrado de Sprint03
 
 Issue [#44](https://github.com/LogiTrack-Atom/shipment-service/issues/44).
-La topología está preparada para seis aplicaciones y tres MySQL. El modelo se valida
-sin iniciar contenedores. Su integración y cierre requieren completar las implementaciones,
-publicar las imágenes y comprobar el arranque real con Eureka y Gateway.
+La topología integra seis aplicaciones y tres MySQL. Se verificaron salud, cuatro
+registros Eureka, negocio por Gateway, disponibilidad Feign, recuperación y persistencia.
+Las seis imágenes están publicadas y fijadas por digest en el manifiesto de entrega.
+La [aceptación final](Aceptacion_final.md) detalla las versiones, resultados y límites.
 
 ## Archivos y componentes
 
@@ -154,18 +155,17 @@ No se incluye borrado automático ni se aplican migraciones a bases del equipo. 
 de datos de #43 usa por ahora la infraestructura histórica fija; su conexión con esta
 topología y el entorno final de Postman se completa tras la integración.
 
-## Cierre de #44
+## Resultado de integración
 
-Completar eureka-server#1, configserver-ms#13, courier-service#17, shipment-service#40,
-api-gateway#2 y shipment-service#41/#42. Construir/publicar las imágenes modificadas,
-registrar sus versiones/digests y la revisión de configuración. Entonces comprobar:
+Eureka, configuración, los clientes y las rutas están integrados en develop. Feign y
+resiliencia se integraron mediante PR #54/#55; Compose y demo mediante PR #56.
+La versión sprint03-1.0.0 conserva el Config Server inmutable de Sprint02 y publica
+las cinco aplicaciones modificadas. Se comprobaron nueve contenedores saludables,
+cuatro registros, caída sin mutación, recuperación y persistencia.
 
-1. Nueve contenedores saludables y cuatro clientes registrados con destinos alcanzables.
-2. Login, roles y flujo de negocio por Gateway con disponibilidad Feign real.
-3. Recreación con persistencia de las tres bases y aislamiento de usuarios/volúmenes.
-4. Datos reproducibles y rutas finales de Postman con las issues #43/#45/#46.
-
-La aceptación integral se registra en #47. Esta preparación no cierra #44.
+Las pruebas Postman finales acreditan 35 pedidos y 61 aserciones; las respuestas 201
+conservan Location pública. La evidencia, diagnóstico dev/prod y aislamiento de las
+bases se describen en [Aceptacion_final.md](Aceptacion_final.md).
 
 Referencias: [orden de arranque de Docker Compose](https://docs.docker.com/compose/how-tos/startup-order/)
 y [healthcheck de servicios](https://docs.docker.com/reference/compose-file/services/#healthcheck).

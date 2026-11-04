@@ -259,3 +259,13 @@ compara la auditoría de escrituras con sus lecturas posteriores.
 ## Entrega Sprint02
 
 La [guía de entrega](docs/sprint02/Entrega.md) identifica imágenes públicas, configuración fija, resultado integrado y procedimiento de arranque. El Compose base descarga `maxdz10/*:sprint02-1.0.0`; las claves y credenciales se proporcionan externamente.
+
+## Entrega Sprint03
+
+- [Arquitectura y operación](docs/sprint03/Arquitectura_y_operacion.md).
+- [Demo reproducible por Gateway](docs/sprint03/Demo_Sprint03.md).
+- [Aceptación y evidencia](docs/sprint03/Aceptacion_final.md).
+- [Versiones e imágenes por digest](docs/sprint03/entrega/versiones.json).
+- [Guion de exposición](docs/sprint03/Guion_exposicion.md).
+
+La entrega técnica y la grabación académica tienen estados separados.

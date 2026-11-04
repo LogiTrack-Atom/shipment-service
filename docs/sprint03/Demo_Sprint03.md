@@ -9,9 +9,9 @@ Requiere Docker Engine/Compose, Python 3 y OpenSSL. Las seis imágenes deben est
 disponibles con las referencias del manifiesto. Desde shipment-service:
 
 ```bash
-python3 scripts/demo/manage_sprint03.py prepare \
+python3 scripts/demo/manage_sprint03.py --state-dir .logitrack-demo/sprint03-final prepare \
   --release-manifest docs/sprint03/entrega/versiones.json
-python3 scripts/demo/manage_sprint03.py verify
+python3 scripts/demo/manage_sprint03.py --state-dir .logitrack-demo/sprint03-final verify
 ```
 
 El administrador crea un proyecto `lt-demo-s03-<identidad>` con nueve contenedores,
@@ -24,7 +24,7 @@ La configuración se fija por SHA. El manifiesto también fija el commit de Comp
 los esquemas. Se comprueba el contenido del snapshot antes de operar; un cambio en
 los archivos o recursos ajenos bajo los nombres esperados impide continuar.
 
-El estado se guarda en `.logitrack-demo/sprint03`, excluido de Git. `runtime.json`,
+El estado se guarda en `.logitrack-demo/sprint03-final`, excluido de Git. `runtime.json`,
 `runtime.env`, claves y `postman_environment.json` son privados. No publicarlos, subirlos
 a issues ni mostrarlos completos durante la grabación. `manifest.json` contiene los
 UUID y nombres sintéticos necesarios para identificar los recursos preparados.
@@ -43,16 +43,16 @@ negocio y el aprovisionamiento usan exclusivamente Gateway. MySQL no publica pue
 ## Postman
 
 Importar las colecciones de Sprint03 y la copia privada de
-`.logitrack-demo/sprint03/postman_environment.json`. Ejecutar primero los rechazos,
+`.logitrack-demo/sprint03-final/postman_environment.json`. Ejecutar primero los rechazos,
 que conservan el catálogo, y después el flujo, que crea recursos nuevos:
 
 ```bash
 npx --yes --package=newman@6.2.3 newman run \
   postman/LogiTrack-Sprint03-Rechazos.postman_collection.json \
-  -e .logitrack-demo/sprint03/postman_environment.json --bail
+  -e .logitrack-demo/sprint03-final/postman_environment.json --bail
 npx --yes --package=newman@6.2.3 newman run \
   postman/LogiTrack-Sprint03-Flujo.postman_collection.json \
-  -e .logitrack-demo/sprint03/postman_environment.json --bail
+  -e .logitrack-demo/sprint03-final/postman_environment.json --bail
 ```
 
 El flujo realiza login, altas, asociación de identidades, creación de envío, asignación,
@@ -63,9 +63,9 @@ guardarlos exclusivamente en un directorio privado o ignorado, nunca en el repos
 ## Persistencia y restablecimiento
 
 ```bash
-python3 scripts/demo/manage_sprint03.py down
-python3 scripts/demo/manage_sprint03.py prepare
-python3 scripts/demo/manage_sprint03.py prepare --profile prod
+python3 scripts/demo/manage_sprint03.py --state-dir .logitrack-demo/sprint03-final down
+python3 scripts/demo/manage_sprint03.py --state-dir .logitrack-demo/sprint03-final prepare
+python3 scripts/demo/manage_sprint03.py --state-dir .logitrack-demo/sprint03-final prepare --profile prod
 ```
 
 Down conserva las tres bases. Cambiar el perfil conserva identidad, credenciales y datos.
@@ -75,7 +75,7 @@ no intenta revertir estados ni reparar asignaciones silenciosamente.
 Para volver al inicio después de una demostración:
 
 ```bash
-python3 scripts/demo/manage_sprint03.py reset
+python3 scripts/demo/manage_sprint03.py --state-dir .logitrack-demo/sprint03-final reset
 ```
 
 Reset verifica la propiedad del proyecto y sus volúmenes, retira únicamente esa demo,
@@ -90,7 +90,7 @@ El administrador de Sprint03 rechaza el estado de una demo histórica de Sprint0
 Sobre una demo inicial sin modificaciones:
 
 ```bash
-python3 scripts/verificacion/sprint03_acceptance.py --reset-after
+python3 scripts/verificacion/sprint03_acceptance.py --state-dir .logitrack-demo/sprint03-final --reset-after
 ```
 
 La prueba cambia dev/prod, verifica diagnóstico y persistencia, detiene Courier y
@@ -98,3 +98,7 @@ comprueba 503 sin mutación. Anuncia otra instancia Courier con DNS y puerto dis
 prueba recuperación por Feign sin reiniciar Shipment y retira el proveedor temporal.
 También ejecuta entrega, recreación del conjunto y restablecimiento explícito de la demo.
 La opción `--reset-after` solicita deliberadamente el reset de sus recursos propios.
+
+No ejecutar Postman simultáneamente con la aceptación automatizada: ambos modifican
+el catálogo de la misma demo. La ruta explícita permite identificar la demo final de
+esta máquina; en un entorno nuevo puede usarse el directorio predeterminado del CLI.
