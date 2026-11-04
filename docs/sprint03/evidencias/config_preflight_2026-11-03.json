@@ -1,0 +1,143 @@
+{
+  "fecha_utc": "2026-11-04T02:40:32.645159+00:00",
+  "config_label": "d32e67296efe2f8ad7d4f82ea08bab3f8e3de58e",
+  "alcance": "respuestas reales de Config Server; no acredita consumo de los clientes",
+  "combinaciones": 15,
+  "aprobadas": 12,
+  "resultados": [
+    {
+      "aplicacion": "eureka-server",
+      "perfil": "default",
+      "aprobado": true,
+      "criterios_pendientes": []
+    },
+    {
+      "aplicacion": "eureka-server",
+      "perfil": "dev",
+      "aprobado": true,
+      "criterios_pendientes": []
+    },
+    {
+      "aplicacion": "eureka-server",
+      "perfil": "prod",
+      "aprobado": true,
+      "criterios_pendientes": []
+    },
+    {
+      "aplicacion": "api-gateway",
+      "perfil": "default",
+      "aprobado": false,
+      "criterios_pendientes": [
+        "puerto interno acordado",
+        "duración JWT acordada",
+        "tres rutas explícitas Gateway 5",
+        "sin rutas bajo la clave anterior",
+        "ruta pública de security-service",
+        "ruta pública de courier-service",
+        "ruta pública de shipment-service"
+      ]
+    },
+    {
+      "aplicacion": "api-gateway",
+      "perfil": "dev",
+      "aprobado": false,
+      "criterios_pendientes": [
+        "puerto interno acordado",
+        "duración JWT acordada",
+        "tres rutas explícitas Gateway 5",
+        "sin rutas bajo la clave anterior",
+        "ruta pública de security-service",
+        "ruta pública de courier-service",
+        "ruta pública de shipment-service"
+      ]
+    },
+    {
+      "aplicacion": "api-gateway",
+      "perfil": "prod",
+      "aprobado": false,
+      "criterios_pendientes": [
+        "puerto interno acordado",
+        "duración JWT acordada",
+        "tres rutas explícitas Gateway 5",
+        "sin rutas bajo la clave anterior",
+        "ruta pública de security-service",
+        "ruta pública de courier-service",
+        "ruta pública de shipment-service"
+      ]
+    },
+    {
+      "aplicacion": "shipment-service",
+      "perfil": "default",
+      "aprobado": true,
+      "criterios_pendientes": []
+    },
+    {
+      "aplicacion": "shipment-service",
+      "perfil": "dev",
+      "aprobado": true,
+      "criterios_pendientes": []
+    },
+    {
+      "aplicacion": "shipment-service",
+      "perfil": "prod",
+      "aprobado": true,
+      "criterios_pendientes": []
+    },
+    {
+      "aplicacion": "courier-service",
+      "perfil": "default",
+      "aprobado": true,
+      "criterios_pendientes": []
+    },
+    {
+      "aplicacion": "courier-service",
+      "perfil": "dev",
+      "aprobado": true,
+      "criterios_pendientes": []
+    },
+    {
+      "aplicacion": "courier-service",
+      "perfil": "prod",
+      "aprobado": true,
+      "criterios_pendientes": []
+    },
+    {
+      "aplicacion": "security-service",
+      "perfil": "default",
+      "aprobado": true,
+      "criterios_pendientes": []
+    },
+    {
+      "aplicacion": "security-service",
+      "perfil": "dev",
+      "aprobado": true,
+      "criterios_pendientes": []
+    },
+    {
+      "aplicacion": "security-service",
+      "perfil": "prod",
+      "aprobado": true,
+      "criterios_pendientes": []
+    }
+  ],
+  "infraestructura": {
+    "config_label": "d32e67296efe2f8ad7d4f82ea08bab3f8e3de58e",
+    "configserver_health": "UP",
+    "eureka_health": "UP",
+    "eureka_application_count": 0,
+    "alcance": "Config Server y Eureka reales; sin clientes de dominio ni Gateway operativo"
+  },
+  "gateway_arranque": {
+    "gateway_commit": "939bf4b196abde1ae54b39a6e65e1cccf3e7ac3b",
+    "estado": "exited",
+    "salida": 1,
+    "rechazo_ttl": true
+  },
+  "gateway_con_ttl_temporal": {
+    "override_temporal": "LOGITRACK_SECURITY_ACCESS_TOKEN_TTL=15m",
+    "gateway_health": "UP",
+    "login_por_prefijo_acordado_http": 404,
+    "esperado_con_ruta_sin_proveedor": 503,
+    "alcance": "solo diagnóstico temporal; no modifica configuración Git ni valida login de negocio"
+  }
+}

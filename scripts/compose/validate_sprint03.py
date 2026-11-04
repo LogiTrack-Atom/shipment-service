@@ -127,7 +127,7 @@ def validate(model: dict, *, build=False, diagnostics=False) -> dict:
         require(env['SERVER_PORT'] == str(APPLICATIONS[name]), 'Los puertos anunciados deben coincidir con los internos.')
     for name in CLIENTS:
         env = services[name]['environment']
-        require(env.get('EUREKA_DEFAULT_ZONE') == 'http://eureka-server:8065/eureka/'
+        require(env.get('EUREKA_URL') == 'http://eureka-server:8065/eureka/'
                 and env.get('EUREKA_CLIENT_ENABLED') == 'true' and env.get('EUREKA_INSTANCE_HOSTNAME') == name
                 and env.get('EUREKA_INSTANCE_PREFER_IP_ADDRESS') == 'false',
                 'Los cuatro clientes deben resolver Eureka y anunciar su DNS de Docker.')

@@ -43,14 +43,14 @@ que incluya las configuraciones de Sprint03. Los cinco Config Client y el backen
 de Config Server usan esa misma revisión. No se admite la rama develop ni la revisión
 histórica de Sprint02 para esta entrega.
 
-La implementación de configserver-ms#13 debe consumir `EUREKA_DEFAULT_ZONE` bajo la clave
+La configuración integrada en configserver-ms#13 consume `EUREKA_URL` bajo la clave
 `eureka.client.service-url.defaultZone`, conservando camelCase en el nombre del mapa:
 
 ```yaml
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_DEFAULT_ZONE:http://localhost:8065/eureka/}
+      defaultZone: ${EUREKA_URL:http://localhost:8065/eureka/}
 ```
 
 Compose suministra EUREKA_INSTANCE_HOSTNAME y SERVER_PORT para anunciar destinos internos,
@@ -97,6 +97,32 @@ sin construir imágenes ni verificar la existencia de los Dockerfiles de otros c
 El workflow **Validación del modelo Compose Sprint03** usa referencias sintéticas
 example.invalid únicamente para comprobar sintaxis y contratos: no descarga imágenes,
 no inicia contenedores ni acredita nueve componentes saludables o cuatro registros reales.
+
+## Comprobación previa de configuración remota
+
+Con Config Server saludable y su diagnóstico publicado en loopback, comprobar las
+quince combinaciones de cinco aplicaciones y perfiles default/dev/prod:
+
+```bash
+python3 scripts/compose/verify_remote_config.py \
+  --config-url http://127.0.0.1:8085 \
+  --config-label <SHA-de-configserver-ms> \
+  --output target/sprint03-config-preflight.json
+```
+
+El comando solo hace GET, no sigue redirecciones y devuelve código 1 si encuentra
+contratos pendientes. Comprueba revisión Git, precedencia de fuentes, marcadores,
+puertos, configuración del servidor autónomo, placeholder Eureka, TTL JWT y las tres
+rutas explícitas de Gateway con sus prefijos y StripPrefix. Mantiene los valores del
+Environment en memoria; el informe solo incluye criterios y resultados.
+
+La prueba HTTP cubre respuestas reales de Config Server. No acredita binding ni consumo
+en los clientes, registro de las cuatro aplicaciones o funcionamiento de negocio.
+La suite de `scripts/compose/tests` verifica además que una fuente de mayor precedencia
+puede invalidar una ruta y que el informe no copia secretos ni nombres de fuentes.
+
+El [ensayo de infraestructura del 03/11/2026](Integracion_previa.md) documenta la revisión
+probada y los bloqueos encontrados antes de construir el conjunto completo.
 
 ## Ejecución, cuando estén listas las dependencias
 

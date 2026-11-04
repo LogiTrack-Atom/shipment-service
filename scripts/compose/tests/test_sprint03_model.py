@@ -122,6 +122,13 @@ class Sprint03ModelTest(unittest.TestCase):
         with self.assertRaises(ModelError):
             validate(model)
 
+    def test_rejects_discovery_variable_not_consumed_by_remote_config(self):
+        model = self.base()
+        env = model['services']['courier-service']['environment']
+        env['EUREKA_DEFAULT_ZONE'] = env.pop('EUREKA_URL')
+        with self.assertRaises(ModelError):
+            validate(model)
+
     def test_rejects_cross_database_configuration(self):
         model = self.base()
         model['services']['shipment-service']['environment']['DB_URL'] = model['services']['courier-service']['environment']['DB_URL']

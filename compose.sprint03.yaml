@@ -21,8 +21,8 @@ x-config-client: &config-client
 
 x-discovery-client: &discovery-client
   <<: *config-client
-  # configserver-ms#13 debe usar este placeholder bajo service-url.defaultZone.
-  EUREKA_DEFAULT_ZONE: http://eureka-server:8065/eureka/
+  # Placeholder consumido por configserver-ms bajo service-url.defaultZone.
+  EUREKA_URL: http://eureka-server:8065/eureka/
   EUREKA_CLIENT_ENABLED: "true"
   EUREKA_INSTANCE_PREFER_IP_ADDRESS: "false"
 
