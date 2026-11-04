@@ -1,0 +1,51 @@
+{
+  "aprobado": true,
+  "alcance": "tres conexiones propias y seis rechazos MySQL 1045 entre contenedores",
+  "resultados": [
+    {
+      "origen": "shipment",
+      "destino": "shipment",
+      "resultado": "esquema propio accesible"
+    },
+    {
+      "origen": "shipment",
+      "destino": "courier",
+      "resultado": "autenticación cruzada rechazada"
+    },
+    {
+      "origen": "shipment",
+      "destino": "security",
+      "resultado": "autenticación cruzada rechazada"
+    },
+    {
+      "origen": "courier",
+      "destino": "courier",
+      "resultado": "esquema propio accesible"
+    },
+    {
+      "origen": "courier",
+      "destino": "shipment",
+      "resultado": "autenticación cruzada rechazada"
+    },
+    {
+      "origen": "courier",
+      "destino": "security",
+      "resultado": "autenticación cruzada rechazada"
+    },
+    {
+      "origen": "security",
+      "destino": "security",
+      "resultado": "esquema propio accesible"
+    },
+    {
+      "origen": "security",
+      "destino": "shipment",
+      "resultado": "autenticación cruzada rechazada"
+    },
+    {
+      "origen": "security",
+      "destino": "courier",
+      "resultado": "autenticación cruzada rechazada"
+    }
+  ]
+}

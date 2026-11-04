@@ -1,0 +1,177 @@
+{
+  "alcance": "configuración anterior a corrección de Location; la ejecución final se registra por separado",
+  "resultados": [
+    {
+      "coleccion": "rechazos",
+      "requests": {
+        "total": 18,
+        "pending": 0,
+        "failed": 0
+      },
+      "assertions": {
+        "total": 31,
+        "pending": 0,
+        "failed": 0
+      },
+      "failures": 0,
+      "ejecuciones": [
+        {
+          "nombre": "Login ADMIN",
+          "http": 200
+        },
+        {
+          "nombre": "Login CLIENTE",
+          "http": 200
+        },
+        {
+          "nombre": "Login REPARTIDOR",
+          "http": 200
+        },
+        {
+          "nombre": "Guardar envío antes de rechazos",
+          "http": 200
+        },
+        {
+          "nombre": "Guardar historial antes de rechazos",
+          "http": 200
+        },
+        {
+          "nombre": "Anónimo sin acceso",
+          "http": 401
+        },
+        {
+          "nombre": "CLIENTE no asigna repartidor",
+          "http": 403
+        },
+        {
+          "nombre": "CLIENTE no lee envío ajeno",
+          "http": 403
+        },
+        {
+          "nombre": "CLIENTE no administra Courier",
+          "http": 403
+        },
+        {
+          "nombre": "CLIENTE sin diagnóstico",
+          "http": 403
+        },
+        {
+          "nombre": "REPARTIDOR sin diagnóstico",
+          "http": 403
+        },
+        {
+          "nombre": "Repartidor inexistente",
+          "http": 404
+        },
+        {
+          "nombre": "Repartidor INACTIVO",
+          "http": 422
+        },
+        {
+          "nombre": "Transición no permitida",
+          "http": 422
+        },
+        {
+          "nombre": "JWT manipulado",
+          "http": 401
+        },
+        {
+          "nombre": "Diagnóstico no expone Environment",
+          "http": 200
+        },
+        {
+          "nombre": "Envío sin mutaciones",
+          "http": 200
+        },
+        {
+          "nombre": "Historial sin mutaciones",
+          "http": 200
+        }
+      ]
+    },
+    {
+      "coleccion": "flujo_inicial",
+      "requests": {
+        "total": 17,
+        "pending": 0,
+        "failed": 0
+      },
+      "assertions": {
+        "total": 27,
+        "pending": 0,
+        "failed": 0
+      },
+      "failures": 0,
+      "ejecuciones": [
+        {
+          "nombre": "01 - Login ADMIN",
+          "http": 200
+        },
+        {
+          "nombre": "02 - Registro CLIENTE",
+          "http": 201
+        },
+        {
+          "nombre": "03 - Login CLIENTE",
+          "http": 200
+        },
+        {
+          "nombre": "04 - Alta usuario REPARTIDOR",
+          "http": 201
+        },
+        {
+          "nombre": "05 - Login REPARTIDOR",
+          "http": 200
+        },
+        {
+          "nombre": "06 - Alta repartidor",
+          "http": 201
+        },
+        {
+          "nombre": "07 - Vincular identidad en courier",
+          "http": 200
+        },
+        {
+          "nombre": "08 - Registrar asociación verificada en shipment",
+          "http": 200
+        },
+        {
+          "nombre": "09 - CLIENTE registra envío",
+          "http": 201
+        },
+        {
+          "nombre": "10 - ADMIN asigna repartidor",
+          "http": 200
+        },
+        {
+          "nombre": "10b - Confirmar asignación persistida",
+          "http": 200
+        },
+        {
+          "nombre": "11 - REPARTIDOR actualiza a EN_RUTA",
+          "http": 200
+        },
+        {
+          "nombre": "12 - REPARTIDOR actualiza a ENTREGADO",
+          "http": 200
+        },
+        {
+          "nombre": "13 - CLIENTE consulta historial",
+          "http": 200
+        },
+        {
+          "nombre": "14 - Acceso anónimo rechazado",
+          "http": 401
+        },
+        {
+          "nombre": "15 - CLIENTE no administra asignaciones",
+          "http": 403
+        },
+        {
+          "nombre": "16 - Configuración consumida ADMIN",
+          "http": 200
+        }
+      ]
+    }
+  ]
+}
