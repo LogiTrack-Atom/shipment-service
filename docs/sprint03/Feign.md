@@ -39,6 +39,7 @@ Se preserva la matriz de Sprint02: 404 inexistente, 503 conexión/timeout/ausenc
 instancia/429/5xx y 502 para contrato o HTTP inesperado. La lectura lenta del cuerpo
 también se trata como transporte, aunque ya se hayan recibido cabeceras 200.
 La issue #42 completa la aceptación específica de resiliencia sobre la integración final.
+Su preparación y los escenarios de caída/recuperación se describen en [Resiliencia.md](Resiliencia.md).
 
 `clients.courier.base-url` y COURIER_SERVICE_URL continúan disponibles exclusivamente
 para `IdentidadClient`, que verifica asociaciones administrativas mediante REST.

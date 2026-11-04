@@ -1,11 +1,10 @@
 package com.logitrack_atom.courier_feign;
 
 import com.logitrack_atom.shipment_service.client.CourierAvailabilityDecoder;
+import com.logitrack_atom.shipment_service.client.CourierHttpErrorDecoder;
 import com.logitrack_atom.shipment_service.config.CourierClientProperties;
 import feign.Logger;
-import feign.FeignException;
 import feign.Request;
-import feign.Response;
 import feign.Retryer;
 import feign.codec.Decoder;
 import feign.codec.ErrorDecoder;
@@ -65,7 +64,6 @@ public class CourierFeignConfiguration {
      */
     @Bean
     public ErrorDecoder courierErrorDecoder() {
-        return (methodKey, response) -> FeignException.errorStatus(methodKey,
-                response.toBuilder().body((Response.Body) null).build());
+        return new CourierHttpErrorDecoder();
     }
 }
