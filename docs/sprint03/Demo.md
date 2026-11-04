@@ -1,5 +1,8 @@
 # Datos reproducibles para la demostración
 
+Modalidad histórica de regresión Sprint02. Para la entrega actual usar
+[Demo_Sprint03.md](Demo_Sprint03.md), con Gateway, Eureka y Feign.
+
 La issue [#43](https://github.com/LogiTrack-Atom/shipment-service/issues/43) prepara un
 entorno descartable propio mediante las APIs de los servicios. No inserta SQL en
 bases ajenas ni incorpora borrado automático en los perfiles de las aplicaciones.

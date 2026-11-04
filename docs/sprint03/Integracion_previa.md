@@ -1,5 +1,8 @@
 # Integración previa de infraestructura — 03/11/2026
 
+Antecedente fechado: sus bloqueos se corrigieron el 04/11/2026. Consultar
+[Aceptacion_final.md](Aceptacion_final.md) para el estado de entrega.
+
 Seguimiento de [#44](https://github.com/LogiTrack-Atom/shipment-service/issues/44)
 y [PR #56](https://github.com/LogiTrack-Atom/shipment-service/pull/56).
 

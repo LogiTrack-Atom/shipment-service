@@ -109,3 +109,15 @@ La clasificación de fallas y la aceptación de recuperación se detallan en [Re
 Los acuerdos técnicos figuran en [Contratos_tecnicos.md](Contratos_tecnicos.md).
 Los criterios de cada issue son verificables y forman parte de su cierre. El ensayo
 y la constancia de entrega académica se registran separados del cierre técnico.
+
+## Cierre técnico
+
+La arquitectura integrada y el recorrido crítico se describen en
+[Arquitectura_y_operacion.md](Arquitectura_y_operacion.md). La demo final usa
+[Demo_Sprint03.md](Demo_Sprint03.md); las instrucciones históricas de Demo.md
+conservan el snapshot Sprint02.
+
+La [aceptación final](Aceptacion_final.md) y el [manifiesto de entrega](entrega/versiones.json)
+registran referencias y límites verificables. El [guion de exposición](Guion_exposicion.md)
+es preparación; el ensayo, la participación de los tres, el video y su entrega requieren
+evidencia académica propia.

@@ -4,9 +4,9 @@ Servicio de envíos, clientes, direcciones e historial. La administración de re
 pertenece a [courier-service](https://github.com/LogiTrack-Atom/courier-service).
 Java 25, Spring Boot 4.1.1, MySQL 8.4 y Maven Wrapper.
 
-La preparación de la topología de seis aplicaciones y tres MySQL de Sprint03 está en
-[docs/sprint03/Compose.md](docs/sprint03/Compose.md). Su validación de modelo no acredita
-el arranque integrado; las dependencias y pruebas pendientes figuran en esa guía.
+La topología integrada de seis aplicaciones y tres MySQL de Sprint03 está en
+[docs/sprint03/Compose.md](docs/sprint03/Compose.md). La aceptación real, imágenes
+públicas y guías de demostración están enlazadas al final de este documento.
 
 ## Estado de la extracción del Sprint02
 
@@ -25,7 +25,7 @@ después de la consulta: se vuelve a comprobar al iniciar ruta.
 Sprint03 migra ese transporte a OpenFeign (#41), conservando la frontera CourierClient.
 La disponibilidad se resuelve por el nombre `courier-service` mediante LoadBalancer;
 la URL administrativa de courier permanece para verificar asociaciones de identidad.
-La preparación y las dependencias de descubrimiento figuran en [Feign.md](docs/sprint03/Feign.md).
+La implementación y verificación de descubrimiento figuran en [Feign.md](docs/sprint03/Feign.md).
 
 **Autorización (#25):** todas las operaciones de negocio requieren una única cabecera
 `Authorization: Bearer ...`, firma RS256 local, emisor, audiencia, UUID, roles y tiempos
@@ -185,7 +185,7 @@ Consultar [la decisión arquitectónica](docs/sprint02/ADR-001-identidad-local.m
 | GET | `/api/v1/envios/{id}` | DTO con `repartidorId` nullable |
 | GET | `/api/v1/envios/seguimiento/{codigoSeguimiento}` | Consulta por tracking |
 | GET | `/api/v1/envios/{id}/historial` | Eventos por fecha ascendente |
-| PUT | `/api/v1/envios/{id}/repartidor` | Solo PENDIENTE, ADMIN y disponibilidad REST comprobada |
+| PUT | `/api/v1/envios/{id}/repartidor` | Solo PENDIENTE, ADMIN y disponibilidad Feign comprobada |
 | PATCH | `/api/v1/envios/{id}/estado` | Máquina de estados; EN_RUTA exige disponibilidad |
 | PATCH | `/api/v1/envios/{id}/cancelacion` | ADMIN, solo PENDIENTE → CANCELADO |
 | PUT | `/api/v1/clientes/{id}/usuario` | Asociación administrativa CLIENTE |
@@ -259,3 +259,13 @@ compara la auditoría de escrituras con sus lecturas posteriores.
 ## Entrega Sprint02
 
 La [guía de entrega](docs/sprint02/Entrega.md) identifica imágenes públicas, configuración fija, resultado integrado y procedimiento de arranque. El Compose base descarga `maxdz10/*:sprint02-1.0.0`; las claves y credenciales se proporcionan externamente.
+
+## Entrega Sprint03
+
+- [Arquitectura y operación](docs/sprint03/Arquitectura_y_operacion.md).
+- [Demo reproducible por Gateway](docs/sprint03/Demo_Sprint03.md).
+- [Aceptación y evidencia](docs/sprint03/Aceptacion_final.md).
+- [Versiones e imágenes por digest](docs/sprint03/entrega/versiones.json).
+- [Guion de exposición](docs/sprint03/Guion_exposicion.md).
+
+La entrega técnica y la grabación académica tienen estados separados.
