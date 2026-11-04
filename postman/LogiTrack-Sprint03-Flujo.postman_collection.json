@@ -21,6 +21,16 @@
           "if (new Set(bases.map(v => v.split(\"/applications/\")[0])).size !== 1) { throw new Error(\"Las tres APIs deben usar el mismo Gateway.\"); }"
         ]
       }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const location=pm.response.headers.get(\"Location\");",
+          "if (location) { pm.test(\"Location usa el prefijo público\", () => { const url=pm.variables.replaceIn(pm.request.url.toString()); const prefix=url.match(/\\/applications\\/[^/]+/)[0]; pm.expect(location.replace(/^https?:\\/\\/[^/]+/, \"\")).to.match(new RegExp(\"^\"+prefix+\"/api/v1/\")); }); }"
+        ]
+      }
     }
   ],
   "item": [
