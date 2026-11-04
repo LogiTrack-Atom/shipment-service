@@ -4,6 +4,8 @@ import com.logitrack_atom.shipment_service.config.ConfigMarkerProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.openfeign.EnableFeignClients;
+import com.logitrack_atom.shipment_service.client.CourierAvailabilityApi;
 
 /**
  * Inicia el servicio de envíos con el marcador de configuración enlazado y validado.
@@ -13,6 +15,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
  * @see ConfigMarkerProperties
  */
 @EnableConfigurationProperties(ConfigMarkerProperties.class)
+@EnableFeignClients(clients = CourierAvailabilityApi.class)
 @SpringBootApplication
 public class ShipmentServiceApplication {
     /** Crea la configuración principal del servicio. */

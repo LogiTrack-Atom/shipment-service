@@ -30,18 +30,18 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * Ejecuta controlador, validación JWT, RestClient y transacciones MySQL reales.
+ * Ejecuta controlador, validación JWT, Feign/LoadBalancer y transacciones MySQL reales.
  *
  * <p>Solo el proveedor remoto es un servidor HTTP controlado; ningún bean de
  * shipment ni repositorio se sustituye por mocks.</p>
  *
  * @author MaxDz
- * @version 0.2.0
+ * @version 0.3.0
  */
 @org.springframework.test.context.ActiveProfiles("test")
 @SpringBootTest
 @AutoConfigureMockMvc
-class CourierRestIT {
+class CourierFeignIT {
     private static final UUID ADMIN = UUID.randomUUID();
     private static final MySQLContainer MYSQL = new MySQLContainer("mysql:8.4")
             .withDatabaseName("shipment_courier_test").withUsername("shipment_app")
@@ -57,6 +57,9 @@ class CourierRestIT {
         registry.add("spring.datasource.password",MYSQL::getPassword);
         registry.add("clients.courier.base-url",CourierStub::baseUrl);
         registry.add("clients.courier.read-timeout",()->"500ms");
+        registry.add("spring.cloud.discovery.client.simple.instances.courier-service[0].uri",CourierStub::baseUrl);
+        registry.add("spring.cloud.loadbalancer.cache.enabled",()->"false");
+        registry.add("eureka.client.enabled",()->"false");
     }
     @Autowired private MockMvc mvc;
     @Autowired private ShipmentService shipmentService;
