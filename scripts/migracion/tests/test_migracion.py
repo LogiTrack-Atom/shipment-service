@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 import time
 import unittest
+from unittest.mock import patch
 import uuid
 
 SCRIPT = Path(__file__).resolve().parents[1] / 'repartidores.py'
@@ -211,12 +212,68 @@ class MigrationMySqlTest(unittest.TestCase):
         self.assertEqual(before, migration.read_tables(self.target, {'repartidores': migration.TARGET_COLUMNS}))
 
     def test_error_a_mitad_del_lote_revierte_filas_y_registro(self):
-        """Una falla real del segundo INSERT no deja filas ni registro de migración parcial."""
+        """Alcanza el segundo INSERT y revierte filas y ledger ante un error SQL real."""
         self.cli('export')
-        self.root(self.target_name, 'USE ' + TARGET_DB + ';\nDELIMITER //\nCREATE TRIGGER fallo_ensayo BEFORE INSERT ON repartidores FOR EACH ROW BEGIN IF NEW.id=' + self.identifier(12) + " THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Fallo de ensayo'; END IF; END;//\nDELIMITER ;\n")
-        self.cli('apply', success=False)
+        # El trigger se instala solo en este contenedor propio.
+        # El mensaje esperado exige observar la primera fila y su ledger dentro
+        # de la misma transacción; un rechazo previo no satisface esta prueba.
+        marker = 'Fallo de ensayo tras primer INSERT y ledger'
+        self.root(self.target_name, 'USE ' + TARGET_DB + ';\nDELIMITER //\n'
+                  'CREATE TRIGGER fallo_ensayo BEFORE INSERT ON repartidores FOR EACH ROW BEGIN '
+                  'IF NEW.id=' + self.identifier(12) + ' THEN '
+                  'IF EXISTS(SELECT 1 FROM repartidores WHERE id=' + self.identifier(11) + ') '
+                  'AND EXISTS(SELECT 1 FROM ' + migration.LEDGER + ' WHERE repartidor_id=' + self.identifier(11) + ") THEN "
+                  "SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='" + marker + "'; "
+                  "ELSE SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='No se alcanzo el primer INSERT y ledger'; "
+                  'END IF; END IF; END;//\nDELIMITER ;\n')
+        self.addCleanup(self.root, self.target_name, 'USE ' + TARGET_DB + '; DROP TRIGGER IF EXISTS fallo_ensayo;')
+        batches = []
+        real_run = subprocess.run
+
+        def record_real_batch(command, **kwargs):
+            """Observa el proceso real, sin sustituir SQL ni publicar su salida."""
+            result = real_run(command, **kwargs)
+            if 'START TRANSACTION;' in kwargs.get('input', ''):
+                batches.append(result)
+            return result
+
+        with patch.object(migration.subprocess, 'run', side_effect=record_real_batch):
+            with self.assertRaises(migration.MigrationError):
+                # Mismo recorrido del CLI, incluidos integridad y schema_guard;
+                # el usuario limitado no ve triggers en information_schema.
+                migration.run(migration.argparse.Namespace(
+                    operation='apply', source_container=self.source_name, source_db=SOURCE_DB,
+                    source_user='migration_reader', target_container=self.target_name,
+                    target_db=TARGET_DB, target_user='migration_writer', artifacts=str(self.folder)))
+        self.assertEqual(len(batches), 1)
+        self.assertNotEqual(batches[0].returncode, 0)
+        self.assertTrue('ERROR 1644 (45000)' in batches[0].stderr and marker in batches[0].stderr,
+                        'El batch debe fallar por el trigger tras observar la primera inserción y su ledger.')
+        # Cada query abre una conexión nueva: no se observa una sesión fallida.
         self.assertEqual(migration.read_tables(self.target, {'repartidores': migration.TARGET_COLUMNS})['repartidores'], [])
         self.assertEqual(self.target.query('SELECT JSON_OBJECT(\'count\',COUNT(*)) FROM ' + migration.LEDGER)[0]['count'], 0)
+        self.assertEqual(migration.read_tables(self.source, migration.TABLES), self.before)
+
+    def test_cli_rechaza_triggers_visibles_antes_de_aplicar_el_lote(self):
+        """Distingue visibilidad por privilegios del rechazo previo a la aplicación."""
+        self.cli('export')
+        self.root(self.target_name, 'USE ' + TARGET_DB + '; CREATE TRIGGER fallo_ensayo '
+                  "BEFORE INSERT ON repartidores FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='No ejecutar';")
+        self.addCleanup(self.root, self.target_name, 'USE ' + TARGET_DB + '; DROP TRIGGER IF EXISTS fallo_ensayo;')
+        query = "SELECT JSON_OBJECT('name',TRIGGER_NAME) FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA=DATABASE()"
+        self.assertEqual(self.target.query(query), [])
+        migration.schema_guard(self.target, target=True)
+        # Solo este usuario del contenedor efímero recibe visibilidad temporal.
+        # No se amplían permisos del migrador ni de bases compartidas.
+        self.root(self.target_name, "GRANT TRIGGER ON " + TARGET_DB + ".repartidores TO 'migration_writer'@'%';")
+        self.addCleanup(self.root, self.target_name, "REVOKE TRIGGER ON " + TARGET_DB + ".repartidores FROM 'migration_writer'@'%';")
+        self.assertEqual(self.target.query(query), [{'name': 'fallo_ensayo'}])
+        result = self.cli('apply', success=False)
+        self.assertEqual(result['motivo'], 'El esquema tiene triggers; requiere revisar el procedimiento antes de migrar.')
+        self.assertFalse((self.folder / 'target-before.json').exists())
+        self.assertEqual(migration.read_tables(self.target, {'repartidores': migration.TARGET_COLUMNS})['repartidores'], [])
+        self.assertEqual(self.target.query('SELECT JSON_OBJECT(\'count\',COUNT(*)) FROM ' + migration.LEDGER)[0]['count'], 0)
+        self.assertEqual(migration.read_tables(self.source, migration.TABLES), self.before)
 
     def test_origen_modificado_impide_importacion(self):
         """No importa una instantánea obsoleta ni cambia el destino."""
