@@ -178,15 +178,29 @@ manualmente el registro para forzar la reversión.
 python3 -m unittest discover -s scripts/migracion/tests -p 'test_*.py' -v
 ```
 
-El modo SQL ejecuta 18 pruebas con dos MySQL 8.4.11 sin puertos publicados ni
+El modo SQL ejecuta 19 pruebas con dos MySQL 8.4.11 sin puertos publicados ni
 volúmenes del equipo, usando el SQL original y la instantánea del proveedor real.
-El modo integrado ejecuta 19 pruebas: publica únicamente el MySQL destino en un
+El modo integrado ejecuta 20 pruebas: publica únicamente el MySQL destino en un
 puerto efímero de loopback para que la utilidad JPA del proveedor pueda leerlo.
 Las credenciales son aleatorias y se prepara un usuario adicional de solo lectura.
 No se publica el MySQL de origen ni se reutiliza un volumen del equipo. Retira sus propios contenedores y volúmenes anónimos al finalizar.
 Los artefactos y contraseñas son temporales. No utiliza docker compose down -v.
 
-Para reproducir las 19 pruebas, obtener courier en la revisión fijada en
+La prueba de rollback intermedio recorre la función usada por el CLI, incluyendo
+integridad y validación de esquema, y exige que el error SQL observe la primera
+fila y su registro dentro de la transacción. Una conexión nueva comprueba la
+reversión. Otro caso distingue la visibilidad de los triggers según privilegios:
+MySQL solo los muestra en information_schema al usuario con permiso TRIGGER.
+El usuario limitado del ensayo no lo tiene; una lista vacía no acredita ausencia
+de triggers. La prueba concede visibilidad solo temporalmente en su contenedor
+propio y comprueba entonces el rechazo del CLI antes de aplicar. No se amplían
+los permisos del migrador ni se modifican las guardas productivas.
+
+La ausencia de triggers debe comprobarse con una revisión autorizada que tenga
+visibilidad suficiente antes de considerar validado ese requisito del esquema.
+No otorgar privilegios DDL al usuario de migración solo para ocultar esta limitación.
+
+Para reproducir las 20 pruebas, obtener courier en la revisión fijada en
 `courier-source.json` y compilar en ese checkout:
 
 ```bash
