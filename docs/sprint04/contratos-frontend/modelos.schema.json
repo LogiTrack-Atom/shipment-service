@@ -1,0 +1,676 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "BORRADOR #71; registro de definiciones para mocks. Seleccionar un $defs; no valida reglas de autorización/transiciones ni aceptación de G0.",
+  "$defs": {
+    "CredencialesLogin": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 254
+        },
+        "password": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 72,
+          "description": "Sin normalizar. El backend limita también a 72 bytes UTF-8; maxLength no sustituye esa comprobación."
+        }
+      },
+      "required": [
+        "email",
+        "password"
+      ],
+      "additionalProperties": false
+    },
+    "RegistroRequest": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 254
+        },
+        "password": {
+          "type": "string",
+          "minLength": 12,
+          "maxLength": 72,
+          "description": "Sin normalizar. El backend limita también a 72 bytes UTF-8; maxLength no sustituye esa comprobación."
+        }
+      },
+      "required": [
+        "email",
+        "password"
+      ],
+      "additionalProperties": false
+    },
+    "UsuarioCreateRequest": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 254
+        },
+        "password": {
+          "type": "string",
+          "minLength": 12,
+          "maxLength": 72,
+          "description": "Sin normalizar. El backend limita también a 72 bytes UTF-8; maxLength no sustituye esa comprobación."
+        },
+        "rol": {
+          "enum": [
+            "ADMIN",
+            "CLIENTE",
+            "REPARTIDOR"
+          ]
+        }
+      },
+      "required": [
+        "email",
+        "password",
+        "rol"
+      ],
+      "additionalProperties": false
+    },
+    "UsuarioResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "ADMIN",
+              "CLIENTE",
+              "REPARTIDOR"
+            ]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "roles",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "TokenResponse": {
+      "type": "object",
+      "properties": {
+        "accessToken": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tokenType": {
+          "const": "Bearer"
+        },
+        "expiresIn": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "accessToken",
+        "tokenType",
+        "expiresIn"
+      ]
+    },
+    "DireccionRequest": {
+      "type": "object",
+      "properties": {
+        "calle": {
+          "type": "string",
+          "minLength": 1
+        },
+        "numero": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ciudad": {
+          "type": "string",
+          "minLength": 1
+        },
+        "codigoPostal": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "calle",
+        "numero",
+        "ciudad",
+        "codigoPostal"
+      ],
+      "additionalProperties": false
+    },
+    "DireccionResponse": {
+      "type": "object",
+      "properties": {
+        "calle": {
+          "type": "string"
+        },
+        "numero": {
+          "type": "string"
+        },
+        "ciudad": {
+          "type": "string"
+        },
+        "codigoPostal": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "calle",
+        "numero",
+        "ciudad",
+        "codigoPostal"
+      ]
+    },
+    "ClienteRequest": {
+      "type": "object",
+      "properties": {
+        "nombre": {
+          "type": "string",
+          "minLength": 1
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "telefono": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "nombre",
+        "email"
+      ],
+      "additionalProperties": false
+    },
+    "ClienteResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "nombre": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "telefono": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "nombre",
+        "email",
+        "telefono"
+      ]
+    },
+    "EnvioRequest": {
+      "type": "object",
+      "properties": {
+        "cliente": {
+          "$ref": "#/$defs/ClienteRequest"
+        },
+        "origen": {
+          "$ref": "#/$defs/DireccionRequest"
+        },
+        "destino": {
+          "$ref": "#/$defs/DireccionRequest"
+        },
+        "pesoKg": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 9999999.999,
+          "multipleOf": 0.001
+        },
+        "anchoCm": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 99999999.99,
+          "multipleOf": 0.01
+        },
+        "altoCm": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 99999999.99,
+          "multipleOf": 0.01
+        },
+        "largoCm": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 99999999.99,
+          "multipleOf": 0.01
+        }
+      },
+      "required": [
+        "cliente",
+        "origen",
+        "destino",
+        "pesoKg",
+        "anchoCm",
+        "altoCm",
+        "largoCm"
+      ],
+      "additionalProperties": false
+    },
+    "EnvioResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "codigoSeguimiento": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cliente": {
+          "$ref": "#/$defs/ClienteResponse"
+        },
+        "repartidorId": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "pesoKg": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 9999999.999,
+          "multipleOf": 0.001
+        },
+        "anchoCm": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 99999999.99,
+          "multipleOf": 0.01
+        },
+        "altoCm": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 99999999.99,
+          "multipleOf": 0.01
+        },
+        "largoCm": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 99999999.99,
+          "multipleOf": 0.01
+        },
+        "estado": {
+          "enum": [
+            "PENDIENTE",
+            "EN_RUTA",
+            "ENTREGADO",
+            "CANCELADO"
+          ]
+        },
+        "origen": {
+          "$ref": "#/$defs/DireccionResponse"
+        },
+        "destino": {
+          "$ref": "#/$defs/DireccionResponse"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "codigoSeguimiento",
+        "cliente",
+        "repartidorId",
+        "pesoKg",
+        "anchoCm",
+        "altoCm",
+        "largoCm",
+        "estado",
+        "origen",
+        "destino",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Envios": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/EnvioResponse"
+      }
+    },
+    "EstadoEnvioRequest": {
+      "type": "object",
+      "properties": {
+        "estado": {
+          "enum": [
+            "PENDIENTE",
+            "EN_RUTA",
+            "ENTREGADO",
+            "CANCELADO"
+          ]
+        }
+      },
+      "required": [
+        "estado"
+      ],
+      "additionalProperties": false
+    },
+    "AsignarRepartidorRequest": {
+      "type": "object",
+      "properties": {
+        "repartidorId": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "repartidorId"
+      ],
+      "additionalProperties": false
+    },
+    "AsociacionUsuarioRequest": {
+      "type": "object",
+      "properties": {
+        "usuarioId": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "usuarioId"
+      ],
+      "additionalProperties": false
+    },
+    "AsociacionUsuarioResponse": {
+      "type": "object",
+      "properties": {
+        "recursoId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "usuarioId": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": [
+        "recursoId",
+        "usuarioId"
+      ]
+    },
+    "HistorialResponse": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "estadoAnterior": {
+            "anyOf": [
+              {
+                "enum": [
+                  "PENDIENTE",
+                  "EN_RUTA",
+                  "ENTREGADO",
+                  "CANCELADO"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "estadoNuevo": {
+            "enum": [
+              "PENDIENTE",
+              "EN_RUTA",
+              "ENTREGADO",
+              "CANCELADO"
+            ]
+          },
+          "fechaCambio": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "estadoAnterior",
+          "estadoNuevo",
+          "fechaCambio"
+        ]
+      }
+    },
+    "RepartidorRequest": {
+      "type": "object",
+      "properties": {
+        "nombre": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "tipoVehiculo": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        }
+      },
+      "required": [
+        "nombre",
+        "tipoVehiculo"
+      ],
+      "additionalProperties": false
+    },
+    "RepartidorResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "nombre": {
+          "type": "string"
+        },
+        "tipoVehiculo": {
+          "type": "string"
+        },
+        "estado": {
+          "enum": [
+            "ACTIVO",
+            "INACTIVO"
+          ]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "nombre",
+        "tipoVehiculo",
+        "estado",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Repartidores": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/RepartidorResponse"
+      }
+    },
+    "EstadoRepartidorRequest": {
+      "type": "object",
+      "properties": {
+        "estado": {
+          "enum": [
+            "ACTIVO",
+            "INACTIVO"
+          ]
+        }
+      },
+      "required": [
+        "estado"
+      ],
+      "additionalProperties": false
+    },
+    "DisponibilidadResponse": {
+      "type": "object",
+      "properties": {
+        "repartidorId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "estado": {
+          "enum": [
+            "ACTIVO",
+            "INACTIVO"
+          ]
+        },
+        "disponible": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "repartidorId",
+        "estado",
+        "disponible"
+      ]
+    },
+    "RepartidorIdentidadResponse": {
+      "type": "object",
+      "properties": {
+        "repartidorId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "usuarioId": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uuid"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "repartidorId",
+        "usuarioId"
+      ]
+    },
+    "ConfiguracionResponse": {
+      "type": "object",
+      "properties": {
+        "aplicacion": {
+          "type": "string"
+        },
+        "perfiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "marcador": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "aplicacion",
+        "perfiles",
+        "marcador"
+      ]
+    },
+    "ApiError": {
+      "type": "object",
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "integer",
+          "minimum": 400,
+          "maximum": 599
+        },
+        "error": {
+          "type": "string"
+        },
+        "mensaje": {
+          "type": "string"
+        },
+        "detalles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "timestamp",
+        "status",
+        "error",
+        "mensaje",
+        "detalles"
+      ]
+    }
+  }
+}
