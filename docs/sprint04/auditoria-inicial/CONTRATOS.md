@@ -53,13 +53,13 @@ No hay listado general de usuarios, listado general de clientes, actualización/
 |---|---|
 | Token | `accessToken: string`, `tokenType: string` (Bearer), `expiresIn: number` (segundos) |
 | Usuario | `id: UUID`, `email: string`, `roles: string[]`, `createdAt`, `updatedAt` |
-| Cliente | `id: UUID`, `nombre: string`, `email: string`, `telefono: string|null` |
+| Cliente | `id: UUID`, `nombre: string`, `email: string`, `telefono: string\|null` |
 | Dirección | `calle`, `numero`, `ciudad`, `codigoPostal` como strings |
-| Envio | `id`, `codigoSeguimiento`, `cliente: Cliente`, `repartidorId: UUID|null`, `pesoKg`, `anchoCm`, `altoCm`, `largoCm`, `estado`, `origen: Dirección`, `destino: Dirección`, `createdAt`, `updatedAt` |
-| Historial | `id: UUID`, `estadoAnterior: EstadoEnvio|null`, `estadoNuevo: EstadoEnvio`, `fechaCambio` |
-| Repartidor | `id: UUID`, `nombre`, `tipoVehiculo`, `estado: ACTIVO|INACTIVO`, `createdAt`, `updatedAt` |
-| Disponibilidad | `repartidorId: UUID`, `estado: ACTIVO|INACTIVO`, `disponible: boolean` |
-| IdentidadRepartidor | `repartidorId: UUID`, `usuarioId: UUID|null` |
+| Envio | `id`, `codigoSeguimiento`, `cliente: Cliente`, `repartidorId: UUID\|null`, `pesoKg`, `anchoCm`, `altoCm`, `largoCm`, `estado`, `origen: Dirección`, `destino: Dirección`, `createdAt`, `updatedAt` |
+| Historial | `id: UUID`, `estadoAnterior: EstadoEnvio\|null`, `estadoNuevo: EstadoEnvio`, `fechaCambio` |
+| Repartidor | `id: UUID`, `nombre`, `tipoVehiculo`, `estado: ACTIVO\|INACTIVO`, `createdAt`, `updatedAt` |
+| Disponibilidad | `repartidorId: UUID`, `estado: ACTIVO\|INACTIVO`, `disponible: boolean` |
+| IdentidadRepartidor | `repartidorId: UUID`, `usuarioId: UUID\|null` |
 | Asociación | `recursoId: UUID`, `usuarioId: UUID` |
 | Configuración | `aplicacion: string`, `perfiles: string[]`, `marcador: string` |
 | ApiError de los servicios | `timestamp`, `status: number`, `error: string`, `mensaje: string`, `detalles: string[]` |
