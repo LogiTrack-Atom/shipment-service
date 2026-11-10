@@ -1,8 +1,8 @@
 # Aceptación de la ampliación RabbitMQ — #80
 
 La ampliación es opt-in. Conserva el núcleo P0 `sprint04-rc1`, sus imágenes, las ramas y
-las bases existentes. Este directorio identifica el candidato y la evidencia; no declara
-publicación completa mientras falten la imagen/UI y el manifiesto final de la ampliación.
+las bases existentes. Este directorio identifica el release MQ aceptado y su evidencia.
+`published.json` fija las cuatro imágenes públicas y los servicios reutilizados por digest.
 
 ## Laboratorio descartable
 
@@ -102,3 +102,19 @@ push. Rechaza tags P0 y cualquier tag MQ existente de contenido diferente. Conse
 de las imágenes publicadas; publicar no declara por sí solo aceptación del release:
 restan pull público y recreación/smoke por referencias inmutables. Sus guardas se ejecutan
 junto con las del publicador P0 en la CI.
+
+## Release publicado y reproducido — 10/11/2026
+
+Versión `sprint04-mq-rc1`, namespace `maxdz10`. Las cuatro imágenes se descargaron sin
+credenciales y sus image IDs coinciden con los candidatos aceptados (`public-pull.json`).
+El laboratorio se recreó usando sus referencias por digest: once servicios saludables,
+conteos inbox/outbox preservados y smoke del núcleo prepare 17 solicitudes/38 aserciones,
+verify 7/18; smoke MQ 27 solicitudes HTTP/26 aserciones (incluye esperas de lectura de
+descubrimiento), nueva operación APPLIED, replay idempotente e historial sin eventos extra.
+Son conteos de ensayo, no 26 casos unitarios. No se afirma reproducción por otro integrante.
+
+Copiar `.env.sprint04-mq.example` fuera de Git como private.env y completar únicamente
+credenciales/claves/origen. Reutilizar la preparación y las migraciones detalladas arriba;
+no sustituir estas imágenes por P0 para activar MQ. `published.json` es la referencia de
+la ampliación; `docs/sprint04/release/published.json` sigue identificando el núcleo P0.
+La promoción a main permanece a cargo de la coordinación del equipo, sin borrar ramas.
