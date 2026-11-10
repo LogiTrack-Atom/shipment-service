@@ -101,6 +101,10 @@ if __name__ == '__main__':
     try:
         main()
     except Exception as error:
+        if isinstance(error, subprocess.CalledProcessError):
+            print('Etapa fallida: ' + ' '.join(str(x) for x in error.cmd[:4]), file=sys.stderr)
+            # Solo stderr de comandos propios: nunca se imprimen stdout/JSON privados.
+            print((error.stderr or '')[-3000:], file=sys.stderr)
         print('Verificación real de broker incompleta: ' + type(error).__name__
               + '. No se muestran archivos privados ni salidas del daemon.', file=sys.stderr)
         sys.exit(1)
