@@ -105,6 +105,10 @@ public class SecurityConfig {
                                                 "/api/v1/envios/seguimiento/{codigoSeguimiento}",
                                                 "/api/v1/envios/{id}/historial")
                                         .hasAnyRole("ADMIN", "CLIENTE", "REPARTIDOR")
+                                        .requestMatchers(HttpMethod.POST, "/api/v1/envios/{id}/solicitudes-asignacion")
+                                        .hasRole("ADMIN")
+                                        .requestMatchers(HttpMethod.GET, "/api/v1/operaciones-asignacion/{id}")
+                                        .hasRole("ADMIN")
                                         .requestMatchers(HttpMethod.POST, "/api/v1/envios")
                                         .hasAnyRole("ADMIN", "CLIENTE")
                                         .requestMatchers(

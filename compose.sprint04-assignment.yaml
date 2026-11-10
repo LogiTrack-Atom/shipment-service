@@ -1,0 +1,11 @@
+# Opt-in del publicador Shipment; combinar con núcleo y broker. Sin depends_on de MQ.
+services:
+  shipment-service:
+    environment:
+      ASSIGNMENT_ENABLED: ${ASSIGNMENT_ENABLED:-false}
+      ASSIGNMENT_PUBLISHER_ENABLED: ${ASSIGNMENT_PUBLISHER_ENABLED:-true}
+      MQ_HOST: rabbitmq
+      MQ_PORT: "5672"
+      MQ_VHOST: logitrack-s04
+      MQ_SHIPMENT_USER: lt_shipment
+      MQ_SHIPMENT_PASSWORD: ${MQ_SHIPMENT_PASSWORD:-}

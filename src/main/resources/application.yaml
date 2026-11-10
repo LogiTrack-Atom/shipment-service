@@ -27,3 +27,9 @@ spring:
       fail-fast: true
       request-connect-timeout: 2000
       request-read-timeout: 3000
+
+---
+logitrack:
+  assignment:
+    enabled: ${ASSIGNMENT_ENABLED:false}
+    publisher-enabled: ${ASSIGNMENT_PUBLISHER_ENABLED:true}

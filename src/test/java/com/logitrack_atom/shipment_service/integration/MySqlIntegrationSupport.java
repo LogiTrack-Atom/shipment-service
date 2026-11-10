@@ -101,6 +101,10 @@ abstract class MySqlIntegrationSupport {
         assertThat(jdbc.queryForObject("SELECT DATABASE()", String.class)).isEqualTo("shipment_test");
         jdbc.execute("DROP TRIGGER IF EXISTS fallo_historial_prueba");
         jdbc.update("DELETE FROM historial_estados_envio");
+        if (jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='assignment_operations'", Integer.class) > 0) {
+            jdbc.update("DELETE FROM amqp_outbox");
+            jdbc.update("DELETE FROM assignment_operations");
+        }
         jdbc.update("DELETE FROM envios");
         reset(courierClient);
         jdbc.update("DELETE FROM clientes");
