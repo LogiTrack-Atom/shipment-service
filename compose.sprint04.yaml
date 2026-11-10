@@ -1,0 +1,292 @@
+# Sprint04 / #72: núcleo autónomo sin RabbitMQ; conserva Sprint03 y sus volúmenes.
+name: ${COMPOSE_PROJECT_NAME:-logitrack-sprint04}
+
+x-application: &application
+  restart: unless-stopped
+  mem_limit: 512m
+  networks: [logitrack-net]
+  # La imagen debe aportar HEALTHCHECK; se conservan su comando y su usuario sin root.
+  healthcheck:
+    interval: 15s
+    timeout: 5s
+    start_period: 60s
+    retries: 4
+
+x-config-client: &config-client
+  SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+  CONFIG_SERVER_URL: http://configserver:8085
+  CONFIG_LABEL: ${CONFIG_LABEL:?Definir el commit verificado de configuración Sprint03}
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health
+  JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=60 -XX:InitialRAMPercentage=10
+
+x-discovery-client: &discovery-client
+  <<: *config-client
+  # Placeholder consumido por configserver-ms bajo service-url.defaultZone.
+  EUREKA_URL: http://eureka-server:8065/eureka/
+  EUREKA_CLIENT_ENABLED: "true"
+  EUREKA_INSTANCE_PREFER_IP_ADDRESS: "false"
+
+x-mysql: &mysql
+  image: mysql:8.4.11
+  restart: unless-stopped
+  mem_limit: 512m
+  networks: [logitrack-net]
+
+services:
+  shipment-mysql:
+    <<: *mysql
+    environment:
+      MYSQL_DATABASE: shipment_db
+      MYSQL_USER: shipment_app
+      MYSQL_PASSWORD: ${SHIPMENT_DB_PASSWORD:?Definir contraseña de shipment fuera de Git}
+      MYSQL_ROOT_PASSWORD: ${SHIPMENT_DB_ROOT_PASSWORD:?Definir contraseña administrativa fuera de Git}
+      TZ: UTC
+    volumes:
+      - type: volume
+        source: shipment_mysql_data
+        target: /var/lib/mysql
+      - type: bind
+        source: ./docker/mysql/init
+        target: /docker-entrypoint-initdb.d
+        read_only: true
+        bind:
+          create_host_path: false
+    healthcheck:
+      test: [CMD-SHELL, 'MYSQL_PWD="$${MYSQL_PASSWORD}" mysql --protocol=TCP --host=127.0.0.1 --user="$${MYSQL_USER}" --database="$${MYSQL_DATABASE}" --batch --skip-column-names --execute="SELECT 1 FROM envios LIMIT 0" >/dev/null']
+      interval: 5s
+      timeout: 4s
+      retries: 20
+      start_period: 30s
+
+  courier-mysql:
+    <<: *mysql
+    environment:
+      MYSQL_DATABASE: courier_db
+      MYSQL_USER: courier_app
+      MYSQL_PASSWORD: ${COURIER_DB_PASSWORD:?Definir contraseña de courier fuera de Git}
+      MYSQL_ROOT_PASSWORD: ${COURIER_DB_ROOT_PASSWORD:?Definir contraseña administrativa fuera de Git}
+      TZ: UTC
+    volumes:
+      - type: volume
+        source: courier_mysql_data
+        target: /var/lib/mysql
+      - type: bind
+        source: ./docker/mysql/courier
+        target: /docker-entrypoint-initdb.d
+        read_only: true
+        bind:
+          create_host_path: false
+    healthcheck:
+      test: [CMD-SHELL, 'MYSQL_PWD="$${MYSQL_PASSWORD}" mysql --protocol=TCP --host=127.0.0.1 --user="$${MYSQL_USER}" --database="$${MYSQL_DATABASE}" --batch --skip-column-names --execute="SELECT 1 FROM repartidores LIMIT 0" >/dev/null']
+      interval: 5s
+      timeout: 4s
+      retries: 20
+      start_period: 30s
+
+  security-mysql:
+    <<: *mysql
+    environment:
+      MYSQL_DATABASE: security_db
+      MYSQL_USER: security_app
+      MYSQL_PASSWORD: ${SECURITY_DB_PASSWORD:?Definir contraseña de security fuera de Git}
+      MYSQL_ROOT_PASSWORD: ${SECURITY_DB_ROOT_PASSWORD:?Definir contraseña administrativa fuera de Git}
+      TZ: UTC
+    volumes:
+      - type: volume
+        source: security_mysql_data
+        target: /var/lib/mysql
+      - type: bind
+        source: ./docker/mysql/security
+        target: /docker-entrypoint-initdb.d
+        read_only: true
+        bind:
+          create_host_path: false
+    healthcheck:
+      test: [CMD-SHELL, 'MYSQL_PWD="$${MYSQL_PASSWORD}" mysql --protocol=TCP --host=127.0.0.1 --user="$${MYSQL_USER}" --database="$${MYSQL_DATABASE}" --batch --skip-column-names --execute="SELECT 1 FROM usuarios LIMIT 0" >/dev/null']
+      interval: 5s
+      timeout: 4s
+      retries: 20
+      start_period: 30s
+
+  configserver:
+    <<: *application
+    image: ${CONFIGSERVER_IMAGE:?Definir imagen publicada de Config Server con versión}
+    environment:
+      SERVER_PORT: "8085"
+      CONFIG_GIT_URI: https://github.com/LogiTrack-Atom/configserver-ms.git
+      CONFIG_GIT_DEFAULT_LABEL: ${CONFIG_LABEL:?Definir el commit verificado de configuración Sprint03}
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=60 -XX:InitialRAMPercentage=10
+
+  eureka-server:
+    <<: *application
+    image: ${EUREKA_IMAGE:?Definir imagen publicada de Eureka Server con versión}
+    depends_on:
+      configserver:
+        condition: service_healthy
+    environment:
+      <<: *config-client
+      SERVER_PORT: "8065"
+      EUREKA_CLIENT_REGISTER_WITH_EUREKA: "false"
+      EUREKA_CLIENT_FETCH_REGISTRY: "false"
+
+  security-service:
+    <<: *application
+    image: ${SECURITY_IMAGE:?Definir imagen publicada de security Sprint03 con versión}
+    depends_on:
+      configserver:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      security-mysql:
+        condition: service_healthy
+    environment:
+      <<: *discovery-client
+      SERVER_PORT: "8082"
+      EUREKA_INSTANCE_HOSTNAME: security-service
+      DB_URL: jdbc:mysql://security-mysql:3306/security_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USERNAME: security_app
+      DB_PASSWORD: ${SECURITY_DB_PASSWORD:?Definir contraseña de security fuera de Git}
+      JWT_PUBLIC_KEY_LOCATION: file:/run/keys/public.pem
+      JWT_PRIVATE_KEY_LOCATION: file:/run/keys/private.pem
+      BOOTSTRAP_ADMIN_ENABLED: ${BOOTSTRAP_ADMIN_ENABLED:-false}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
+    group_add: ["${KEYS_GID:?Definir grupo con lectura de las claves externas}"]
+    volumes:
+      - type: bind
+        source: ${JWT_PUBLIC_KEY_FILE:?Definir archivo público externo}
+        target: /run/keys/public.pem
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${JWT_PRIVATE_KEY_FILE:?Definir archivo privado externo solo para security}
+        target: /run/keys/private.pem
+        read_only: true
+        bind:
+          create_host_path: false
+
+  courier-service:
+    <<: *application
+    image: ${COURIER_IMAGE:?Definir imagen publicada de courier Sprint03 con versión}
+    depends_on:
+      configserver:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      courier-mysql:
+        condition: service_healthy
+      security-service:
+        condition: service_healthy
+    environment:
+      <<: *discovery-client
+      SERVER_PORT: "8081"
+      EUREKA_INSTANCE_HOSTNAME: courier-service
+      DB_URL: jdbc:mysql://courier-mysql:3306/courier_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USERNAME: courier_app
+      DB_PASSWORD: ${COURIER_DB_PASSWORD:?Definir contraseña de courier fuera de Git}
+      JWT_PUBLIC_KEY_LOCATION: file:/run/keys/public.pem
+      SECURITY_SERVICE_URL: http://security-service:8082
+    group_add: ["${KEYS_GID:?Definir grupo con lectura de las claves externas}"]
+    volumes:
+      - type: bind
+        source: ${JWT_PUBLIC_KEY_FILE:?Definir archivo público externo}
+        target: /run/keys/public.pem
+        read_only: true
+        bind:
+          create_host_path: false
+
+  shipment-service:
+    <<: *application
+    image: ${SHIPMENT_IMAGE:?Definir imagen publicada de shipment Sprint03 con versión}
+    depends_on:
+      configserver:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      shipment-mysql:
+        condition: service_healthy
+      security-service:
+        condition: service_healthy
+      courier-service:
+        condition: service_healthy
+    environment:
+      <<: *discovery-client
+      SERVER_PORT: "8080"
+      EUREKA_INSTANCE_HOSTNAME: shipment-service
+      DB_URL: jdbc:mysql://shipment-mysql:3306/shipment_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USERNAME: shipment_app
+      DB_PASSWORD: ${SHIPMENT_DB_PASSWORD:?Definir contraseña de shipment fuera de Git}
+      JWT_PUBLIC_KEY_LOCATION: file:/run/keys/public.pem
+      SECURITY_SERVICE_URL: http://security-service:8082
+      # Solo verificaciones administrativas; disponibilidad Feign usa descubrimiento.
+      COURIER_SERVICE_URL: http://courier-service:8081
+    group_add: ["${KEYS_GID:?Definir grupo con lectura de las claves externas}"]
+    volumes:
+      - type: bind
+        source: ${JWT_PUBLIC_KEY_FILE:?Definir archivo público externo}
+        target: /run/keys/public.pem
+        read_only: true
+        bind:
+          create_host_path: false
+
+  api-gateway:
+    <<: *application
+    image: ${GATEWAY_IMAGE:?Definir imagen publicada de API Gateway con versión}
+    depends_on:
+      configserver:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      security-service:
+        condition: service_healthy
+      courier-service:
+        condition: service_healthy
+      shipment-service:
+        condition: service_healthy
+    environment:
+      <<: *discovery-client
+      SERVER_PORT: "8066"
+      EUREKA_INSTANCE_HOSTNAME: api-gateway
+      JWT_PUBLIC_KEY_LOCATION: file:/run/keys/public.pem
+    group_add: ["${KEYS_GID:?Definir grupo con lectura de las claves externas}"]
+    volumes:
+      - type: bind
+        source: ${JWT_PUBLIC_KEY_FILE:?Definir archivo público externo}
+        target: /run/keys/public.pem
+        read_only: true
+        bind:
+          create_host_path: false
+
+  frontend:
+    image: ${FRONTEND_IMAGE:?Definir imagen frontend construida con VITE_USE_MOCKS=false}
+    restart: unless-stopped
+    mem_limit: 128m
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    networks: [logitrack-net]
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    environment:
+      GATEWAY_UPSTREAM: http://api-gateway:8066
+    ports:
+      - 127.0.0.1:${FRONTEND_HOST_PORT:-8080}:8080
+    healthcheck:
+      interval: 10s
+      timeout: 3s
+      start_period: 5s
+      retries: 5
+
+volumes:
+  shipment_mysql_data: {}
+  courier_mysql_data: {}
+  security_mysql_data: {}
+
+networks:
+  logitrack-net:
+    driver: bridge
