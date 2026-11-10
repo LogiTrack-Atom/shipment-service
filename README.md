@@ -269,3 +269,11 @@ La [guía de entrega](docs/sprint02/Entrega.md) identifica imágenes públicas, 
 - [Guion de exposición](docs/sprint03/Guion_exposicion.md).
 
 La entrega técnica y la grabación académica tienen estados separados.
+
+
+## Núcleo Sprint04
+
+El arranque unificado con frontend, Gateway, servicios y tres bases se documenta en
+[Compose Sprint04](docs/sprint04/COMPOSE.md). Usar `compose.sprint04.yaml` y
+`.env.sprint04.example`; el núcleo no requiere RabbitMQ. Los archivos y volúmenes
+de Sprint03 se mantienen separados.
