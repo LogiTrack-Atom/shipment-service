@@ -93,3 +93,6 @@ La regresión completa del servicio y CI de ambas PR deben aprobar antes de cerr
 
 
 Courier #21 completa el overlay de ambos servicios. El preparador ahora crea application.env privado con las dos credenciales restringidas y MQ deshabilitado; ver [BROKER.md](BROKER.md). No usar imágenes P0 para activar estas rutas.
+
+
+#79 incorpora el inbox de resultados (migración 005), guardas compartidas y vencimiento. Para la imagen nueva aplicar también 005 antes de activar consumo; ver [RESULTADOS_CONCURRENCIA.md](RESULTADOS_CONCURRENCIA.md). El modo API local requiere desactivar publisher-enabled y consumer-enabled juntos.

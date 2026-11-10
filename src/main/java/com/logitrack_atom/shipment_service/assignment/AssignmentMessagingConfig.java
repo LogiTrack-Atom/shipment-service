@@ -11,7 +11,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 /** Activa transporte solo con opt-in; no declara colas ni agrega salud AMQP al núcleo. */
 @Configuration(proxyBeanMethods = false)
 @EnableScheduling
-@ConditionalOnProperty(prefix = "logitrack.assignment", name = {"enabled", "publisher-enabled"}, havingValue = "true")
+@ConditionalOnProperty(prefix = "logitrack.assignment", name = "enabled", havingValue = "true")
+@org.springframework.context.annotation.Conditional(AssignmentTransportCondition.class)
 public class AssignmentMessagingConfig {
     /** Crea la configuración opcional sin abrir conexiones durante su construcción. */
     public AssignmentMessagingConfig() { }
@@ -63,8 +64,45 @@ public class AssignmentMessagingConfig {
      * @return tarea desacoplada
      */
     @Bean
+    @ConditionalOnProperty(prefix = "logitrack.assignment", name = "publisher-enabled", havingValue = "true")
     public AssignmentPublisher assignmentPublisher(OutboxStore outbox, RabbitTemplate assignmentRabbitTemplate) {
         outbox.ensureSchemaReady();
         return new AssignmentPublisher(outbox, assignmentRabbitTemplate);
     }
+
+    /**
+     * Construye el receptor de resultados con ACK posterior al commit local.
+     * @param results guardas y deduplicación de resultados
+     * @param mapper parser JSON
+     * @param assignmentRabbitTemplate retry confirmado
+     * @return límite de transporte de resultados
+     */
+    @Bean
+    public AssignmentResultListener assignmentResultListener(AssignmentResultsService results,
+            tools.jackson.databind.ObjectMapper mapper, RabbitTemplate assignmentRabbitTemplate) {
+        return new AssignmentResultListener(results, mapper, assignmentRabbitTemplate);
+    }
+
+    /**
+     * Activa consumo manual sin declarar colas ni incluir el broker en salud del portal.
+     * @param assignmentConnectionFactory usuario de servicio Shipment
+     * @param assignmentResultListener procesamiento protegido
+     * @param results comprobación de la migración de inbox
+     * @return consumidor recuperable del resultado v1
+     */
+    @Bean
+    @ConditionalOnProperty(prefix = "logitrack.assignment", name = "consumer-enabled", havingValue = "true")
+    public org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer assignmentResultContainer(
+            CachingConnectionFactory assignmentConnectionFactory, AssignmentResultListener assignmentResultListener, AssignmentResultsService results) {
+        results.ensureSchemaReady();
+        var container = new org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer(assignmentConnectionFactory);
+        container.setQueueNames("lt.shipment.assignment.v1");
+        container.setAcknowledgeMode(org.springframework.amqp.core.AcknowledgeMode.MANUAL);
+        container.setPrefetchCount(10);container.setConcurrentConsumers(1);
+        container.setAutoDeclare(false);container.setMissingQueuesFatal(false);
+        container.setDefaultRequeueRejected(false);container.setRecoveryInterval(5000);
+        container.setMessageListener(assignmentResultListener);
+        return container;
+    }
+
 }

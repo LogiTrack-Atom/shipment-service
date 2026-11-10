@@ -33,3 +33,4 @@ logitrack:
   assignment:
     enabled: ${ASSIGNMENT_ENABLED:false}
     publisher-enabled: ${ASSIGNMENT_PUBLISHER_ENABLED:true}
+    consumer-enabled: ${ASSIGNMENT_CONSUMER_ENABLED:true}
