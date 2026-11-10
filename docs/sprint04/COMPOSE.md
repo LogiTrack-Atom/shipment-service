@@ -14,7 +14,7 @@ que puedan cambiarse después en el runtime:
 
 ```sh
 docker build --build-arg VITE_USE_MOCKS=false \
-  -t logitrack-frontend:sprint04-local ../logitrack-frontend
+  -t logitrack-frontend:sprint04-session-local ../logitrack-frontend
 ```
 
 Copiar `.env.sprint04.example` a un archivo privado ignorado por Git, por ejemplo
@@ -49,7 +49,7 @@ el archivo antiguo por accidente. También admite `up` en primer plano:
 docker compose --env-file .env.sprint04.local up
 ```
 
-El frontend escucha por defecto en `http://127.0.0.1:8080`. Solo ese puerto se
+El frontend escucha por defecto en `http://localhost:8080`. Solo ese puerto se
 publica y queda ligado a loopback. Gateway y bases permanecen en la red de Compose.
 Nginx conserva `/applications/...`, añade el proxy al Gateway y sirve fallback SPA
 solo para páginas: un error API no se convierte en `index.html`.
@@ -107,3 +107,39 @@ Estos resultados se informan separados de las 188 pruebas unitarias/de component
 del frontend ya aprobadas sobre el mismo árbol de código; no se repitieron suites
 Java ni auditorías.
 No acredita hosting público, despliegue en Kubernetes ni aceptación completa de #9.
+
+
+## Actualización de sesión renovable — security-service#11
+
+Las imágenes de Security y Gateway de esta ampliación se construyen localmente
+antes de arrancar; no se presentan como imágenes publicadas. La plantilla usa tags
+locales nuevos y conserva los tags/digests Sprint03 de los demás servicios:
+
+```sh
+docker build -t logitrack-security-service:sprint04-session-local ../security-service
+docker build -t logitrack-api-gateway:sprint04-session-local ../api-gateway
+docker build --build-arg VITE_USE_MOCKS=false -t logitrack-frontend:sprint04-session-local ../logitrack-frontend
+```
+
+Los tres repositorios deben incluir las PR de security-service#11 / frontend#3.
+`SESSION_ORIGIN` debe coincidir exactamente con la URL pública del navegador, incluido
+puerto si corresponde. La plantilla usa http://localhost:8080 para la excepción local
+Secure de Chromium; si cambiás FRONTEND_HOST_PORT, actualizar también SESSION_ORIGIN.
+Otros navegadores pueden requerir HTTPS local. En despliegue, usar HTTPS; no se quita
+Secure de la cookie. CORS_ALLOWED_ORIGINS del Gateway toma ese mismo origen.
+
+En bases nuevas se aplica 002-refresh-sessions.sql después de 001. En una base ya
+existente, aplicar la migración 002 explícitamente mediante conexión privada antes de
+actualizar Security; conservar usuarios, volumen y claves. No usar down --volumes.
+El SQL de Compose coincide byte a byte con el de Security. Las imágenes anteriores
+no ofrecen las nuevas rutas de sesión: no combinarlas con el frontend renovable.
+
+El JWT queda en memoria; solo se conserva la cookie HttpOnly de renovación. React
+puede guardar un marcador sin credenciales para un logout pendiente. Recarga restaura
+por renovación y consulta me. Logout revoca renovación; un Bearer copiado no se revoca
+antes de exp. Ver BROWSER_SESSION.md de Security y docs/SESION_RENOVABLE.md del frontend.
+
+El ensayo candidato usa diez servicios saludables, backend/Gateway nuevos y navegador
+real: login → recarga autenticada → logout → recarga en login. La regresión Bearer de
+negocio se mantiene: 38 solicitudes / 57 aserciones. La publicación con digests y el
+manifiesto final siguen en #73; no se inventa una publicación con estos tags locales.

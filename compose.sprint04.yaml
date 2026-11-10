@@ -149,6 +149,8 @@ services:
       DB_PASSWORD: ${SECURITY_DB_PASSWORD:?Definir contraseña de security fuera de Git}
       JWT_PUBLIC_KEY_LOCATION: file:/run/keys/public.pem
       JWT_PRIVATE_KEY_LOCATION: file:/run/keys/private.pem
+      SESSION_ORIGIN: ${SESSION_ORIGIN:?Definir origen público exacto de la sesión del navegador}
+      SESSION_TTL: ${SESSION_TTL:-8h}
       BOOTSTRAP_ADMIN_ENABLED: ${BOOTSTRAP_ADMIN_ENABLED:-false}
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
       BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
@@ -249,6 +251,7 @@ services:
       <<: *discovery-client
       SERVER_PORT: "8066"
       EUREKA_INSTANCE_HOSTNAME: api-gateway
+      CORS_ALLOWED_ORIGINS: ${SESSION_ORIGIN:?Definir origen público exacto de la sesión del navegador}
       JWT_PUBLIC_KEY_LOCATION: file:/run/keys/public.pem
     group_add: ["${KEYS_GID:?Definir grupo con lectura de las claves externas}"]
     volumes:
