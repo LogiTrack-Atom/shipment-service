@@ -1,0 +1,135 @@
+{
+  "format": 1,
+  "version": "sprint04-rc1",
+  "g1_approved": false,
+  "publication_complete": false,
+  "config_label": "a08f95ee8fa0bf412fb30f68776e9a8794f94110",
+  "platform": "linux/amd64",
+  "images": {
+    "security-service": "logitrack-security-service:sprint04-session-local",
+    "api-gateway": "logitrack-api-gateway:sprint04-session-local",
+    "logitrack-frontend": "logitrack-frontend:s04-accept9-fixed"
+  },
+  "image_ids": {
+    "security-service": "sha256:c00ed0169db24301fcf048430c1d5bc85f91b7ca22312ba63c74a7d8ba8e2c62",
+    "api-gateway": "sha256:fe458eca94030127d7f8a98d5002ff3cf14e3e28b4a4dbc11fe27be70fc328ed",
+    "logitrack-frontend": "sha256:25b352df48094b71578cedb205cddcac1997279a957818752d2fcf63d7d1e5be"
+  },
+  "sources": {
+    "security-service": {
+      "build_commit": "7d9a0ce0ff3d4097e2c92592ba56850fdb47fc41",
+      "release_commit": "dcd396764fbd2a646b29a5203265b72575b5a099",
+      "runtime_sources_equal": true,
+      "compared_paths": [
+        "src/main",
+        "pom.xml",
+        "Dockerfile",
+        ".mvn",
+        "mvnw"
+      ]
+    },
+    "api-gateway": {
+      "build_commit": "437e4ce99a21daade4bd9fb6fc1e66da0e705a68",
+      "release_commit": "869cf9d864ac995459e447c2e590340b6178d7a5",
+      "runtime_sources_equal": true,
+      "compared_paths": [
+        "src/main",
+        "pom.xml",
+        "Dockerfile",
+        ".mvn",
+        "mvnw"
+      ]
+    },
+    "logitrack-frontend": {
+      "build_commit": "2eda527145255bbbb306e10d3ec38aa6619792b6",
+      "release_commit": "c6076834eb6b244e7d413275844d10396ed9c7c0",
+      "runtime_sources_equal": true,
+      "compared_paths": [
+        "src",
+        "public",
+        "Dockerfile",
+        "docker",
+        ".dockerignore",
+        "package.json",
+        "package-lock.json",
+        "tsconfig.json",
+        "tsconfig.app.json",
+        "tsconfig.node.json",
+        "vite.config.ts"
+      ]
+    },
+    "shipment-service": {
+      "build_commit": "b2454e916332e4b0ec388782047fc63215f53da9",
+      "release_commit": "21371396a266da125c445009ff327b5a2b9fa9f5",
+      "runtime_sources_equal": true,
+      "compared_paths": [
+        "src/main",
+        "pom.xml",
+        "Dockerfile",
+        ".mvn",
+        "mvnw"
+      ]
+    },
+    "courier-service": {
+      "build_commit": "1cd721bea9c9897951c0b41fcceeb93ee8d88f59",
+      "release_commit": "003003d619d0479bc0577d839a580e61e51a8f0b",
+      "runtime_sources_equal": true,
+      "compared_paths": [
+        "src/main",
+        "pom.xml",
+        "Dockerfile",
+        ".mvn",
+        "mvnw"
+      ]
+    },
+    "eureka-server": {
+      "build_commit": "b3795f7f5486e5b11667e5e77ba559bc1958a010",
+      "release_commit": "49f5271e2075fc1c9b5b6192ed1f7cb0da5bf24b",
+      "runtime_sources_equal": true,
+      "compared_paths": [
+        "src/main",
+        "pom.xml",
+        "Dockerfile",
+        ".mvn",
+        "mvnw"
+      ]
+    }
+  },
+  "base_images": {
+    "configserver": "maxdz10/configserver:sprint02-1.0.0@sha256:1658bc0e413f5519087ab00ef0e170de31cb20a17b6b84aef08ca17acf19874b",
+    "shipment-service": "maxdz10/shipment-service:sprint03-1.0.0@sha256:aa85d72dbb97bf0cc6c1c81d261fa892f312db922cee21e6cee086a8d4f81595",
+    "courier-service": "maxdz10/courier-service:sprint03-1.0.0@sha256:a226ba795cea75de3343db6b5a0a0a053b36262c7b6c1290e485e55c6e4abf3f",
+    "eureka-server": "maxdz10/eureka-server:sprint03-1.0.0@sha256:70a31b326a036de44fcd57238b3bf65f9f1a26e11735108cce1e944fea9dcdcb"
+  },
+  "base_build_commits": {
+    "shipment-service": "b2454e916332e4b0ec388782047fc63215f53da9",
+    "courier-service": "1cd721bea9c9897951c0b41fcceeb93ee8d88f59",
+    "eureka-server": "b3795f7f5486e5b11667e5e77ba559bc1958a010"
+  },
+  "base_release": "sprint03-1.0.1",
+  "core_acceptance": {
+    "issue": "https://github.com/LogiTrack-Atom/logitrack-frontend/issues/9",
+    "accepted": true,
+    "fix_pr": "https://github.com/LogiTrack-Atom/logitrack-frontend/pull/24"
+  },
+  "peer_reproduction": {
+    "status": "pending",
+    "criterion": "issue #73 requiere reproducción independiente por otro integrante"
+  },
+  "mysql_image": "mysql@sha256:0f51e63e537a1f176423fa03ef559aabe6fa4372a53160a44bc7e75da7d15364",
+  "deployment": {
+    "tested_base_commit": "21371396a266da125c445009ff327b5a2b9fa9f5",
+    "mysql_digest_resolution_matches_tested_containers": true,
+    "files_sha256": {
+      "compose.sprint04.yaml": "45cc8a023d6c97a2a578b8d1fff1878b989871d8a54817435ef51a613ebe9928",
+      "docker/mysql/courier/001-schema.sql": "d5194952c2098cf8c27847a148725224e05f5ebf20ceb6e3c1affa807b8ddccb",
+      "docker/mysql/migrations/002-separar-repartidores.sql": "98713dfb53a3a592b60e61657a4ebd3e2972f00ae0b1f80dcfa43dbf4f53a52a",
+      "docker/mysql/migrations/003-identidades-autorizacion.sql": "f6709081ce7e51e0ee62163fc4c67a4c6707cc16b7c8a57ae445c7e61d60b1a7",
+      "docker/mysql/migrations/001-migration-ledger.sql": "669771fc9dce4d916fd854fc4c6aa94b12e3a38830ae5b412b9635beaaa569c6",
+      "docker/mysql/security/001-schema.sql": "1afdb601ccdd082e2b8f9733b2d2331ff57849a3945813a2f6e988c94e047635",
+      "docker/mysql/security/002-refresh-sessions.sql": "f117adc7e8e3435aaab367cb8577efc3af83ef4766cf0a6484bf58751418ee78",
+      "docker/mysql/init/001-schema.sql": "c51e653e937c895bf56f9f9eee80b4426ca91a2c943f01fd0e9526c543c942bb"
+    }
+  },
+  "publication_status": "Autorizada en maxdz10; push pendiente de resolver insufficient_scope en la sesión Docker local."
+}
