@@ -72,6 +72,10 @@ def main():
                 with urlopen(request, timeout=10) as response:
                     return json.load(response)
 
+            application_env = dict(line.split('=', 1) for line in (private / 'application.env').read_text().splitlines() if '=' in line)
+            assert application_env['ASSIGNMENT_ENABLED'] == 'false'
+            assert application_env['MQ_SHIPMENT_PASSWORD'] == passwords['lt_shipment'] and application_env['MQ_COURIER_PASSWORD'] == passwords['lt_courier']
+            assert (private / 'application.env').stat().st_mode & 0o777 == 0o600
             users = api('users')
             assert {row['name'] for row in users} == {'lt_operator', 'lt_shipment', 'lt_courier'}
             queues = api('queues/logitrack-s04')
@@ -89,7 +93,7 @@ def main():
             docker('up', '-d', '--wait', '--wait-timeout', '180')
             verify = phase('verify')
             print(json.dumps({'ok': True, 'prepare': prepare, 'verify': verify,
-                              'topology_checks': 4, 'guest_absent': True,
+                              'topology_checks': 4, 'application_env_checks': 3, 'guest_absent': True,
                               'production_amqp_port_unpublished': True,
                               'business_consumers_tested': False}, indent=2))
         finally:

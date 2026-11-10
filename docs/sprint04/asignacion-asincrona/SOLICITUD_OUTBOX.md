@@ -90,3 +90,6 @@ fallo de reconexión. La prueba adicional de migración usa otra copia MySQL des
 Gateway: 172 pruebas/Javadoc locales, incluidos seis casos de roles y un preflight nuevo.
 La regresión completa del servicio y CI de ambas PR deben aprobar antes de cerrar #78.
 #80 conserva pruebas de consumidores/ACK, DLQ y caídas conjuntas aún pendientes.
+
+
+Courier #21 completa el overlay de ambos servicios. El preparador ahora crea application.env privado con las dos credenciales restringidas y MQ deshabilitado; ver [BROKER.md](BROKER.md). No usar imágenes P0 para activar estas rutas.

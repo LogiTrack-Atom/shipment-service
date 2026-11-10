@@ -9,3 +9,13 @@ services:
       MQ_VHOST: logitrack-s04
       MQ_SHIPMENT_USER: lt_shipment
       MQ_SHIPMENT_PASSWORD: ${MQ_SHIPMENT_PASSWORD:-}
+  courier-service:
+    environment:
+      ASSIGNMENT_ENABLED: ${ASSIGNMENT_ENABLED:-false}
+      ASSIGNMENT_PUBLISHER_ENABLED: ${ASSIGNMENT_PUBLISHER_ENABLED:-true}
+      ASSIGNMENT_CONSUMER_ENABLED: ${ASSIGNMENT_CONSUMER_ENABLED:-true}
+      MQ_HOST: rabbitmq
+      MQ_PORT: "5672"
+      MQ_VHOST: logitrack-s04
+      MQ_COURIER_USER: lt_courier
+      MQ_COURIER_PASSWORD: ${MQ_COURIER_PASSWORD:-}

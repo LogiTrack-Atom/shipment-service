@@ -80,3 +80,27 @@ configuración pública. No activar consumidores antes de aplicar sus migracione
 Ver [importación oficial](https://www.rabbitmq.com/docs/definitions),
 [permisos](https://www.rabbitmq.com/docs/access-control) y
 [quorum queues](https://www.rabbitmq.com/docs/quorum-queues).
+
+
+## Credenciales de aplicaciones — Courier #21
+
+prepare_broker.py genera además application.env privado (0600), con las credenciales
+restringidas de Shipment/Courier y ASSIGNMENT_ENABLED=false por defecto. No copiar la
+contraseña del operador a los servicios. El ensayo automático comprueba coherencia de
+ambas credenciales y permisos del archivo sin imprimir valores.
+
+Después de aplicar las migraciones de ambos servicios y completar #79/#80, activar
+ASSIGNMENT_ENABLED=true en ese archivo y combinar:
+
+```sh
+docker compose --env-file /ruta/privada/core.env --env-file /ruta/privada/broker/broker.env \
+  --env-file /ruta/privada/broker/application.env \
+  -f compose.sprint04.yaml -f compose.sprint04-mq.yaml -f compose.sprint04-assignment.yaml \
+  --profile mq up -d --wait --wait-timeout 480
+```
+
+El overlay entrega MQ_COURIER_PASSWORD únicamente a Courier y MQ_SHIPMENT_PASSWORD a
+Shipment, sin agregar dependencia de arranque al broker. Usar imágenes nuevas de la
+ampliación; P0 no implementa este transporte. Para directorios ya generados no reejecutar
+el preparador: completar application.env externo con las credenciales existentes y 0600,
+sin regenerar usuarios de un volumen vivo. No es una rotación automática.
