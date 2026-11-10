@@ -67,7 +67,12 @@ los servicios reales. La aceptación ampliada pendiente permanece en frontend#9.
 ## ADR implementado y decisión pendiente
 
 El núcleo verificado usa origen único: navegador → Nginx → Gateway → servicios.
-Solo el frontend se publica en loopback. La alternativa cross-origin tiene allowlist
+Solo el frontend se publica en loopback. La sección «Orquestación e Infraestructura» de la consigna exige Docker multi-stage,
+red interna y arranque mediante Compose; no exige hosting público. El núcleo local
+verificado cumple ese objetivo. Hosting público y Kubernetes quedan como mejoras
+de despliegue, sin bloquear la imagen Docker ni la aceptación del núcleo local.
+
+La alternativa cross-origin tiene allowlist
 exacta y preflight antes de JWT en CORS; el dominio/TLS final depende del hosting.
 
 JWT en memoria: navegar conserva contexto; recargar exige login. Exp se controla en UI
