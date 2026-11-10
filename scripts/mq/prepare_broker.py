@@ -77,6 +77,8 @@ def main():
     passwords = {user: secrets.token_urlsafe(32) for user in ('lt_operator', 'lt_shipment', 'lt_courier')}
     files = {'definitions.json': json.dumps(definitions(passwords), indent=2) + '\n',
              'credentials.json': json.dumps(passwords, indent=2) + '\n',
+             'application.env': 'ASSIGNMENT_ENABLED=false\nASSIGNMENT_PUBLISHER_ENABLED=true\nASSIGNMENT_CONSUMER_ENABLED=true\n'
+                                + 'MQ_SHIPMENT_PASSWORD=' + passwords['lt_shipment'] + '\nMQ_COURIER_PASSWORD=' + passwords['lt_courier'] + '\n',
              'broker.env': 'COMPOSE_PROJECT_NAME=logitrack-sprint04\nRABBITMQ_DEFINITIONS_FILE=' + str(directory / 'definitions.json')
                            + '\nRABBITMQ_SECRETS_GID=' + str(os.getgid()) + '\nRABBITMQ_MANAGEMENT_PORT=15672\n'}
     for name, content in files.items():
