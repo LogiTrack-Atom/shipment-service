@@ -27,5 +27,7 @@ jobs:
           distribution: temurin
           java-version: '25'
           cache: maven
+      - name: Verificar protecciones del publicador Sprint04
+        run: python3 -m unittest discover -s scripts/release/tests -p test_publish_sprint04.py -v
       - name: Ejecutar pruebas y generar Javadoc
         run: ./mvnw -B -ntp verify javadoc:javadoc

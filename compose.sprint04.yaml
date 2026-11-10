@@ -27,7 +27,7 @@ x-discovery-client: &discovery-client
   EUREKA_INSTANCE_PREFER_IP_ADDRESS: "false"
 
 x-mysql: &mysql
-  image: mysql:8.4.11
+  image: ${MYSQL_IMAGE:-mysql:8.4.11}
   restart: unless-stopped
   mem_limit: 512m
   networks: [logitrack-net]
