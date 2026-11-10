@@ -77,3 +77,28 @@ El release final de #80 requiere también esa aceptación UI y sus imágenes/man
 At-least-once con efecto idempotente local; sin exactly-once, reserva exclusiva ni alta
 disponibilidad. Un nodo RabbitMQ con volumen persistente sigue siendo un punto único de falla.
 No incluye despliegue público ni Minikube. La ampliación no bloquea la entrega del núcleo P0.
+
+## UI y candidato listo para publicar
+
+`ui-evidence.json` registra la prueba manual real de la continuación de PR25 mediante
+[PR26](https://github.com/LogiTrack-Atom/logitrack-frontend/pull/26): solicitado→confirmado
+con GET operación/envío; broker detenido→demorado y consulta manual con una sola operación
+PENDING en SQL; logout real durante el seguimiento vuelve al login. Las pruebas de componente
+cubren además abortar y descartar APPLIED tardío y conservar la clave ante 503.
+
+`candidate.json` fija cuatro image IDs locales, commits fuente, argumentos públicos de
+construcción, configuración y SHA-256 de migraciones. No contiene secretos. El frontend
+se construye con VITE_USE_MOCKS=false y VITE_ASYNC_ASSIGNMENT=true, manteniendo P0 intacto.
+
+Después de autorizar la publicación de las cuatro imágenes verificadas en el namespace:
+
+```sh
+python3 scripts/release/publish_mq.py --candidate docs/sprint04/release-mq/candidate.json \
+  --namespace maxdz10 --tag sprint04-mq-rc1 --output /ruta/salida/published.json
+```
+
+El publicador exige aceptación backend/UI y compara las cuatro imágenes antes del primer
+push. Rechaza tags P0 y cualquier tag MQ existente de contenido diferente. Conserva digests
+de las imágenes publicadas; publicar no declara por sí solo aceptación del release:
+restan pull público y recreación/smoke por referencias inmutables. Sus guardas se ejecutan
+junto con las del publicador P0 en la CI.
