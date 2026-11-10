@@ -36,6 +36,7 @@ target/
 !.env.example
 !.env.component.example
 !.env.sprint03.example
+!.env.sprint04.example
 
 # Artefactos locales del ensayo de migración
 __pycache__/
