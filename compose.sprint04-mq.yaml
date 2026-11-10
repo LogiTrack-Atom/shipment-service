@@ -1,0 +1,45 @@
+# Ampliación opt-in: combinar con compose.sprint04.yaml; el núcleo no depende del broker.
+services:
+  rabbitmq:
+    image: rabbitmq:4.4.0-management@sha256:af6f50d38098d8bd52fef7f3fa85015dd8b2bf6def58e995bf584ae9ba0f6407
+    profiles: [mq]
+    # Arrancar sin root conserva el grupo suplementario que lee las definiciones 0640.
+    user: rabbitmq
+    hostname: rabbitmq
+    restart: unless-stopped
+    mem_limit: 768m
+    environment:
+      RABBITMQ_NODENAME: rabbit@rabbitmq
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: +S 2:2
+    group_add: ["${RABBITMQ_SECRETS_GID:?Definir grupo de lectura de las definiciones externas}"]
+    security_opt: [no-new-privileges:true]
+    networks: [logitrack-net]
+    ports:
+      - 127.0.0.1:${RABBITMQ_MANAGEMENT_PORT:-15672}:15672
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - type: bind
+        source: ./docker/rabbitmq/rabbitmq.conf
+        target: /etc/rabbitmq/rabbitmq.conf
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${RABBITMQ_DEFINITIONS_FILE:?Definir archivo privado de topología y usuarios}
+        target: /run/secrets/definitions.json
+        read_only: true
+        bind:
+          create_host_path: false
+    healthcheck:
+      test: [CMD-SHELL, 'rabbitmq-diagnostics -q ping && rabbitmq-diagnostics -q check_port_connectivity']
+      interval: 10s
+      timeout: 8s
+      retries: 12
+      start_period: 30s
+
+volumes:
+  rabbitmq_data: {}
+
+networks:
+  logitrack-net:
+    driver: bridge
