@@ -1,10 +1,10 @@
 # Contratos para preparar el frontend · S04-01 / #71
 
-**Contrato técnico conciliado con el núcleo integrado; ADR docente pendiente.** Actualizado: 10/11/2026. Responsable: MaxDZ-10. Organización: LogiTrack-Atom.
+**Contrato técnico conciliado; ADR de sesión renovable adoptado por el equipo.** Actualizado: 10/11/2026. Responsable: MaxDZ-10. Organización: LogiTrack-Atom.
 
 Las pantallas de autenticación, cliente HTTP, Shipment, Courier y administración ya están integradas en `logitrack-frontend/develop`. La integración real y la persistencia del núcleo se verificaron por Gateway y Nginx en shipment-service#72. Este paquete conserva modelos y ejemplos estáticos, y distingue esa simulación de las comprobaciones ejecutadas con servicios.
 
-S04-00/G0 está retirado como requisito. No es necesario reabrir la auditoría para consumir estos contratos. La aceptación docente de la sesión en memoria y el destino público de hosting siguen pendientes; integrar esta documentación no los declara aprobados.
+S04-00/G0 está retirado como requisito. No es necesario reabrir la auditoría para consumir estos contratos. La sesión ahora se recupera al recargar mediante renovación segura; es una decisión técnica del equipo del 10/11/2026, conforme a la interpretación más exigente de persistencia de la consigna. No se atribuye aprobación individual del profesor. El hosting público es opcional.
 
 Ver [conciliación y cobertura efectiva](CONCILIACION.md) e [identificación del entorno probado](integracion-verificada.json).
 
@@ -68,6 +68,9 @@ Enviar `Authorization: Bearer <token>` en operaciones protegidas. Los roles son 
 |---|---|---|---|---|
 | POST | I `/auth/register` | Público | `{email,password}` | 201 Usuario |
 | POST | I `/auth/login` | Público | `{email,password}` | 200 Token |
+| POST | I `/auth/session` | Mismo origen + cabecera CSRF | `{email,password}` | 200 Token + cookie HttpOnly/Secure/Strict |
+| POST | I `/auth/session/refresh` | Mismo origen + cabecera CSRF | Cookie de renovación | 200 Token + cookie rotada; 401 limpia cookie |
+| POST | I `/auth/session/logout` | Mismo origen + cabecera CSRF | Cookie de renovación | 204 + cookie eliminada |
 | GET | I `/auth/me` | A, Cl, R | — | 200 Usuario autenticado |
 | POST | I `/usuarios` | A | `{email,password,rol}` | 201 Usuario |
 | GET | I `/usuarios/{id}` | A | — | 200 Usuario |
@@ -91,7 +94,7 @@ Enviar `Authorization: Bearer <token>` en operaciones protegidas. Los roles son 
 | GET | C `/repartidores/{id}/usuario` | A | — | 200 IdentidadRepartidor |
 | GET | C `/admin/configuracion` | A | — | 200 Configuración |
 
-No hay listado general de usuarios, listado general de clientes, actualización/baja de usuarios, borrado de envíos, refresh ni logout remoto en estos controladores. #S04-09 debe diseñar el flujo administrativo alrededor de las operaciones disponibles. CORS y el proxy del núcleo ya se verificaron; el hosting público conserva su aceptación específica.
+No hay listado general de usuarios, listado general de clientes, actualización/baja de usuarios, borrado de envíos, refresh ni logout remoto en los controladores originales; los nuevos endpoints de sesión renuevan/revocan la cookie según la tabla. #S04-09 debe diseñar el flujo administrativo alrededor de las operaciones disponibles. CORS y el proxy del núcleo ya se verificaron; el hosting público conserva su aceptación específica.
 
 ## Modelos y validaciones
 
@@ -131,7 +134,7 @@ Simular como mínimo: 400 validación, 401 credencial ausente/inválida/expirada
 
 Los mocks deben usar datos ficticios, UUID distintos para identidad/dominio y relaciones coherentes; casos de lista vacía, carga lenta, identidad sin asociación y acciones ajenas. No incluir JWT reales. Preparar estados de UI «sin sesión», «cargando», «vacío», «error», «confirmado» y «resultado incierto». Desactivar doble envío mejora UX, pero no sustituye idempotencia del servidor.
 
-La configuración común declara TTL de 15 minutos y tolerancia de reloj de 60 segundos; la evidencia de #67 confirmó el borde antes/después del skew con reloj controlado; eso no completa la aceptación frontend. La propuesta es JWT en memoria y volver al login al recargar, pendiente de confirmar el requisito del profesor sobre persistencia en #S04-04. La UI termina la sesión al `exp`; el margen del servidor no es una ampliación deliberada de sesión. No existe revocación automática del Bearer copiado al cerrar sesión local. No cambiar el reloj del host para probar vencimiento.
+La configuración común declara TTL de 15 minutos y tolerancia de reloj de 60 segundos; la evidencia de #67 confirmó el borde antes/después del skew con reloj controlado; eso no completa la aceptación frontend. El ADR adoptado mantiene JWT en memoria y recupera acceso al recargar mediante cookie de renovación segura. La UI termina la sesión al `exp`; el margen del servidor no es una ampliación deliberada de sesión. No existe revocación automática del Bearer copiado al cerrar sesión local. No cambiar el reloj del host para probar vencimiento.
 
 RabbitMQ y el endpoint asíncrono todavía no forman parte de esta base: sus issues comienzan después de G1. No simular respuestas 202 como si el flujo ya estuviera implementado.
 
@@ -142,16 +145,18 @@ RabbitMQ y el endpoint asíncrono todavía no forman parte de esta base: sus iss
 - `security-service`: `src/main/java/com/logitrack_atom/security_service/controller/{AuthController,UsuarioController}.java`, `dto/{request,response}/` y `config/SecurityConfig.java`.
 - `configserver-ms`: `api-gateway.yml` para rutas, JWT y reescritura del header Location. La configuración efectiva depende del perfil y label; no se infiere de los fixtures. El label probado se registra en integracion-verificada.json.
 
-## ADR-001 · Sesión y red del frontend (implementado, aceptación docente pendiente)
+## ADR-001 · Sesión renovable y red del frontend (adoptado)
 
-**Estado: implementado en el frontend; interpretación docente de persistencia pendiente.** La consigna exige almacenamiento seguro, propagación Bearer, guards y logout/redirección ante 401/403. La expresión sobre persistencia de seguridad no especifica inequívocamente si el login debe sobrevivir a recargar: confirmar con la cátedra antes de aceptar S04-04. Fuentes: Sprint04_ArquitecturasAvanzadas-Sprint04.pdf, sección Implementación del Cliente Frontend, y anotación de límite temporal de tokens. No se atribuye una aprobación docente inexistente a esta propuesta.
+**Estado: adoptado por decisión del equipo del 10/11/2026 y comprobado técnicamente.** La consigna exige almacenamiento seguro y persistencia del contexto JWT. Se adopta recuperación tras recarga, cubriendo la interpretación más exigente; no se inventa una aprobación individual del profesor ni se convierte esa aprobación en un trámite adicional no exigido por el texto.
 
-1. Guardar el accessToken exclusivamente en memoria del AuthProvider. Navegación SPA conserva contexto; recargar o abrir otra pestaña vuelve al login. Sin Web Storage, URL, logs ni inclusión en bundle. Limpiar password del formulario al completar/abandonar; no guardar credenciales en el estado del flujo de administración.
-2. Interpretar exp en segundos y cerrar la sesión al alcanzarlo, al recuperar foco y antes de cada request; rechazar tokens de respuesta malformados o vencidos. expiresIn es duración, no una fecha. El frontend puede leer claims para presentación, pero la validación criptográfica, rol y pertenencia pertenecen al servidor. El skew backend de 60 s no extiende deliberadamente la sesión de UI. No hay refresh ni logout remoto en el contrato actual.
-3. Cada login crea una generación de sesión. Logout limpia datos/caché/flujo, aborta pendientes e invalida resultados de generaciones anteriores. Revalidar después de volver con atrás/adelante (incluido pageshow/restauración). Un 401/403 de request protegido provoca una única limpieza/redirección al login sin bucles; el error de login público se muestra en su formulario. El Bearer copiado fuera de la SPA puede seguir válido hasta su vencimiento: logout local no lo revoca.
-4. El cliente HTTP solo adjunta Bearer al origen Gateway autorizado y los prefijos applications definidos aquí. Resolver y validar destinos: rechazar URLs absolutas no permitidas y rutas // que cambien el origen. No incluir credenciales de cookies por defecto. No enviar token a imágenes, servicios externos ni hosting de terceros. Renderizar mensajes de error como texto; soportar ApiError, ProblemDetail, texto, cuerpo vacío y fallo de transporte.
-5. Red preferida para la base: origen único con servidor estático/proxy que preserve /applications/<servicio>/api/v1; el navegador utiliza un destino público accesible, no DNS interno Docker. Si el hosting obliga a cross-origin, configurar allowlist exacta en Gateway en api-gateway#8, preflight para Authorization/Content-Type, métodos reales y exposición de Location si se consume. Host/origen/TLS lo confirma Gab en frontend#2; no inventar un dominio o credenciales. Fallback SPA no debe convertir errores /applications en index.html.
-6. Configuración de URL es pública y configurable; ningún secreto en variables VITE_* o bundle. El modo predeterminado es mock; `VITE_USE_MOCKS=false` selecciona explícitamente el transporte real. Si la cátedra exige persistencia tras recarga, revisar esta decisión y sus riesgos antes de aceptar autenticación; no agregar almacenamiento persistente silenciosamente.
+1. JWT de acceso solo en memoria. Security mantiene renovación opaca en cookie `__Host-logitrack_refresh`, HttpOnly/Secure/SameSite=Strict/Path=/, sin Domain. React no puede leerla. El único dato en Web Storage es un marcador sin credenciales para logout pendiente.
+2. Login/refresh/logout del navegador requieren Origin exacto y `X-LogiTrack-Session: 1`. Usan el proxy del mismo origen; el negocio conserva Bearer y credentials omit. HTTPS en despliegue; localhost HTTP solo como excepción compatible de pruebas, sin quitar Secure.
+3. Recarga restaura una vez, rota cookie y confirma me antes de habilitar la UI. El servidor guarda solo hashes, usa bloqueo MySQL por familia y revoca por reutilización; TTL absoluto 8h por defecto, máximo 24h. El JWT nunca supera su TTL normal ni el límite de familia.
+4. Logout limpia datos, aborta/desestima generaciones viejas y revoca renovación. Las pestañas se coordinan mediante Web Locks cuando están disponibles y storage para cierre local. Un logout de red no confirmado no se presenta como revocación exitosa. Un Bearer copiado sigue sujeto a exp: no hay promesa de revocación inmediata.
+5. Exp de UI y 401/403 protegidos conservan cierre de sesión; no se suma el skew ni se reintenta negocio. No se introduce renovación automática después del rechazo de una operación.
+6. La red verificada es navegador→Nginx→Gateway→servicios. Host público/Kubernetes son mejoras opcionales; el núcleo obligatorio funciona con Compose local. Actualizar tres imágenes y aplicar SQL aditivo antes del despliegue; no mezclar frontend nuevo con las imágenes Security/Gateway Sprint03.
+
+Implementación y pruebas: [Security PR #12](https://github.com/LogiTrack-Atom/security-service/pull/12), [Gateway PR #10](https://github.com/LogiTrack-Atom/api-gateway/pull/10), [frontend PR #22](https://github.com/LogiTrack-Atom/logitrack-frontend/pull/22) y [Compose PR #90](https://github.com/LogiTrack-Atom/shipment-service/pull/90). Ver BROWSER_SESSION.md de Security, docs/SESION_RENOVABLE.md del frontend e integracion-verificada.json. No se afirma inmunidad ante XSS.
 
 ## Traspaso y validación inicial — 09/11/2026
 
@@ -179,4 +184,4 @@ for case in fixtures['escenarios']:
                                 format_checker=FormatChecker()).validate(case[field])
 ```
 
-Pendientes de cierre de #71: confirmar con la cátedra la interpretación de persistencia tras recarga y completar el ADR con ese resultado. La red del núcleo usa origen único con Nginx y está verificada; host/origen/TLS público se configuran al concretar el hosting, sin inventar un destino. La aceptación transversal restante continúa en frontend#9. No se reabren scanners ni auditorías.
+La conciliación técnica y el ADR de renovación están implementados y probados; el cierre de #71 se completa al integrar las PR coordinadas. La aceptación transversal restante continúa en frontend#9 y el release con digests en #73, sin auditoría como bloqueo.

@@ -64,24 +64,28 @@ Errores de transporte, respuesta perdida y concurrencia entre sesiones se induce
 pruebas del cliente/coordinador. No se afirma que se hayan inyectado todos esos fallos en
 los servicios reales. La aceptación ampliada pendiente permanece en frontend#9.
 
-## ADR implementado y decisión pendiente
+## Actualización: ADR de sesión renovable adoptado
 
-El núcleo verificado usa origen único: navegador → Nginx → Gateway → servicios.
-Solo el frontend se publica en loopback. La sección «Orquestación e Infraestructura» de la consigna exige Docker multi-stage,
-red interna y arranque mediante Compose; no exige hosting público. El núcleo local
-verificado cumple ese objetivo. Hosting público y Kubernetes quedan como mejoras
-de despliegue, sin bloquear la imagen Docker ni la aceptación del núcleo local.
+El equipo decidió el 10/11/2026 que la recarga debe recuperar la sesión sin guardar
+JWT en Web Storage. La arquitectura y nuevas rutas están detalladas en ADR-001 del
+README y en las cuatro PR de security-service#11. Esta decisión satisface la
+interpretación más exigente del texto de persistencia de la consigna; no se atribuye
+una aprobación individual del profesor.
 
-La alternativa cross-origin tiene allowlist
-exacta y preflight antes de JWT en CORS; el dominio/TLS final depende del hosting.
+Se probó con las imágenes multietapa finales, sin montajes de JAR: login, recarga
+autenticada, tres pestañas con sesión, logout propagado a las otras dos y recarga
+posterior anónima. API de renovación: 11 solicitudes y 17 aserciones. La regresión
+Bearer de negocio conserva 8 escenarios, 38 solicitudes y 57 aserciones. Reaplicar
+el SQL aditivo conservó las cuentas; copias SQL de ambos repositorios idénticas.
+Pruebas: frontend 196; Security 198 Java; Gateway 165 Java; Javadoc/doclint aprobados.
 
-JWT en memoria: navegar conserva contexto; recargar exige login. Exp se controla en UI
-sin sumar el skew del backend; logout borra contexto, cancela pendientes y descarta
-respuestas antiguas. El cierre local no revoca un Bearer copiado. El contrato no ofrece
-refresh token ni cookie de sesión HttpOnly para recuperar el contexto tras recarga.
+La renovación expira de forma absoluta y rota con bloqueo por familia. Reutilizar
+un token consumido revoca la familia; logout revoca renovación, sin prometer
+revocación inmediata de JWT copiado. Se validan Origin y cabecera no simple para
+CSRF. Cookie HttpOnly/Secure/Strict, HTTPS en despliegue y proxy del mismo origen.
+No se habilitan cookies cross-origin ni reintentos de negocio tras 401/403.
 
-La consigna pide almacenamiento seguro y persistencia del contexto JWT. Las fuentes
-aportadas no aclaran de forma inequívoca si recargar debe conservar el login. Esa
-interpretación sigue pendiente de confirmación docente: esta conciliación técnica no
-la da por aceptada. Si se exige persistencia tras recarga, revisar la arquitectura y
-adaptar antes de cerrar autenticación; no introducir Web Storage silenciosamente.
+Las versiones e imágenes reales están en el bloque `sesion_renovable` de
+integracion-verificada.json. La identificación del núcleo anterior se conserva como
+historia; no se atribuyen sus pruebas a imágenes nuevas por similitud. Los tags
+nuevos son locales; publicación de digests y manifiesto de release permanece en #73.
