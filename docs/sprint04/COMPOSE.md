@@ -111,9 +111,11 @@ No acredita hosting público, despliegue en Kubernetes ni aceptación completa d
 
 ## Actualización de sesión renovable — security-service#11
 
-Las imágenes de Security y Gateway de esta ampliación se construyen localmente
-antes de arrancar; no se presentan como imágenes publicadas. La plantilla usa tags
-locales nuevos y conserva los tags/digests Sprint03 de los demás servicios:
+Durante el ensayo inicial se construyeron imágenes locales de Security, Gateway y
+Frontend. Para reproducir el release usar ahora las imágenes públicas por digest de
+`.env.sprint04.example` y el [manifiesto de #73](release/published.json).
+Los siguientes comandos documentan la construcción del candidato, que no es necesaria
+para descargar el release:
 
 ```sh
 docker build -t logitrack-security-service:sprint04-session-local ../security-service
@@ -141,5 +143,6 @@ antes de exp. Ver BROWSER_SESSION.md de Security y docs/SESION_RENOVABLE.md del 
 
 El ensayo candidato usa diez servicios saludables, backend/Gateway nuevos y navegador
 real: login → recarga autenticada → logout → recarga en login. La regresión Bearer de
-negocio se mantiene: 38 solicitudes / 57 aserciones. La publicación con digests y el
-manifiesto final siguen en #73; no se inventa una publicación con estos tags locales.
+negocio se mantiene: 38 solicitudes / 57 aserciones. Las tres imágenes modificadas ya están publicadas con digests en #73.
+El cierre de G1 requiere además el arranque inmutable y la reproducción independiente;
+consultar [el estado del release](release/README.md).
