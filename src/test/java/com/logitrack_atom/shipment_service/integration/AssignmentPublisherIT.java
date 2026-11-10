@@ -16,7 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.testcontainers.containers.GenericContainer;
 
 /** Publicador Java real con MySQL y RabbitMQ: confirm, mandatory return y recuperación sin reiniciar la app. */
-@SpringBootTest(properties = {"logitrack.assignment.enabled=true", "logitrack.assignment.publisher-enabled=false"})
+@SpringBootTest(properties = {"logitrack.assignment.enabled=true", "logitrack.assignment.publisher-enabled=false", "logitrack.assignment.consumer-enabled=false"})
 class AssignmentPublisherIT extends MySqlIntegrationSupport {
     @Autowired AssignmentService assignments;
     @Autowired OutboxStore outbox;

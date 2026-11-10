@@ -21,7 +21,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 
 /** Aceptación real MySQL de commit, rollback, replay y leases; broker/publicador desactivados. */
-@SpringBootTest(properties = {"logitrack.assignment.enabled=true", "logitrack.assignment.publisher-enabled=false"})
+@SpringBootTest(properties = {"logitrack.assignment.enabled=true", "logitrack.assignment.publisher-enabled=false", "logitrack.assignment.consumer-enabled=false"})
 class AssignmentAcceptanceIT extends MySqlIntegrationSupport {
     @Autowired AssignmentService assignments;
     @Autowired OutboxStore outbox;

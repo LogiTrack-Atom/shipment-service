@@ -102,6 +102,8 @@ abstract class MySqlIntegrationSupport {
         jdbc.execute("DROP TRIGGER IF EXISTS fallo_historial_prueba");
         jdbc.update("DELETE FROM historial_estados_envio");
         if (jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='assignment_operations'", Integer.class) > 0) {
+            if (jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='assignment_inbox'", Integer.class) > 0)
+                jdbc.update("DELETE FROM assignment_inbox");
             jdbc.update("DELETE FROM amqp_outbox");
             jdbc.update("DELETE FROM assignment_operations");
         }

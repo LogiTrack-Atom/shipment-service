@@ -76,6 +76,9 @@ public class ShipmentServiceTest {
     @org.junit.jupiter.api.BeforeEach
     void administradorDeRegresion() { org.mockito.Mockito.lenient().when(access.esAdmin()).thenReturn(true); }
 
+    @Mock
+    private com.logitrack_atom.shipment_service.assignment.AssignmentCoordinator assignmentCoordinator;
+
     @InjectMocks
     private ShipmentServiceImpl shipmentService;
 

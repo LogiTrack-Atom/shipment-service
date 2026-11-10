@@ -47,6 +47,7 @@ import java.util.UUID;
 @Service
 public class ShipmentServiceImpl implements ShipmentService {
 
+    private final com.logitrack_atom.shipment_service.assignment.AssignmentCoordinator assignmentCoordinator;
     private final ShipmentAccess access;
     private final EnvioRepository envioRepository;
     private final ClienteRepository clienteRepository;
@@ -169,6 +170,7 @@ public class ShipmentServiceImpl implements ShipmentService {
             validarRepartidorAsignado(envio);
         }
 
+        assignmentCoordinator.invalidate(id, "STATE_CHANGED");
         envio.setEstado(nuevoEstado);
         envioRepository.save(envio);
         registrarHistorial(envio, estadoActual, nuevoEstado);
@@ -192,6 +194,7 @@ public class ShipmentServiceImpl implements ShipmentService {
 
         courierClient.verificarDisponible(repartidorId);
 
+        assignmentCoordinator.invalidate(envioId, "REPLACED");
         envio.setRepartidorId(repartidorId);
         envioRepository.save(envio);
         envioRepository.flush();
@@ -255,6 +258,7 @@ public class ShipmentServiceImpl implements ShipmentService {
     /**
      * Recibe las dependencias mediante inyección por constructor.
      *
+     * @param assignmentCoordinator guardas compartidas con resultados asíncronos
      * @param access evaluador de roles y pertenencia del usuario autenticado
      * @param envioRepository persistencia y bloqueos de envíos
      * @param clienteRepository persistencia y búsqueda de clientes asociados
@@ -272,7 +276,9 @@ public class ShipmentServiceImpl implements ShipmentService {
             HistorialEstadoEnvioRepository historialRepository,
             EnvioMapper envioMapper,
             ClienteMapper clienteMapper,
-            HistorialEstadoEnvioMapper historialMapper) {
+            HistorialEstadoEnvioMapper historialMapper,
+            com.logitrack_atom.shipment_service.assignment.AssignmentCoordinator assignmentCoordinator) {
+        this.assignmentCoordinator = assignmentCoordinator;
         this.access = access;
         this.envioRepository = envioRepository;
         this.clienteRepository = clienteRepository;

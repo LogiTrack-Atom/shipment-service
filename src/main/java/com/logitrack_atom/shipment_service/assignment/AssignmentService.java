@@ -24,6 +24,7 @@ public class AssignmentService {
     private final ObjectMapper mapper;
     private final TransactionTemplate transactions;
     private final boolean enabled;
+    private final AssignmentResultsService results;
 
     /**
      * Recibe persistencia, identidad y transacciones de aceptación.
@@ -31,10 +32,11 @@ public class AssignmentService {
      * @param access identidad del JWT validado
      * @param mapper serializador JSON de la aplicación
      * @param manager gestor compartido por JPA y JDBC
+     * @param results vencimiento local antes de exponer el estado
      * @param enabled habilitación explícita de la API de ampliación
      */
     public AssignmentService(AssignmentStore store, ShipmentAccess access, ObjectMapper mapper,
-            PlatformTransactionManager manager, @Value("${logitrack.assignment.enabled:false}") boolean enabled) {
+            PlatformTransactionManager manager, AssignmentResultsService results, @Value("${logitrack.assignment.enabled:false}") boolean enabled) {
         this.store = store;
         this.access = access;
         this.mapper = mapper;
@@ -42,6 +44,7 @@ public class AssignmentService {
         this.transactions.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
         this.transactions.setIsolationLevel(org.springframework.transaction.TransactionDefinition.ISOLATION_READ_COMMITTED);
         this.enabled = enabled;
+        this.results = results;
     }
 
     /**
@@ -110,6 +113,7 @@ public class AssignmentService {
      */
     @PreAuthorize("hasRole('ADMIN')")
     public AssignmentOperation find(UUID id) {
+        results.expire(id);
         return store.find(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Operación no encontrada"));
     }
 }

@@ -114,4 +114,99 @@ public class AssignmentStore {
      * @param active operación pendiente anteriormente vigente
      */
     public record Guard(String state, long version, UUID active) { }
+
+    /**
+     * Obtiene referencias inmutables de una operación antes de bloquear el envío.
+     * @param id operación local
+     * @param lock toma bloqueo de operación solo después del bloqueo de envío
+     * @return registro con el comando causal original
+     */
+    public Optional<StoredOperation> stored(UUID id, boolean lock) {
+        return jdbc.query("SELECT * FROM assignment_operations WHERE id=?" + (lock ? " FOR UPDATE" : ""),
+                (r, n) -> new StoredOperation(map(r, n), uuid(r.getBytes("command_message_id"))), bytes(id)).stream().findFirst();
+    }
+
+    /**
+     * Consulta deduplicación de un resultado ya confirmado.
+     * @param id identidad de mensaje de resultado
+     * @return huella original, si existe
+     */
+    public Optional<byte[]> inboxHash(UUID id) {
+        return jdbc.query("SELECT payload_hash FROM assignment_inbox WHERE message_id=?", (r, n) -> r.getBytes(1), bytes(id)).stream().findFirst();
+    }
+
+    /**
+     * Guarda la identidad procesada dentro del commit de aplicación del resultado.
+     * @param result resultado validado
+     * @param hash huella de los bytes recibidos
+     * @param now instante UTC del procesamiento
+     */
+    public void recordResult(AvailabilityResult result, byte[] hash, Instant now) {
+        jdbc.update("INSERT INTO assignment_inbox(message_id,operation_id,payload_hash,processed_at) VALUES (?,?,?,?)",
+                bytes(result.messageId()), bytes(result.operationId()), hash, Timestamp.from(now));
+    }
+
+    /**
+     * Cambia solo el estado de la operación protegida por el bloqueo de envío/operación.
+     * @param id operación local
+     * @param status estado terminal
+     * @param reason motivo seguro nullable
+     * @param now instante UTC
+     */
+    public void finish(UUID id, String status, String reason, Instant now) {
+        jdbc.update("UPDATE assignment_operations SET status=?,reason=?,updated_at=? WHERE id=? AND status='PENDING'",
+                status, reason, Timestamp.from(now), bytes(id));
+    }
+
+    /**
+     * Limpia el puntero solo si todavía corresponde a la operación procesada.
+     * @param envio agregado local
+     * @param operation operación propietaria del puntero
+     */
+    public void clearActive(UUID envio, UUID operation) {
+        jdbc.update("UPDATE envios SET active_assignment_operation_id=NULL WHERE id=? AND active_assignment_operation_id=?", bytes(envio), bytes(operation));
+    }
+
+    /**
+     * Asigna sin transición de estado ni evento de historial, después de validar todas las guardas.
+     * @param result resultado AVAILABLE vigente
+     * @param now auditoría de la escritura de dominio
+     */
+    public void apply(AvailabilityResult result, Instant now) {
+        int changed = jdbc.update("UPDATE envios SET repartidor_id=?,updated_at=?,active_assignment_operation_id=NULL WHERE id=? AND active_assignment_operation_id=?",
+                bytes(result.repartidorId()), Timestamp.from(now), bytes(result.envioId()), bytes(result.operationId()));
+        if (changed != 1) throw new IllegalStateException("La operación perdió vigencia durante la transacción");
+    }
+
+    /**
+     * Incrementa generación para un comando síncrono que ya validó sus precondiciones.
+     * @param envio agregado bajo bloqueo local
+     */
+    public void invalidateGeneration(UUID envio) {
+        jdbc.update("UPDATE envios SET assignment_version=assignment_version+1,active_assignment_operation_id=NULL WHERE id=?", bytes(envio));
+    }
+
+    /**
+     * Selecciona un lote de vencimientos sin bloquear otros agregados mientras se procesa cada uno.
+     * @param now instante UTC de selección
+     * @return hasta cincuenta operaciones pendientes vencidas
+     */
+    public java.util.List<UUID> due(Instant now) {
+        return jdbc.query("SELECT id FROM assignment_operations WHERE status='PENDING' AND expires_at<=? ORDER BY expires_at LIMIT 50",
+                (r, n) -> uuid(r.getBytes(1)), Timestamp.from(now));
+    }
+
+    /** Comprueba el inbox de resultados antes de habilitar su consumidor. */
+    public void requireResultSchema() {
+        jdbc.queryForList("SELECT message_id,operation_id,payload_hash,processed_at FROM assignment_inbox LIMIT 0");
+        jdbc.queryForList("SELECT assignment_version,active_assignment_operation_id FROM envios LIMIT 0");
+    }
+
+    /**
+     * Referencias de operación que nunca se toman como autoridad de autorización del usuario.
+     * @param operation estado público persistido
+     * @param commandId identidad del comando que Courier debe citar
+     */
+    public record StoredOperation(AssignmentOperation operation, UUID commandId) { }
+
 }
