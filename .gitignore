@@ -49,3 +49,5 @@ __pycache__/
 
 # Estado y credenciales del entorno de demostración administrado.
 .logitrack-demo/
+
+!.env.sprint04-mq.example
