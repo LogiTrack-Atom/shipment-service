@@ -108,27 +108,27 @@
     "sources": [
       {
         "repo": "security-service",
-        "worktree": "/home/maxdz/Documentos/ChatGPT/LogiTrack Atom/worktrees/security-s04-11",
         "sha": "7d9a0ce0ff3d4097e2c92592ba56850fdb47fc41",
-        "branch": "feature/11-renovacion-sesion"
+        "branch": "feature/11-renovacion-sesion",
+        "repository_url": "https://github.com/LogiTrack-Atom/security-service"
       },
       {
         "repo": "api-gateway",
-        "worktree": "/home/maxdz/Documentos/ChatGPT/LogiTrack Atom/worktrees/gateway-s04-11",
         "sha": "437e4ce99a21daade4bd9fb6fc1e66da0e705a68",
-        "branch": "feature/11-sesion-navegador"
+        "branch": "feature/11-sesion-navegador",
+        "repository_url": "https://github.com/LogiTrack-Atom/api-gateway"
       },
       {
         "repo": "shipment-service",
-        "worktree": "/home/maxdz/Documentos/ChatGPT/LogiTrack Atom/worktrees/shipment-s04-11",
         "sha": "b7b3d36e9e3adddff46e78492fb4fe433cb694b6",
-        "branch": "feature/11-esquema-sesion"
+        "branch": "feature/11-esquema-sesion",
+        "repository_url": "https://github.com/LogiTrack-Atom/shipment-service"
       },
       {
         "repo": "logitrack-frontend",
-        "worktree": "/home/maxdz/Documentos/ChatGPT/LogiTrack Atom/worktrees/frontend-s04-3-renovacion",
         "sha": "f5971841f03599103b509e648f9db72985f7a914",
-        "branch": "feature/3-renovacion-sesion"
+        "branch": "feature/3-renovacion-sesion",
+        "repository_url": "https://github.com/LogiTrack-Atom/logitrack-frontend"
       }
     ],
     "images": [
