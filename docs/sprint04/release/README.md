@@ -111,3 +111,12 @@ aceptación previa de navegador. El laboratorio temporal se retira tras el ensay
 La reproducción por otro integrante sigue pendiente: #73 permanece En curso y
 G1 no se declara aprobado. No hay trabajo técnico pendiente en frontend#9 para
 este release. No se inicia #76 antes de resolver ese criterio de #73.
+
+
+## Decisión vigente de cierre — 10/11/2026
+
+El propietario autorizó cerrar #73 con las pruebas técnicas anteriores y retirar la
+reproducción por otro integrante como requisito. No se realizó esa reproducción.
+#73 está cerrada, G1 técnico aceptado y Kanban Hecho. Esta decisión sustituye las
+menciones históricas a su espera. Las instrucciones de reproducción se conservan como
+guía útil; #76 puede continuar y la ampliación mantiene pruebas/release propios.

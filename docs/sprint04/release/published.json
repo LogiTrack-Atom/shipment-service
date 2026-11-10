@@ -1,7 +1,7 @@
 {
   "format": 1,
   "version": "sprint04-rc1",
-  "g1_approved": false,
+  "g1_approved": true,
   "publication_complete": true,
   "config_label": "a08f95ee8fa0bf412fb30f68776e9a8794f94110",
   "platform": "linux/amd64",
@@ -113,8 +113,9 @@
     "fix_pr": "https://github.com/LogiTrack-Atom/logitrack-frontend/pull/24"
   },
   "peer_reproduction": {
-    "status": "pending",
-    "criterion": "issue #73 requiere reproducción independiente por otro integrante"
+    "status": "not_performed",
+    "required": false,
+    "decision": "Propietario autorizó cierre técnico de #73 el 10/11/2026; no se atribuye reproducción a otro integrante."
   },
   "mysql_image": "mysql@sha256:0f51e63e537a1f176423fa03ef559aabe6fa4372a53160a44bc7e75da7d15364",
   "deployment": {
@@ -132,7 +133,7 @@
     },
     "release_base_commit": "7da5e2817f54368252a0cfeac89dc113af852071"
   },
-  "publication_status": "Publicadas; descarga pública, identidad, arranque y persistencia por digest verificados. G1 pendiente de reproducción independiente.",
+  "publication_status": "Publicadas y verificadas. G1 técnico aceptado por decisión del propietario; #73 cerrada.",
   "registry": "Docker Hub",
   "verification": {
     "public_pull": {
