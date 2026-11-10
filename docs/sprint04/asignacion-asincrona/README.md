@@ -78,7 +78,7 @@ Todas las rutas que toman varios bloqueos usan envío → operación; deduplicac
 | Ambos | `amqp_inbox`: `(consumer_name, message_id)` UNIQUE, operation_id, huella SHA-256 del cuerpo y processed_at; misma identidad con cuerpo distinto es inválida |
 | Courier | Inbox y outbox del resultado en un commit; command_message_id único, un resultado persistido por comando; lectura de su propia base sin HTTP ni modificación/reserva del repartidor |
 
-Migraciones aditivas con ledger/checksums según las herramientas existentes, aplicadas
+Migraciones aditivas versionadas con checksum en el manifiesto propio, aplicadas
 primero en copias MySQL 8.4 y en instalación vacía; nunca borrar volúmenes para migrar.
 No eliminar inbox/idempotency/outbox de esta versión durante el Sprint: borrar registros
 permitiría repetir efectos. Una política futura de retención exige una ventana explícita
@@ -147,3 +147,6 @@ En equipos sin ensurepip/python3-venv, se puede crear el entorno con `uv venv` e
 instalar con `uv pip install --python /ruta/al/entorno/bin/python -r ...`.
 Dependencias del verificador fijadas a las versiones comprobadas. Ocho pruebas de
 contrato aprobadas; los subcasos no se cuentan como pruebas de integración.
+
+
+Implementación de solicitud/publicador y procedimiento de migración: [#78](SOLICITUD_OUTBOX.md). El ledger histórico de repartidores es exclusivo de Courier.

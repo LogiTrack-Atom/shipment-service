@@ -34,6 +34,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class OpenApiIT extends MySqlIntegrationSupport {
     private static final String MISSING = "00000000-0000-0000-0000-000000000001";
     private static final Map<String, Set<String>> CONTRACTS = Map.ofEntries(
+            Map.entry("post /api/v1/envios/{id}/solicitudes-asignacion", Set.of("202","400","401","403","404","409","422","503")),
+            Map.entry("get /api/v1/operaciones-asignacion/{id}", Set.of("200","400","401","403","404")),
             Map.entry("post /api/v1/envios", Set.of("201", "400", "409", "401", "403")),
             Map.entry("get /api/v1/envios", Set.of("200", "400", "401", "403")),
             Map.entry("get /api/v1/envios/{id}", Set.of("200", "400", "404", "401", "403")),
@@ -46,10 +48,10 @@ class OpenApiIT extends MySqlIntegrationSupport {
             Map.entry("put /api/v1/asociaciones/repartidores/{id}", Set.of("200","400","401","403","404","409","422","502","503")));
 
     @Test
-    void publicaDiezOperacionesConRespuestasTipadasYErroresPertinentes() throws Exception {
+    void publicaOperacionesDelContratoConRespuestasTipadasYErroresPertinentes() throws Exception {
         DocumentContext document = documentacion();
         Map<String, Map<String, Map<String, Object>>> paths = document.read("$.paths");
-        assertThat(paths.values().stream().mapToInt(Map::size).sum()).isEqualTo(10);
+        assertThat(paths.values().stream().mapToInt(Map::size).sum()).isEqualTo(CONTRACTS.size());
         Set<String> operationIds = new HashSet<>();
         for (var contract : CONTRACTS.entrySet()) {
             String[] key = contract.getKey().split(" ", 2);

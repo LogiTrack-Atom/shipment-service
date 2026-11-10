@@ -80,6 +80,18 @@ public class OpenApiConfig {
         components.addResponses("RolIncompatible", error(422,"La cuenta no tiene el rol requerido.","La cuenta no tiene el rol requerido para esta asociación"));
         components.addResponses("IdentidadRespuestaInvalida", error(502,"Contrato remoto inválido.","No se pudo verificar la asociación de identidad"));
         components.addResponses("IdentidadNoDisponible", error(503,"No se pudo comprobar la asociación.","No se pudo verificar la asociación de identidad"));
+        components.addResponses("SolicitudAsignacionInvalida", error(400,
+                "Cuerpo, UUID o Idempotency-Key ausente/no canónica.", "Idempotency-Key debe ser un UUID canónico en minúsculas"));
+        components.addResponses("SolicitudEnvioNoEncontrado", error(404,
+                "El envío objetivo no existe.", "Envío no encontrado"));
+        components.addResponses("OperacionAsignacionNoEncontrada", error(404,
+                "La operación consultada no existe.", "Operación no encontrada"));
+        components.addResponses("IdempotenciaAsignacionConflicto", error(409,
+                "Clave reutilizada con otra intención o generación agotada.", "Idempotency-Key ya usada para otra intención"));
+        components.addResponses("AsignacionAsincronaNoPendiente", error(422,
+                "Solo se aceptan nuevas intenciones sobre un envío PENDIENTE.", "El envío debe estar PENDIENTE"));
+        components.addResponses("AsignacionAsincronaDeshabilitada", error(503,
+                "La ampliación está deshabilitada; no se crea operación ni outbox.", "Asignación asíncrona deshabilitada"));
         return new OpenAPI().components(components).info(new Info()
                 .title("shipment-service API").version("v1")
                 .description("""
