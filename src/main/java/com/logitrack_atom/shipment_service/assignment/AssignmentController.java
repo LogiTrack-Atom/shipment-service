@@ -1,6 +1,13 @@
 package com.logitrack_atom.shipment_service.assignment;
 
 import com.logitrack_atom.shipment_service.dto.response.ApiError;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
@@ -21,8 +28,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 /** API administrativa de aceptación y seguimiento local de asignaciones asíncronas. */
 @RestController
-@io.swagger.v3.oas.annotations.security.SecurityRequirement(name = "bearerAuth")
-@io.swagger.v3.oas.annotations.tags.Tag(name = "Asignación asíncrona")
+@SecurityRequirement(name = "bearerAuth")
+@Tag(name = "Asignación asíncrona")
 public class AssignmentController {
     private final AssignmentService service;
 
@@ -40,9 +47,18 @@ public class AssignmentController {
      * @param servlet contexto HTTP; solo admite el prefijo conocido del Gateway
      * @return 202 y ubicación de la operación después del commit local
      */
-    @io.swagger.v3.oas.annotations.Operation(summary = "Solicitar asignación asíncrona",
-            description = "ADMIN. Acepta después del commit local, sin esperar a Courier ni al broker. Reutilizar Idempotency-Key para reconciliar la misma intención.",
-            responses = @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "202", description = "Operación persistida y consultable"))
+    @Operation(operationId = "solicitarAsignacionAsincrona", summary = "Solicitar asignación asíncrona",
+            description = "ADMIN. Acepta después del commit local, sin esperar a Courier ni al broker. Reutilizar Idempotency-Key para reconciliar la misma intención.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "202", description = "Operación persistida y consultable", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AssignmentOperation.class))),
+            @ApiResponse(responseCode = "400", ref = "#/components/responses/SolicitudAsignacionInvalida"),
+            @ApiResponse(responseCode = "401", ref = "#/components/responses/AutenticacionRequerida"),
+            @ApiResponse(responseCode = "403", ref = "#/components/responses/AccesoDenegado"),
+            @ApiResponse(responseCode = "404", ref = "#/components/responses/SolicitudEnvioNoEncontrado"),
+            @ApiResponse(responseCode = "409", ref = "#/components/responses/IdempotenciaAsignacionConflicto"),
+            @ApiResponse(responseCode = "422", ref = "#/components/responses/AsignacionAsincronaNoPendiente"),
+            @ApiResponse(responseCode = "503", ref = "#/components/responses/AsignacionAsincronaDeshabilitada")
+    })
     @PostMapping("/api/v1/envios/{id}/solicitudes-asignacion")
     public ResponseEntity<AssignmentOperation> accept(@PathVariable UUID id,
             @RequestHeader("Idempotency-Key") String key, @Valid @RequestBody AssignmentRequest request, HttpServletRequest servlet) {
@@ -57,7 +73,14 @@ public class AssignmentController {
      * @param id operación local
      * @return estado autorizado, sin llamadas remotas
      */
-    @io.swagger.v3.oas.annotations.Operation(summary = "Consultar operación de asignación", description = "ADMIN. Lectura local sin depender de RabbitMQ.")
+    @Operation(operationId = "obtenerOperacionAsignacion", summary = "Consultar operación de asignación", description = "ADMIN. Lectura local sin depender de RabbitMQ.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Estado de operación persistido", content = @Content(mediaType = "application/json", schema = @Schema(implementation = AssignmentOperation.class))),
+            @ApiResponse(responseCode = "400", ref = "#/components/responses/UuidInvalido"),
+            @ApiResponse(responseCode = "401", ref = "#/components/responses/AutenticacionRequerida"),
+            @ApiResponse(responseCode = "403", ref = "#/components/responses/AccesoDenegado"),
+            @ApiResponse(responseCode = "404", ref = "#/components/responses/OperacionAsignacionNoEncontrada")
+    })
     @GetMapping("/api/v1/operaciones-asignacion/{id}")
     public AssignmentOperation find(@PathVariable UUID id) { return service.find(id); }
 
