@@ -1,22 +1,24 @@
 # Contratos para preparar el frontend · S04-01 / #71
 
-**BORRADOR para mocks; aprobación de integración pendiente.** Fecha: 2026-11-09. Responsable: MaxDZ-10. Organización: LogiTrack-Atom.
+**Contrato técnico conciliado con el núcleo integrado; ADR docente pendiente.** Actualizado: 10/11/2026. Responsable: MaxDZ-10. Organización: LogiTrack-Atom.
 
-Este paquete permite a GabDiaz preparar su base React y a MaxDZ-10/JMatiasF desarrollar pantallas sobre datos ficticios. La estructura y hosting de React permanecen a cargo de GabDiaz. No modifica código Java, infraestructura, dependencias ni datos compartidos. Las mejoras de auditoría diferidas por el equipo siguen en #69; G0 (#70) permanece pendiente y esta PR no lo aprueba.
+Las pantallas de autenticación, cliente HTTP, Shipment, Courier y administración ya están integradas en `logitrack-frontend/develop`. La integración real y la persistencia del núcleo se verificaron por Gateway y Nginx en shipment-service#72. Este paquete conserva modelos y ejemplos estáticos, y distingue esa simulación de las comprobaciones ejecutadas con servicios.
 
-El frontend público solo tenía README en main y ninguna PR en la consulta de esta fecha; no se presume una implementación no publicada. La issue #71 permite este borrador tras #66. Las interfaces y mocks definitivos requieren reconciliación final y política docente de sesión confirmada.
+S04-00/G0 está retirado como requisito. No es necesario reabrir la auditoría para consumir estos contratos. La aceptación docente de la sesión en memoria y el destino público de hosting siguen pendientes; integrar esta documentación no los declara aprobados.
+
+Ver [conciliación y cobertura efectiva](CONCILIACION.md) e [identificación del entorno probado](integracion-verificada.json).
 
 ## Archivos e interfaces
 
 - `modelos.schema.json`: 25 definiciones JSON Schema 2020-12 de solicitudes/respuestas. Usar `#/$defs/<Modelo>` para validar un payload; el documento raíz es un registro de modelos. Interfaces independientes de la estructura que elija Gab para React/TypeScript.
 - `escenarios.mock.json`: 25 escenarios con actor, método, ruta, código, cuerpo y modelo; solo ejemplos estáticos para conectar al adaptador mock de la base. `allowRealRequests: false` es metadato de intención, no un bloqueo de red implementado. Sin servidor ni interceptores instalados en este paquete.
-- Este documento: rutas/modelos, flujos por rol, ADR propuesto y criterios de traspaso.
+- Este documento: rutas/modelos, flujos por rol, ADR implementado provisionalmente y criterios pendientes.
 
 Los esquemas de solicitudes limitan lo que debe construir el cliente; no afirman que todos los DTO del servidor rechacen cada campo adicional. Las respuestas admiten extensión de campos para no inventar un contrato cerrado. Las reglas de autorización, estado, unicidad y máximo de bytes UTF-8 de password requieren lógica adicional: JSON Schema no sustituye el backend. Validar decimales con aritmética exacta para evitar falsos errores de multipleOf binario.
 
 ## Referencias contrastadas
 
-Base de código y pruebas #66–#68; evidencia ejecutada en [PR #83](https://github.com/LogiTrack-Atom/shipment-service/pull/83), sin repetir suites. Los enlaces siguientes fijan las fuentes del contrato:
+Referencias históricas de código para los DTO y pruebas ejecutadas en [PR #83](https://github.com/LogiTrack-Atom/shipment-service/pull/83), sin repetir suites. Los enlaces siguientes fijan las fuentes del contrato:
 
 | Repositorio | SHA |
 | --- | --- |
@@ -28,7 +30,7 @@ Base de código y pruebas #66–#68; evidencia ejecutada en [PR #83](https://git
 | [configserver](https://github.com/LogiTrack-Atom/configserver/tree/4d7b1fb484e3546a853bbd1dbd2ed04e24e78bd5) | `4d7b1fb484e3546a853bbd1dbd2ed04e24e78bd5` |
 | [configserver-ms](https://github.com/LogiTrack-Atom/configserver-ms/tree/a08f95ee8fa0bf412fb30f68776e9a8794f94110) | `a08f95ee8fa0bf412fb30f68776e9a8794f94110` |
 
-La corrección documental BearerAuth de Courier está en [PR #23](https://github.com/LogiTrack-Atom/courier-service/pull/23); no cambia autorización ni estos DTO. La rectificación del diagnóstico de migración está en [PR #87](https://github.com/LogiTrack-Atom/shipment-service/pull/87). Esas PR y las anteriores conservan su estado de revisión/integración propio.
+La propuesta documental BearerAuth de Courier, diferida sin merge, se conserva en [PR #23](https://github.com/LogiTrack-Atom/courier-service/pull/23); no cambia autorización ni estos DTO. La rectificación del diagnóstico de migración está en [PR #87](https://github.com/LogiTrack-Atom/shipment-service/pull/87). Las PR de auditoría se cerraron sin merge; sus hallazgos y pruebas se conservan como historia, no como dependencia funcional.
 
 ## Matriz de flujos por rol
 
@@ -89,7 +91,7 @@ Enviar `Authorization: Bearer <token>` en operaciones protegidas. Los roles son 
 | GET | C `/repartidores/{id}/usuario` | A | — | 200 IdentidadRepartidor |
 | GET | C `/admin/configuracion` | A | — | 200 Configuración |
 
-No hay listado general de usuarios, listado general de clientes, actualización/baja de usuarios, borrado de envíos, refresh ni logout remoto en estos controladores. #S04-09 debe diseñar el flujo administrativo alrededor de las operaciones disponibles. Las comprobaciones adicionales de gateway, esquema y seguridad se validarán antes de integrar.
+No hay listado general de usuarios, listado general de clientes, actualización/baja de usuarios, borrado de envíos, refresh ni logout remoto en estos controladores. #S04-09 debe diseñar el flujo administrativo alrededor de las operaciones disponibles. CORS y el proxy del núcleo ya se verificaron; el hosting público conserva su aceptación específica.
 
 ## Modelos y validaciones
 
@@ -138,20 +140,20 @@ RabbitMQ y el endpoint asíncrono todavía no forman parte de esta base: sus iss
 - `shipment-service`: `src/main/java/com/logitrack_atom/shipment_service/controller/{EnvioController,AsociacionUsuarioController}.java`, `dto/{request,response}/`, `config/SecurityConfig.java`, `security/ShipmentAccess.java` y `enums/EstadoEnvio.java`.
 - `courier-service`: `src/main/java/com/logitrack_atom/courier_service/controller/{RepartidorController,ConfiguracionController}.java`, `dto/{request,response}/`, `config/SecurityConfig.java`, `security/RepartidorAccess.java` y `service/impl/RepartidorServiceImpl.java`.
 - `security-service`: `src/main/java/com/logitrack_atom/security_service/controller/{AuthController,UsuarioController}.java`, `dto/{request,response}/` y `config/SecurityConfig.java`.
-- `configserver-ms`: `api-gateway.yml` para rutas, JWT y reescritura del header Location. La aplicación remota efectiva depende del perfil y label, no se infieren de estos fixtures ni sustituyen G0.
+- `configserver-ms`: `api-gateway.yml` para rutas, JWT y reescritura del header Location. La configuración efectiva depende del perfil y label; no se infiere de los fixtures. El label probado se registra en integracion-verificada.json.
 
-## ADR-001 · Sesión y red del frontend (propuesto)
+## ADR-001 · Sesión y red del frontend (implementado, aceptación docente pendiente)
 
-**Estado: propuesta para preparación con mocks.** La consigna exige almacenamiento seguro, propagación Bearer, guards y logout/redirección ante 401/403. La expresión sobre persistencia de seguridad no especifica inequívocamente si el login debe sobrevivir a recargar: confirmar con la cátedra antes de aceptar S04-04. Fuentes: Sprint04_ArquitecturasAvanzadas-Sprint04.pdf, sección Implementación del Cliente Frontend, y anotación de límite temporal de tokens. No se atribuye una aprobación docente inexistente a esta propuesta.
+**Estado: implementado en el frontend; interpretación docente de persistencia pendiente.** La consigna exige almacenamiento seguro, propagación Bearer, guards y logout/redirección ante 401/403. La expresión sobre persistencia de seguridad no especifica inequívocamente si el login debe sobrevivir a recargar: confirmar con la cátedra antes de aceptar S04-04. Fuentes: Sprint04_ArquitecturasAvanzadas-Sprint04.pdf, sección Implementación del Cliente Frontend, y anotación de límite temporal de tokens. No se atribuye una aprobación docente inexistente a esta propuesta.
 
 1. Guardar el accessToken exclusivamente en memoria del AuthProvider. Navegación SPA conserva contexto; recargar o abrir otra pestaña vuelve al login. Sin Web Storage, URL, logs ni inclusión en bundle. Limpiar password del formulario al completar/abandonar; no guardar credenciales en el estado del flujo de administración.
 2. Interpretar exp en segundos y cerrar la sesión al alcanzarlo, al recuperar foco y antes de cada request; rechazar tokens de respuesta malformados o vencidos. expiresIn es duración, no una fecha. El frontend puede leer claims para presentación, pero la validación criptográfica, rol y pertenencia pertenecen al servidor. El skew backend de 60 s no extiende deliberadamente la sesión de UI. No hay refresh ni logout remoto en el contrato actual.
 3. Cada login crea una generación de sesión. Logout limpia datos/caché/flujo, aborta pendientes e invalida resultados de generaciones anteriores. Revalidar después de volver con atrás/adelante (incluido pageshow/restauración). Un 401/403 de request protegido provoca una única limpieza/redirección al login sin bucles; el error de login público se muestra en su formulario. El Bearer copiado fuera de la SPA puede seguir válido hasta su vencimiento: logout local no lo revoca.
 4. El cliente HTTP solo adjunta Bearer al origen Gateway autorizado y los prefijos applications definidos aquí. Resolver y validar destinos: rechazar URLs absolutas no permitidas y rutas // que cambien el origen. No incluir credenciales de cookies por defecto. No enviar token a imágenes, servicios externos ni hosting de terceros. Renderizar mensajes de error como texto; soportar ApiError, ProblemDetail, texto, cuerpo vacío y fallo de transporte.
 5. Red preferida para la base: origen único con servidor estático/proxy que preserve /applications/<servicio>/api/v1; el navegador utiliza un destino público accesible, no DNS interno Docker. Si el hosting obliga a cross-origin, configurar allowlist exacta en Gateway en api-gateway#8, preflight para Authorization/Content-Type, métodos reales y exposición de Location si se consume. Host/origen/TLS lo confirma Gab en frontend#2; no inventar un dominio o credenciales. Fallback SPA no debe convertir errores /applications en index.html.
-6. Configuración de URL es pública y configurable; ningún secreto en variables VITE_* o bundle. Mantener modo mock explícito hasta autorización de integración. Si la cátedra exige persistencia tras recarga, revisar esta decisión y sus riesgos antes de aceptar autenticación; no agregar almacenamiento persistente silenciosamente.
+6. Configuración de URL es pública y configurable; ningún secreto en variables VITE_* o bundle. El modo predeterminado es mock; `VITE_USE_MOCKS=false` selecciona explícitamente el transporte real. Si la cátedra exige persistencia tras recarga, revisar esta decisión y sus riesgos antes de aceptar autenticación; no agregar almacenamiento persistente silenciosamente.
 
-## Traspaso y validación
+## Traspaso y validación inicial — 09/11/2026
 
 Gab puede mapear los escenarios a su adaptador mock, rotular ese modo y mantener la aplicación sin llamadas reales. Los cuerpos usan UUID de usuario distintos de cliente/repartidor y datos example.com. No hay token, password ni datos del equipo. Los escenarios son independientes; no simulan persistencia, filtros de autorización reales, latencia por sí solos ni efectos transaccionales. El de envío ajeno declara que el recurso existe fuera de la vista del actor: no confundir 403 con 404 ni inferir que el catálogo devuelve ese recurso al usuario.
 
@@ -177,4 +179,4 @@ for case in fixtures['escenarios']:
                                 format_checker=FormatChecker()).validate(case[field])
 ```
 
-Pendientes de cierre de #71: decisión docente de persistencia, origen/proxy de hosting, reconciliación G0 e integración/aceptación de los módulos. El borrador no completa esos criterios ni cambia las asignaciones. La decisión del equipo de diferir el resto de auditoría sigue vigente; no se reabren scanners o regresiones para preparar estas pantallas.
+Pendientes de cierre de #71: confirmar con la cátedra la interpretación de persistencia tras recarga y completar el ADR con ese resultado. La red del núcleo usa origen único con Nginx y está verificada; host/origen/TLS público se configuran al concretar el hosting, sin inventar un destino. La aceptación transversal restante continúa en frontend#9. No se reabren scanners ni auditorías.
