@@ -29,5 +29,10 @@ jobs:
           cache: maven
       - name: Verificar protecciones del publicador Sprint04
         run: python3 -m unittest discover -s scripts/release/tests -p test_publish_sprint04.py -v
+      - name: Validar contratos de asignación asíncrona
+        run: |
+          python3 -m venv /tmp/logitrack-contracts
+          /tmp/logitrack-contracts/bin/pip install --disable-pip-version-check -r scripts/contracts/requirements.txt
+          /tmp/logitrack-contracts/bin/python -m unittest discover -s scripts/contracts/tests -v
       - name: Ejecutar pruebas y generar Javadoc
         run: ./mvnw -B -ntp verify javadoc:javadoc

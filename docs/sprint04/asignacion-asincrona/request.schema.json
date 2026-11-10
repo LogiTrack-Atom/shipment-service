@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/LogiTrack-Atom/shipment-service/blob/develop/docs/sprint04/asignacion-asincrona/request.schema.json",
+  "title": "request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "repartidorId"
+  ],
+  "properties": {
+    "repartidorId": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    }
+  }
+}

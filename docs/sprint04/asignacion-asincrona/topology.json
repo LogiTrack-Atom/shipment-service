@@ -1,0 +1,35 @@
+{
+  "vhost": "logitrack-s04",
+  "exchange_type": "direct",
+  "durable": true,
+  "queue_type": "quorum",
+  "delivery_mode": 2,
+  "max_body_bytes": 16384,
+  "max_retries": 3,
+  "retry_delay_ms": 5000,
+  "operation_ttl_seconds": 300,
+  "exchanges": {
+    "commands": "lt.assignment.commands.v1",
+    "results": "lt.assignment.results.v1",
+    "retry": "lt.assignment.retry.v1",
+    "dead": "lt.assignment.dead.v1"
+  },
+  "flows": {
+    "commands": {
+      "routing_key": "availability.request",
+      "queue": "lt.courier.assignment.v1",
+      "retry_queue": "lt.courier.assignment.retry.v1",
+      "retry_routing_key": "courier.retry",
+      "dead_queue": "lt.courier.assignment.dead.v1",
+      "dead_routing_key": "courier.dead"
+    },
+    "results": {
+      "routing_key": "availability.result",
+      "queue": "lt.shipment.assignment.v1",
+      "retry_queue": "lt.shipment.assignment.retry.v1",
+      "retry_routing_key": "shipment.retry",
+      "dead_queue": "lt.shipment.assignment.dead.v1",
+      "dead_routing_key": "shipment.dead"
+    }
+  }
+}
