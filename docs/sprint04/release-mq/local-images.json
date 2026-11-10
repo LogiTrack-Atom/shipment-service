@@ -1,0 +1,26 @@
+{
+  "shipment-service": {
+    "local_image": "logitrack-shipment-service:s04-79-candidate",
+    "image_id": "sha256:4e1e2fc42a8699490768a4e4a51d6b54fbc8238266d28fb0cb5c2d36ff391e29",
+    "build_commit": "a4c1a1641e7700242228f0b83ed86bc2a380d48c",
+    "runtime_tree": "787f9d4a9d41a06dc9c819a5d268a599ad890af2",
+    "dockerfile_sha256": "6dfa99b06f882b658bd2766adf4ecbd1eceff7031b7f71838a4d42c88ca7899f",
+    "published": false
+  },
+  "courier-service": {
+    "local_image": "logitrack-courier-service:s04-21-candidate",
+    "image_id": "sha256:484e49838a648d76fb55ead8a7b830f111e1f1460f475d3e6e87ba337761daae",
+    "build_commit": "8a2f1e5ab97f5c81cfb071d39ee3ca1ceadb5a96",
+    "runtime_tree": "933f9566d4d1c8a7c0043465e7759289cd2b5377",
+    "dockerfile_sha256": "53a278c54813c351c78a011cbf78d2fa1e4d798c1715eea134b49c4cf657e13f",
+    "published": false
+  },
+  "api-gateway": {
+    "local_image": "logitrack-api-gateway:s04-78-candidate",
+    "image_id": "sha256:ce55f7cb6f0f2f3727fa8dac6b8c0dca6dff6c2c2b6abc0f530641e0a81e15c2",
+    "build_commit": "6150d1f41d02b88b7c1f4b48b60d82dfff4c9d75",
+    "runtime_tree": "b1e2bdaaa64040e6b3463eaecbcdb46876ca3981",
+    "dockerfile_sha256": "9e87fd402c0c3ad8561c4b0212a201aa54ea59ee7765f7784cf71f79406e880a",
+    "published": false
+  }
+}
