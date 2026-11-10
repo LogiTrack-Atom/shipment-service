@@ -3,6 +3,8 @@ services:
   rabbitmq:
     image: rabbitmq:4.4.0-management@sha256:af6f50d38098d8bd52fef7f3fa85015dd8b2bf6def58e995bf584ae9ba0f6407
     profiles: [mq]
+    # Arrancar sin root conserva el grupo suplementario que lee las definiciones 0640.
+    user: rabbitmq
     hostname: rabbitmq
     restart: unless-stopped
     mem_limit: 768m

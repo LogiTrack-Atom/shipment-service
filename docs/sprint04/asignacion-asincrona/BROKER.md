@@ -20,6 +20,8 @@ incluye hashes salados SHA-256 y también es privado: 0640 con grupo suplementar
 lectura del contenedor; credenciales/env 0600 y directorio 0700. No subir ninguno a Git.
 Usar el mismo COMPOSE_PROJECT_NAME al combinar ambos env; el último env prevalece.
 
+El proceso arranca como rabbitmq (sin root), conservando el grupo suplementario
+para leer las definiciones 0640 también en Docker Linux nativo.
 Management queda en 127.0.0.1:15672 (puerto configurable), AMQP no se publica al host.
 Los servicios de la red Docker acceden por rabbitmq:5672 al vhost logitrack-s04.
 lt_operator administra; usuarios de aplicación no pueden declarar/borrar recursos,
