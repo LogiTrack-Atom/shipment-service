@@ -25,6 +25,14 @@ class NoRedirect(HTTPRedirectHandler):
         return None
 
 
+class UnexpectedStatus(AssertionError):
+    """Distingue indisponibilidad de Gateway de una respuesta de contrato inesperada."""
+
+    def __init__(self, status, method, path, expected):
+        super().__init__(f'{method} {path}: HTTP {status}, esperado {expected}')
+        self.status = status
+
+
 def main():
     """Ejecuta escenarios sobre servicios reales y emite únicamente un resumen público."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -82,12 +90,14 @@ def main():
         except HTTPError as error:
             response = error
         with response:
-            check(response.code == expected, f'{method} {path}: HTTP {response.code}, esperado {expected}')
+            stats['assertions'] += 1
+            if response.code != expected:
+                raise UnexpectedStatus(response.code, method, path, expected)
             raw = response.read()
             return (json.loads(raw) if raw else None), response.headers
 
     def control(*command):
-        subprocess.run(compose + list(command), check=True, capture_output=True)
+        return subprocess.check_output(compose + list(command), text=True).strip()
 
     def sql(service, statement, admin=False):
         command = ('MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql --user=root' if admin else
@@ -117,6 +127,26 @@ def main():
         if key:
             headers['Idempotency-Key'] = key
         return request(base, path, method, body, headers, expected)
+
+    def gateway_instance():
+        container = control('ps', '-q', 'api-gateway')
+        check(bool(container), 'Gateway debe estar en ejecución')
+        started = subprocess.check_output(
+            ['docker', 'inspect', '--format', '{{.State.StartedAt}}', container], text=True
+        ).strip()
+        return container, started
+
+    def gateway_read_after_restart(path):
+        # Reintentar solo GET ante indisponibilidad temporal. Los 4xx y otros
+        # errores de contrato siguen fallando inmediatamente.
+        def probe():
+            try:
+                return api(path)
+            except UnexpectedStatus as error:
+                if error.status not in (500, 502, 503, 504):
+                    raise
+                return None
+        return eventually(probe, lambda result: result is not None)
 
     def health():
         # GET autenticado verifica el núcleo completo durante la caída AMQP.
@@ -261,11 +291,17 @@ def main():
         for name in ['lt.courier.assignment.v1', 'lt.shipment.assignment.v1']:
             eventually(lambda: queue(name), lambda q: q['messages_ready'] == 0 and q['messages_unacknowledged'] == 0)
         before = sql('shipment', "SELECT COUNT(*), SUM(status='APPLIED') FROM assignment_operations")
+        gateway = gateway_instance()
         control('restart', 'courier-service', 'shipment-service')
         control('up', '-d', '--no-deps', '--wait', '--wait-timeout', '180', 'courier-service', 'shipment-service')
+        courier_after = gateway_read_after_restart(couriers + '/' + rider)
+        shipment_after = gateway_read_after_restart(shipments + '/' + synchronous)
+        check(courier_after['id'] == rider, 'Gateway recupera la lectura de Courier')
+        check(shipment_after['repartidorId'] == rider, 'Gateway recupera Shipment y conserva la asignación')
+        check(gateway_instance() == gateway, 'Gateway se mantuvo en la misma instancia')
         check(sql('shipment', "SELECT COUNT(*), SUM(status='APPLIED') FROM assignment_operations") == before, 'Reinicio posterior al ACK no crea ni reaplica operaciones')
         check(sql('shipment', "SELECT COUNT(*) FROM assignment_inbox WHERE operation_id=UNHEX(REPLACE('" + op['operationId'] + "','-',''))") == '1', 'Reinicio posterior al ACK conserva efecto único')
-        scenario('Feign/PUT y reinicio posterior al ACK')
+        scenario('Feign/PUT, reinicio posterior al ACK y recuperación por Gateway')
         print(json.dumps({'ok': True, **stats, 'limits': ['Sin UI asíncrona frontend#10',
             'Corte TCP anterior al ACK cubierto por AssignmentDeliveryIT de Courier#21; aquí se prueba reinicio posterior al ACK',
             'At-least-once; sin reserva exclusiva ni alta disponibilidad']}, indent=2))
