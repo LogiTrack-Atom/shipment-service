@@ -1,0 +1,1354 @@
+{
+  "info": {
+    "name": "LogiTrack Sprint03 — Seguridad y negocio",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Requiere security_fixture.py sobre una demo propia. Cubre JWT vencido con firma válida, roles/pertenencia y errores de negocio. Cada rechazo termina con lecturas y comparación de envío e historial. El generador prepara un envío auxiliar CANCELADO sin modificar los envíos de referencia. Restablecer la demo al terminar."
+  },
+  "item": [
+    {
+      "name": "Login ADMIN",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{securityBaseUrl}}/api/v1/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.variables.set(\"adminToken\", pm.response.json().accessToken);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login CLIENTE",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{securityBaseUrl}}/api/v1/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{clienteEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.variables.set(\"clientToken\", pm.response.json().accessToken);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login REPARTIDOR",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{securityBaseUrl}}/api/v1/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{repartidor_inactivoEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.variables.set(\"courierToken\", pm.response.json().accessToken);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Guardar envío antes de rechazos",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.variables.set(\"beforeShipment\", JSON.stringify(pm.response.json()));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Guardar historial antes de rechazos",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}/historial"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.variables.set(\"beforeHistory\", JSON.stringify(pm.response.json()));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Guardar beforeOther envío",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_ajenoId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.variables.set(\"beforeOtherShipment\", JSON.stringify(pm.response.json()));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Guardar beforeOther historial",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_ajenoId}}/historial"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.variables.set(\"beforeOtherHistory\", JSON.stringify(pm.response.json()));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Guardar beforeUnassignable envío",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_no_asignableId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.variables.set(\"beforeUnassignableShipment\", JSON.stringify(pm.response.json()));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Guardar beforeUnassignable historial",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_no_asignableId}}/historial"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.variables.set(\"beforeUnassignableHistory\", JSON.stringify(pm.response.json()));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Anónimo sin acceso",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+              "pm.test(\"ApiError estructurado\", () => { const r=pm.response.json(); pm.expect(r.status).to.eql(401); pm.expect(r).to.have.all.keys(\"timestamp\", \"status\", \"error\", \"mensaje\", \"detalles\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Anónimo sin acceso / verificar envío",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Datos sin mutaciones\", () => pm.expect(pm.response.json()).to.eql(JSON.parse(pm.variables.get(\"beforeShipment\"))));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Anónimo sin acceso / verificar historial",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}/historial"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Datos sin mutaciones\", () => pm.expect(pm.response.json()).to.eql(JSON.parse(pm.variables.get(\"beforeHistory\"))));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "CLIENTE no asigna repartidor",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{clientToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}/repartidor",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"repartidorId\": \"{{repartidor_activoId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+              "pm.test(\"ApiError estructurado\", () => { const r=pm.response.json(); pm.expect(r.status).to.eql(403); pm.expect(r).to.have.all.keys(\"timestamp\", \"status\", \"error\", \"mensaje\", \"detalles\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "CLIENTE no asigna repartidor / verificar envío",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Datos sin mutaciones\", () => pm.expect(pm.response.json()).to.eql(JSON.parse(pm.variables.get(\"beforeShipment\"))));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "CLIENTE no asigna repartidor / verificar historial",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}/historial"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Datos sin mutaciones\", () => pm.expect(pm.response.json()).to.eql(JSON.parse(pm.variables.get(\"beforeHistory\"))));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "CLIENTE no lee envío ajeno",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{clientToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_ajenoId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+              "pm.test(\"ApiError estructurado\", () => { const r=pm.response.json(); pm.expect(r.status).to.eql(403); pm.expect(r).to.have.all.keys(\"timestamp\", \"status\", \"error\", \"mensaje\", \"detalles\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "CLIENTE no lee envío ajeno / verificar envío",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_ajenoId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Datos sin mutaciones\", () => pm.expect(pm.response.json()).to.eql(JSON.parse(pm.variables.get(\"beforeOtherShipment\"))));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "CLIENTE no lee envío ajeno / verificar historial",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_ajenoId}}/historial"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Datos sin mutaciones\", () => pm.expect(pm.response.json()).to.eql(JSON.parse(pm.variables.get(\"beforeOtherHistory\"))));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "CLIENTE no administra Courier",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{clientToken}}"
+          }
+        ],
+        "url": "{{courierBaseUrl}}/api/v1/repartidores"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+              "pm.test(\"ApiError estructurado\", () => { const r=pm.response.json(); pm.expect(r.status).to.eql(403); pm.expect(r).to.have.all.keys(\"timestamp\", \"status\", \"error\", \"mensaje\", \"detalles\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "CLIENTE no administra Courier / verificar envío",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Datos sin mutaciones\", () => pm.expect(pm.response.json()).to.eql(JSON.parse(pm.variables.get(\"beforeShipment\"))));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "CLIENTE no administra Courier / verificar historial",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}/historial"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Datos sin mutaciones\", () => pm.expect(pm.response.json()).to.eql(JSON.parse(pm.variables.get(\"beforeHistory\"))));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "CLIENTE sin diagnóstico",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{clientToken}}"
+          }
+        ],
+        "url": "{{courierBaseUrl}}/api/v1/admin/configuracion"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+              "pm.test(\"ApiError estructurado\", () => { const r=pm.response.json(); pm.expect(r.status).to.eql(403); pm.expect(r).to.have.all.keys(\"timestamp\", \"status\", \"error\", \"mensaje\", \"detalles\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "CLIENTE sin diagnóstico / verificar envío",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Datos sin mutaciones\", () => pm.expect(pm.response.json()).to.eql(JSON.parse(pm.variables.get(\"beforeShipment\"))));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "CLIENTE sin diagnóstico / verificar historial",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}/historial"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Datos sin mutaciones\", () => pm.expect(pm.response.json()).to.eql(JSON.parse(pm.variables.get(\"beforeHistory\"))));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "REPARTIDOR sin diagnóstico",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{courierToken}}"
+          }
+        ],
+        "url": "{{courierBaseUrl}}/api/v1/admin/configuracion"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+              "pm.test(\"ApiError estructurado\", () => { const r=pm.response.json(); pm.expect(r.status).to.eql(403); pm.expect(r).to.have.all.keys(\"timestamp\", \"status\", \"error\", \"mensaje\", \"detalles\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "REPARTIDOR sin diagnóstico / verificar envío",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Datos sin mutaciones\", () => pm.expect(pm.response.json()).to.eql(JSON.parse(pm.variables.get(\"beforeShipment\"))));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "REPARTIDOR sin diagnóstico / verificar historial",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}/historial"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Datos sin mutaciones\", () => pm.expect(pm.response.json()).to.eql(JSON.parse(pm.variables.get(\"beforeHistory\"))));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Repartidor inexistente",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}/repartidor",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"repartidorId\": \"fe6f4f6a-47bd-4710-8b5f-91dd74b637ef\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+              "pm.test(\"ApiError estructurado\", () => { const r=pm.response.json(); pm.expect(r.status).to.eql(404); pm.expect(r).to.have.all.keys(\"timestamp\", \"status\", \"error\", \"mensaje\", \"detalles\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Repartidor inexistente / verificar envío",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Datos sin mutaciones\", () => pm.expect(pm.response.json()).to.eql(JSON.parse(pm.variables.get(\"beforeShipment\"))));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Repartidor inexistente / verificar historial",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}/historial"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Datos sin mutaciones\", () => pm.expect(pm.response.json()).to.eql(JSON.parse(pm.variables.get(\"beforeHistory\"))));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Repartidor INACTIVO",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}/repartidor",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"repartidorId\": \"{{repartidor_inactivoId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 422\", () => pm.response.to.have.status(422));",
+              "pm.test(\"ApiError estructurado\", () => { const r=pm.response.json(); pm.expect(r.status).to.eql(422); pm.expect(r).to.have.all.keys(\"timestamp\", \"status\", \"error\", \"mensaje\", \"detalles\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Repartidor INACTIVO / verificar envío",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Datos sin mutaciones\", () => pm.expect(pm.response.json()).to.eql(JSON.parse(pm.variables.get(\"beforeShipment\"))));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Repartidor INACTIVO / verificar historial",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}/historial"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Datos sin mutaciones\", () => pm.expect(pm.response.json()).to.eql(JSON.parse(pm.variables.get(\"beforeHistory\"))));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transición no permitida",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}/estado",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"estado\": \"ENTREGADO\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 422\", () => pm.response.to.have.status(422));",
+              "pm.test(\"ApiError estructurado\", () => { const r=pm.response.json(); pm.expect(r.status).to.eql(422); pm.expect(r).to.have.all.keys(\"timestamp\", \"status\", \"error\", \"mensaje\", \"detalles\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transición no permitida / verificar envío",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Datos sin mutaciones\", () => pm.expect(pm.response.json()).to.eql(JSON.parse(pm.variables.get(\"beforeShipment\"))));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transición no permitida / verificar historial",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}/historial"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Datos sin mutaciones\", () => pm.expect(pm.response.json()).to.eql(JSON.parse(pm.variables.get(\"beforeHistory\"))));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "JWT manipulado",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{alteredToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}"
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const parts=pm.variables.get(\"adminToken\").split(\".\"); parts[2]=(parts[2][0]===\"A\"?\"B\":\"A\")+parts[2].slice(1); pm.variables.set(\"alteredToken\",parts.join(\".\"));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+              "pm.test(\"ApiError estructurado\", () => { const r=pm.response.json(); pm.expect(r.status).to.eql(401); pm.expect(r).to.have.all.keys(\"timestamp\", \"status\", \"error\", \"mensaje\", \"detalles\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "JWT manipulado / verificar envío",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Datos sin mutaciones\", () => pm.expect(pm.response.json()).to.eql(JSON.parse(pm.variables.get(\"beforeShipment\"))));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "JWT manipulado / verificar historial",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}/historial"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Datos sin mutaciones\", () => pm.expect(pm.response.json()).to.eql(JSON.parse(pm.variables.get(\"beforeHistory\"))));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "JWT vencido con firma válida",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{expiredToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+              "pm.test(\"ApiError estructurado\", () => { const r=pm.response.json(); pm.expect(r.status).to.eql(401); pm.expect(r).to.have.all.keys(\"timestamp\", \"status\", \"error\", \"mensaje\", \"detalles\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "JWT vencido con firma válida / verificar envío",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Datos sin mutaciones\", () => pm.expect(pm.response.json()).to.eql(JSON.parse(pm.variables.get(\"beforeShipment\"))));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "JWT vencido con firma válida / verificar historial",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}/historial"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Datos sin mutaciones\", () => pm.expect(pm.response.json()).to.eql(JSON.parse(pm.variables.get(\"beforeHistory\"))));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Envío CANCELADO no asignable",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_no_asignableId}}/repartidor",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"repartidorId\": \"{{repartidor_activoId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 422\", () => pm.response.to.have.status(422));",
+              "pm.test(\"ApiError estructurado\", () => { const r=pm.response.json(); pm.expect(r.status).to.eql(422); pm.expect(r).to.have.all.keys(\"timestamp\", \"status\", \"error\", \"mensaje\", \"detalles\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Envío CANCELADO no asignable / verificar envío",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_no_asignableId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Datos sin mutaciones\", () => pm.expect(pm.response.json()).to.eql(JSON.parse(pm.variables.get(\"beforeUnassignableShipment\"))));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Envío CANCELADO no asignable / verificar historial",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_no_asignableId}}/historial"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Datos sin mutaciones\", () => pm.expect(pm.response.json()).to.eql(JSON.parse(pm.variables.get(\"beforeUnassignableHistory\"))));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Diagnóstico no expone Environment",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{courierBaseUrl}}/api/v1/admin/configuracion"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Solo tres campos públicos\", () => pm.expect(pm.response.json()).to.have.all.keys(\"aplicacion\",\"perfiles\",\"marcador\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Envío sin mutaciones",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Snapshot idéntico\", () => pm.expect(pm.response.json()).to.eql(JSON.parse(pm.variables.get(\"beforeShipment\"))));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Historial sin mutaciones",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{adminToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envio_asignableId}}/historial"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Historial idéntico\", () => pm.expect(pm.response.json()).to.eql(JSON.parse(pm.variables.get(\"beforeHistory\"))));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

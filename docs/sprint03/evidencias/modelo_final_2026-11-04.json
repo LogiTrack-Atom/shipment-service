@@ -1,0 +1,10 @@
+{
+  "alcance": "modelo Compose; no se iniciaron contenedores",
+  "aplicaciones": 6,
+  "bases_mysql": 3,
+  "componentes_declarados": 9,
+  "clientes_eureka_declarados": 4,
+  "diagnostico_local": true,
+  "construccion_local": false,
+  "resultado": "modelo válido"
+}

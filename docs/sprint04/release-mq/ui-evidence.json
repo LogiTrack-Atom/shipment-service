@@ -1,0 +1,20 @@
+{
+  "date": "2026-11-10",
+  "frontend_build_commit": "a135d41f7d981c6ed903885d799e2cfc75e331cf",
+  "accepted": true,
+  "scenarios": [
+    "202 visible como Solicitado; Confirmado solo después de GET operación y envío",
+    "Broker detenido: demora acotada y consulta manual; exactamente una operación PENDING en SQL",
+    "Logout real durante seguimiento pendiente: navegador vuelve al login sin datos privados"
+  ],
+  "pending_operation_count": 1,
+  "component_tests": [
+    "logout aborta señal y descarta APPLIED tardío",
+    "503 reintenta manualmente con la misma clave"
+  ],
+  "screenshots": [
+    "ui-confirmed.png",
+    "ui-delayed.png",
+    "ui-logout.png"
+  ]
+}

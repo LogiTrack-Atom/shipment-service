@@ -1,0 +1,22 @@
+{
+  "shipment-service": {
+    "reference": "maxdz10/shipment-service:sprint04-mq-rc1@sha256:4e1e2fc42a8699490768a4e4a51d6b54fbc8238266d28fb0cb5c2d36ff391e29",
+    "image_id": "sha256:4e1e2fc42a8699490768a4e4a51d6b54fbc8238266d28fb0cb5c2d36ff391e29",
+    "anonymous_pull": true
+  },
+  "courier-service": {
+    "reference": "maxdz10/courier-service:sprint04-mq-rc1@sha256:484e49838a648d76fb55ead8a7b830f111e1f1460f475d3e6e87ba337761daae",
+    "image_id": "sha256:484e49838a648d76fb55ead8a7b830f111e1f1460f475d3e6e87ba337761daae",
+    "anonymous_pull": true
+  },
+  "api-gateway": {
+    "reference": "maxdz10/api-gateway:sprint04-mq-rc1@sha256:ce55f7cb6f0f2f3727fa8dac6b8c0dca6dff6c2c2b6abc0f530641e0a81e15c2",
+    "image_id": "sha256:ce55f7cb6f0f2f3727fa8dac6b8c0dca6dff6c2c2b6abc0f530641e0a81e15c2",
+    "anonymous_pull": true
+  },
+  "logitrack-frontend": {
+    "reference": "maxdz10/logitrack-frontend:sprint04-mq-rc1@sha256:9649323de09721edc1bd9e638baea88ccaa550c7aaa9c431e391a7114acde58a",
+    "image_id": "sha256:9649323de09721edc1bd9e638baea88ccaa550c7aaa9c431e391a7114acde58a",
+    "anonymous_pull": true
+  }
+}

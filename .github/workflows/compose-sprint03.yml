@@ -1,0 +1,31 @@
+name: Validación del modelo Compose Sprint03
+
+on:
+  pull_request:
+    branches: [develop]
+    paths:
+      - compose.sprint03*.yaml
+      - .env.sprint03.example
+      - .gitignore
+      - scripts/compose/**
+      - .github/workflows/compose-sprint03.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: modelo-compose-sprint03-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  modelo-compose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Obtener código
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Validar modelos y rechazos sin iniciar contenedores
+        run: |
+          docker compose version
+          python3 -m unittest discover -s scripts/compose/tests -p 'test_*.py' -v

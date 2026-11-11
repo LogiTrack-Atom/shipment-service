@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: shipment-service
+  profiles:
+    default: dev
+  cloud:
+    openfeign:
+      client:
+        # Prevalecen los límites validados, sin redirecciones ni registro de credenciales.
+        default-to-properties: false
+    loadbalancer:
+      retry:
+        enabled: false
+
+springdoc:
+  override-with-generic-response: false
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev | prod
+    import: configserver:${CONFIG_SERVER_URL:http://localhost:8085}
+  cloud:
+    config:
+      label: ${CONFIG_LABEL:develop}
+      fail-fast: true
+      request-connect-timeout: 2000
+      request-read-timeout: 3000
+
+---
+logitrack:
+  assignment:
+    enabled: ${ASSIGNMENT_ENABLED:false}
+    publisher-enabled: ${ASSIGNMENT_PUBLISHER_ENABLED:true}
+    consumer-enabled: ${ASSIGNMENT_CONSUMER_ENABLED:true}

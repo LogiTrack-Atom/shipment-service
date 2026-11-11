@@ -1,0 +1,10 @@
+logging:
+  level:
+    root: INFO
+    com.logitrack_atom: DEBUG
+spring:
+  jpa:
+    show-sql: true
+logitrack:
+  config:
+    marker: shipment-service-dev

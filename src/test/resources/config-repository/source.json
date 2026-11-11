@@ -1,0 +1,9 @@
+{
+  "repository": "https://github.com/LogiTrack-Atom/configserver-ms",
+  "commit": "460e961ddd7c20316ce21966972b24e504047abf",
+  "files": {
+    "shipment-service.yml": "05ff1cb1eea817f73c49bfbbafba09d4cea631f1fdb0aec30c235c5ac85817b3",
+    "shipment-service-dev.yml": "8a3dcf110c18ad76f4b9869cdce03914c3aadfc9aad812564e855a64314d945e",
+    "shipment-service-prod.yml": "c5be0eec09767771977ccf551aaafd2bc2bc1d28df2188b7344aa55ffa6cd109"
+  }
+}

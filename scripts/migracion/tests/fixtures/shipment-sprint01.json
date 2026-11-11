@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/LogiTrack-Atom/shipment-service",
+  "commit": "7c12a79c554199715c6835c73882a08817d56a8a",
+  "path": "docker/mysql/init/001-schema.sql",
+  "sha256": "322eb45e27330386f0ddd3600cf537ad5de68b6deb5dd35db6b80db1098af33b"
+}

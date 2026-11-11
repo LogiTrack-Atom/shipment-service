@@ -1,0 +1,33 @@
+name: Broker RabbitMQ Sprint04
+
+on:
+  pull_request:
+    branches: [develop]
+    paths: ['compose.sprint04-mq.yaml', 'compose.sprint04-assignment.yaml', 'docker/rabbitmq/**', 'scripts/mq/**', 'docs/sprint04/asignacion-asincrona/topology.json', '.github/workflows/broker.yml']
+  push:
+    branches: [develop]
+    paths: ['compose.sprint04-mq.yaml', 'compose.sprint04-assignment.yaml', 'docker/rabbitmq/**', 'scripts/mq/**', 'docs/sprint04/asignacion-asincrona/topology.json', '.github/workflows/broker.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: broker-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  broker:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Obtener código
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Preparar cliente AMQP
+        run: |
+          python3 -m venv /tmp/logitrack-mq-client
+          /tmp/logitrack-mq-client/bin/pip install --disable-pip-version-check -r scripts/mq/requirements.txt
+      - name: Probar persistencia, permisos, retry y DLQ con broker real
+        run: /tmp/logitrack-mq-client/bin/python scripts/mq/check_broker.py
+      - name: Validar separación de credenciales en Compose
+        run: python3 scripts/mq/check_assignment_config.py

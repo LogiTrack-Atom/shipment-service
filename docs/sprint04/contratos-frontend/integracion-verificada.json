@@ -1,0 +1,213 @@
+{
+  "fecha": "2026-11-10",
+  "frontend_sha": "ff9c7bc9ff93ba7a79b4e80602d7d1e2e51d4adb",
+  "shipment_compose_merge": "2f5ce6336a52d1f9e55927e225ed40f01dd4db30",
+  "config_sha": "a08f95ee8fa0bf412fb30f68776e9a8794f94110",
+  "runtime_images": [
+    {
+      "service": "frontend",
+      "image_id": "sha256:401ce967c222c8cbd27f40d85640110f00ee21752004ac7d039ac93b0ef41e2c"
+    },
+    {
+      "service": "api-gateway",
+      "image_id": "sha256:5c9496b6311b60f88382785093175ba92255a405f7a1036b8f1843f4e33663cf"
+    },
+    {
+      "service": "shipment-service",
+      "image_id": "sha256:aa85d72dbb97bf0cc6c1c81d261fa892f312db922cee21e6cee086a8d4f81595"
+    },
+    {
+      "service": "courier-service",
+      "image_id": "sha256:a226ba795cea75de3343db6b5a0a0a053b36262c7b6c1290e485e55c6e4abf3f"
+    },
+    {
+      "service": "security-service",
+      "image_id": "sha256:12353ae6ff6cdafc5f3b27de40da66587e5eaee893664a732e1a828e2c8095b8"
+    },
+    {
+      "service": "eureka-server",
+      "image_id": "sha256:70a31b326a036de44fcd57238b3bf65f9f1a26e11735108cce1e944fea9dcdcb"
+    },
+    {
+      "service": "security-mysql",
+      "image_id": "sha256:0f51e63e537a1f176423fa03ef559aabe6fa4372a53160a44bc7e75da7d15364"
+    },
+    {
+      "service": "courier-mysql",
+      "image_id": "sha256:0f51e63e537a1f176423fa03ef559aabe6fa4372a53160a44bc7e75da7d15364"
+    },
+    {
+      "service": "shipment-mysql",
+      "image_id": "sha256:0f51e63e537a1f176423fa03ef559aabe6fa4372a53160a44bc7e75da7d15364"
+    },
+    {
+      "service": "configserver",
+      "image_id": "sha256:1658bc0e413f5519087ab00ef0e170de31cb20a17b6b84aef08ca17acf19874b"
+    }
+  ],
+  "provenance": "Observación del proyecto local descartable lt-s04-72, no publicación ni hosting remoto. Los fixtures fueron validados estáticamente; los payloads runtime no se validaron exhaustivamente contra todos los esquemas.",
+  "checks": {
+    "api": {
+      "ok": true,
+      "escenarios": 8,
+      "requests_http": 38,
+      "aserciones": 57,
+      "pruebas_java_ejecutadas": 0,
+      "escenarios_verificados": [
+        "autenticación y rechazo de credenciales inválidas",
+        "registro público CLIENTE y permisos por rol",
+        "alta administrativa y asociación parcial Courier",
+        "referencia Shipment y repetición del mismo PUT",
+        "alta de envío y aislamiento entre clientes incluso por tracking",
+        "asignación sin transición ni evento adicional",
+        "entrega por repartidor y lecturas posteriores por cliente",
+        "disponibilidad real de ficha propia"
+      ]
+    },
+    "persistence_prepare": {
+      "ok": true,
+      "phase": "prepare",
+      "requests_http": 17,
+      "aserciones": 38
+    },
+    "persistence_verify": {
+      "ok": true,
+      "phase": "verify",
+      "requests_http": 7,
+      "aserciones": 18
+    }
+  },
+  "files_sha256": {
+    "modelos.schema.json": "2c916cabbf83d473c89819f5039a14b202ae8ccb48f72bba3fad06ef087983d9",
+    "escenarios.mock.json": "e08c85f7fd7f6be031ee709d8751f5b3da7dba1ca888b5dc8a9e4484468c4aa1"
+  },
+  "adr_session": "adoptado por el equipo: recarga recupera acceso mediante renovación HttpOnly/Secure; sin atribuir aprobación individual docente",
+  "cors_merge": "2b8bb5c5780e9783f2b8c8e3e365337859a3468f",
+  "cors_image_in_compose": "Sprint03 sin nuevo CORS; misma procedencia que el entorno observado",
+  "sesion_renovable": {
+    "fecha": "2026-11-10",
+    "issue": "LogiTrack-Atom/security-service#11",
+    "prs": [
+      {
+        "repo": "security-service",
+        "url": "https://github.com/LogiTrack-Atom/security-service/pull/12"
+      },
+      {
+        "repo": "api-gateway",
+        "url": "https://github.com/LogiTrack-Atom/api-gateway/pull/10"
+      },
+      {
+        "repo": "logitrack-frontend",
+        "url": "https://github.com/LogiTrack-Atom/logitrack-frontend/pull/22"
+      },
+      {
+        "repo": "shipment-service",
+        "url": "https://github.com/LogiTrack-Atom/shipment-service/pull/90"
+      }
+    ],
+    "sources": [
+      {
+        "repo": "security-service",
+        "sha": "7d9a0ce0ff3d4097e2c92592ba56850fdb47fc41",
+        "branch": "feature/11-renovacion-sesion",
+        "repository_url": "https://github.com/LogiTrack-Atom/security-service"
+      },
+      {
+        "repo": "api-gateway",
+        "sha": "437e4ce99a21daade4bd9fb6fc1e66da0e705a68",
+        "branch": "feature/11-sesion-navegador",
+        "repository_url": "https://github.com/LogiTrack-Atom/api-gateway"
+      },
+      {
+        "repo": "shipment-service",
+        "sha": "b7b3d36e9e3adddff46e78492fb4fe433cb694b6",
+        "branch": "feature/11-esquema-sesion",
+        "repository_url": "https://github.com/LogiTrack-Atom/shipment-service"
+      },
+      {
+        "repo": "logitrack-frontend",
+        "sha": "f5971841f03599103b509e648f9db72985f7a914",
+        "branch": "feature/3-renovacion-sesion",
+        "repository_url": "https://github.com/LogiTrack-Atom/logitrack-frontend"
+      }
+    ],
+    "images": [
+      {
+        "service": "frontend",
+        "image_id": "sha256:24b5f785ae4a02adfc5d9930fff6133bad4bfcfd612dfe8f2fe55f68508f2606"
+      },
+      {
+        "service": "api-gateway",
+        "image_id": "sha256:fe458eca94030127d7f8a98d5002ff3cf14e3e28b4a4dbc11fe27be70fc328ed"
+      },
+      {
+        "service": "security-service",
+        "image_id": "sha256:c00ed0169db24301fcf048430c1d5bc85f91b7ca22312ba63c74a7d8ba8e2c62"
+      },
+      {
+        "service": "shipment-service",
+        "image_id": "sha256:aa85d72dbb97bf0cc6c1c81d261fa892f312db922cee21e6cee086a8d4f81595"
+      },
+      {
+        "service": "courier-service",
+        "image_id": "sha256:a226ba795cea75de3343db6b5a0a0a053b36262c7b6c1290e485e55c6e4abf3f"
+      },
+      {
+        "service": "eureka-server",
+        "image_id": "sha256:70a31b326a036de44fcd57238b3bf65f9f1a26e11735108cce1e944fea9dcdcb"
+      },
+      {
+        "service": "courier-mysql",
+        "image_id": "sha256:0f51e63e537a1f176423fa03ef559aabe6fa4372a53160a44bc7e75da7d15364"
+      },
+      {
+        "service": "security-mysql",
+        "image_id": "sha256:0f51e63e537a1f176423fa03ef559aabe6fa4372a53160a44bc7e75da7d15364"
+      },
+      {
+        "service": "shipment-mysql",
+        "image_id": "sha256:0f51e63e537a1f176423fa03ef559aabe6fa4372a53160a44bc7e75da7d15364"
+      },
+      {
+        "service": "configserver",
+        "image_id": "sha256:1658bc0e413f5519087ab00ef0e170de31cb20a17b6b84aef08ca17acf19874b"
+      }
+    ],
+    "publication": "Imágenes construidas y probadas localmente; publicación con digests en #73.",
+    "tests": {
+      "frontend": 196,
+      "security_java": 198,
+      "gateway_java": 165
+    },
+    "api_session": {
+      "ok": true,
+      "requests_http": 11,
+      "aserciones": 17,
+      "browser_cookie_acceptance": "verificar por separado con navegador real"
+    },
+    "api_legacy": {
+      "ok": true,
+      "escenarios": 8,
+      "requests_http": 38,
+      "aserciones": 57,
+      "pruebas_java_ejecutadas": 0,
+      "escenarios_verificados": [
+        "autenticación y rechazo de credenciales inválidas",
+        "registro público CLIENTE y permisos por rol",
+        "alta administrativa y asociación parcial Courier",
+        "referencia Shipment y repetición del mismo PUT",
+        "alta de envío y aislamiento entre clientes incluso por tracking",
+        "asignación sin transición ni evento adicional",
+        "entrega por repartidor y lecturas posteriores por cliente",
+        "disponibilidad real de ficha propia"
+      ]
+    },
+    "browser": "Recarga autenticada, tres pestañas con sesión, logout propagado a otras dos, recarga posterior anónima.",
+    "sql": {
+      "ok": true,
+      "users_before": 7,
+      "users_after": 7,
+      "sql_copies_identical": true
+    }
+  }
+}

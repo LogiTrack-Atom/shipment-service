@@ -1,0 +1,97 @@
+{
+  "version": "sprint04-rc1",
+  "repositories": [
+    {
+      "repository": "LogiTrack-Atom/security-service",
+      "candidate_commit": "dcd396764fbd2a646b29a5203265b72575b5a099",
+      "candidate_branch": "release/75-sprint04-p0",
+      "main_before": "337e9543b1d671b4510c2b975f7c0784295218a3",
+      "develop_at_inventory": "dcd396764fbd2a646b29a5203265b72575b5a099",
+      "comparison": {
+        "status": "ahead",
+        "ahead_by": 15,
+        "behind_by": 0
+      },
+      "pull_request": "https://github.com/LogiTrack-Atom/security-service/pull/13"
+    },
+    {
+      "repository": "LogiTrack-Atom/api-gateway",
+      "candidate_commit": "869cf9d864ac995459e447c2e590340b6178d7a5",
+      "candidate_branch": "release/75-sprint04-p0",
+      "main_before": null,
+      "develop_at_inventory": "f022134df93cc8424a65d993c968fc0711c0f8d9"
+    },
+    {
+      "repository": "LogiTrack-Atom/logitrack-frontend",
+      "candidate_commit": "c6076834eb6b244e7d413275844d10396ed9c7c0",
+      "candidate_branch": "release/75-sprint04-p0",
+      "main_before": "973e697672295b05b6c583530f900c90ca323a90",
+      "develop_at_inventory": "51d6759fa3ca78673189f640e1904bbb0b779c46",
+      "comparison": {
+        "status": "ahead",
+        "ahead_by": 137,
+        "behind_by": 0
+      },
+      "pull_request": "https://github.com/LogiTrack-Atom/logitrack-frontend/pull/27"
+    },
+    {
+      "repository": "LogiTrack-Atom/shipment-service",
+      "candidate_commit": "21371396a266da125c445009ff327b5a2b9fa9f5",
+      "candidate_branch": "release/75-sprint04-p0",
+      "main_before": "b6b4fafe34378379d7c4f61cc1b55fce28eaa06e",
+      "develop_at_inventory": "be017d14e8fce1ebbf3a43a5772607f8aa4de05d",
+      "comparison": {
+        "status": "ahead",
+        "ahead_by": 111,
+        "behind_by": 0
+      },
+      "pull_request": "https://github.com/LogiTrack-Atom/shipment-service/pull/101"
+    },
+    {
+      "repository": "LogiTrack-Atom/courier-service",
+      "candidate_commit": "003003d619d0479bc0577d839a580e61e51a8f0b",
+      "candidate_branch": "release/75-sprint04-p0",
+      "main_before": "8a6d15b6b6d8d7c1ed59da0cd584c3e1ae73ce2e",
+      "develop_at_inventory": "bb3a1f72631779db288ac370ba0381f4689dcf01",
+      "comparison": {
+        "status": "ahead",
+        "ahead_by": 24,
+        "behind_by": 0
+      },
+      "pull_request": "https://github.com/LogiTrack-Atom/courier-service/pull/25"
+    },
+    {
+      "repository": "LogiTrack-Atom/eureka-server",
+      "candidate_commit": "49f5271e2075fc1c9b5b6192ed1f7cb0da5bf24b",
+      "candidate_branch": "release/75-sprint04-p0",
+      "main_before": null,
+      "develop_at_inventory": "49f5271e2075fc1c9b5b6192ed1f7cb0da5bf24b"
+    },
+    {
+      "repository": "LogiTrack-Atom/configserver-ms",
+      "candidate_commit": "a08f95ee8fa0bf412fb30f68776e9a8794f94110",
+      "candidate_branch": "release/75-sprint04-p0",
+      "main_before": "d09bd6b61f5558aeb5eff8da7f1efcdd1d19c889",
+      "develop_at_inventory": "a08f95ee8fa0bf412fb30f68776e9a8794f94110",
+      "comparison": {
+        "status": "diverged",
+        "ahead_by": 5,
+        "behind_by": 2
+      },
+      "pull_request": "https://github.com/LogiTrack-Atom/configserver-ms/pull/20"
+    },
+    {
+      "repository": "LogiTrack-Atom/configserver",
+      "candidate_commit": "4d7b1fb484e3546a853bbd1dbd2ed04e24e78bd5",
+      "candidate_branch": "release/75-sprint04-p0",
+      "main_before": "74b320c6e5930271c6e282f0a1519b90e3279d59",
+      "develop_at_inventory": "4d7b1fb484e3546a853bbd1dbd2ed04e24e78bd5",
+      "comparison": {
+        "status": "ahead",
+        "ahead_by": 6,
+        "behind_by": 0
+      },
+      "pull_request": "https://github.com/LogiTrack-Atom/configserver/pull/7"
+    }
+  ]
+}

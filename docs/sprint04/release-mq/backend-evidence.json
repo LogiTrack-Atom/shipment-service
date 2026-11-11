@@ -1,0 +1,24 @@
+{
+  "ok": true,
+  "http_requests": 138,
+  "assertions": 181,
+  "scenarios": [
+    "202, pipeline real, idempotencia HTTP e historial",
+    "Duplicados de comando y resultado: efecto SQL único",
+    "Courier inexistente e inactivo",
+    "Broker caído: núcleo disponible, outbox y recuperación",
+    "Courier caído: comando durable y recuperación",
+    "Resultados tardíos tras cancelación y nueva generación",
+    "Mensaje inválido aislado en DLQ",
+    "Retry acotado, DLQ y recuperación tras reparar SQL",
+    "Feign/PUT y reinicio posterior al ACK"
+  ],
+  "limits": [
+    "Sin UI asíncrona frontend#10",
+    "Corte TCP anterior al ACK cubierto por AssignmentDeliveryIT de Courier#21; aquí se prueba reinicio posterior al ACK",
+    "At-least-once; sin reserva exclusiva ni alta disponibilidad"
+  ],
+  "script_sha256": "a35104c17f2cc480ef632e95b54a539afce84fad52900a680c4e2bc736fa248b",
+  "date": "2026-11-10",
+  "project": "lt-s04-mq80"
+}

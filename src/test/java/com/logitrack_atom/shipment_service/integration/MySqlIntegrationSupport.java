@@ -1,0 +1,142 @@
+package com.logitrack_atom.shipment_service.integration;
+
+import com.logitrack_atom.shipment_service.repository.ClienteRepository;
+import com.logitrack_atom.shipment_service.repository.EnvioRepository;
+import com.logitrack_atom.shipment_service.repository.HistorialEstadoEnvioRepository;
+import com.logitrack_atom.shipment_service.client.CourierClient;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import static org.mockito.Mockito.reset;
+import com.logitrack_atom.shipment_service.service.ShipmentService;
+import jakarta.persistence.EntityManager;
+import org.junit.jupiter.api.BeforeEach;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.testcontainers.mysql.MySQLContainer;
+import org.testcontainers.utility.MountableFile;
+
+import java.nio.file.Path;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.UUID;
+import java.util.function.Supplier;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * MySQL real aislada y doble exclusivo del puerto remoto de courier.
+ *
+ * @author MaxDz
+ * @version 0.2.0
+ */
+@org.springframework.test.context.ActiveProfiles("test")
+@SpringBootTest
+@AutoConfigureMockMvc
+abstract class MySqlIntegrationSupport {
+
+    private static final MySQLContainer MYSQL = new MySQLContainer("mysql:8.4")
+            .withDatabaseName("shipment_test")
+            .withUsername("shipment_test")
+            .withPassword(UUID.randomUUID().toString())
+            .withUrlParam("serverTimezone", "UTC")
+            .withCopyFileToContainer(MountableFile.forHostPath(
+                    Path.of("docker/mysql/init/001-schema.sql").toAbsolutePath()),
+                    "/docker-entrypoint-initdb.d/001-schema.sql");
+
+    static {
+        MYSQL.start();
+    }
+
+    @DynamicPropertySource
+    static void configurarMySql(DynamicPropertyRegistry registry) {
+        com.logitrack_atom.shipment_service.support.TestRsaKeys.registrar(registry);
+        registry.add("spring.datasource.url", MYSQL::getJdbcUrl);
+        registry.add("spring.datasource.username", MYSQL::getUsername);
+        registry.add("spring.datasource.password", MYSQL::getPassword);
+        registry.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
+    }
+
+    /**
+     * Proporciona la conexión aislada a los ensayos de configuración remota.
+     * @return variables del cliente que no se incorporan al repositorio Git temporal
+     */
+    static java.util.Map<String, Object> databaseProperties() {
+        return java.util.Map.of("DB_URL", MYSQL.getJdbcUrl(), "DB_USERNAME", MYSQL.getUsername(), "DB_PASSWORD", MYSQL.getPassword());
+    }
+
+    @Autowired protected MockMvc mvc;
+    @Autowired private org.springframework.web.context.WebApplicationContext webContext;
+    /** @return verdadero si la regresión HTTP usa ADMIN por defecto */
+    protected boolean autenticarPorDefecto() { return true; }
+    /** Retira el actor de prueba y evita contaminar la siguiente ejecución. */
+    @org.junit.jupiter.api.AfterEach
+    void limpiarActor() { com.logitrack_atom.shipment_service.support.SecurityTestActors.clear(); }
+
+    @Autowired protected JdbcTemplate jdbc;
+    @Autowired protected EntityManager entityManager;
+    @Autowired protected PlatformTransactionManager transactionManager;
+    @Autowired protected ShipmentService shipmentService;
+    @MockitoBean protected CourierClient courierClient;
+    @Autowired protected ClienteRepository clientes;
+    @Autowired protected EnvioRepository envios;
+    @Autowired protected HistorialEstadoEnvioRepository historiales;
+
+    @BeforeEach
+    void limpiarBaseDePrueba() {
+        com.logitrack_atom.shipment_service.support.SecurityTestActors.admin();
+        var builder=org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup(webContext)
+                .addFilters(webContext.getBean("springSecurityFilterChain", jakarta.servlet.Filter.class))
+                .alwaysDo(result->com.logitrack_atom.shipment_service.support.SecurityTestActors.admin());
+        if(autenticarPorDefecto())builder.defaultRequest(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/")
+                .header("Authorization","Bearer "+com.logitrack_atom.shipment_service.support.SecurityTestActors.adminToken()));
+        mvc=builder.build();
+        jdbc.update("DELETE FROM repartidor_usuarios");
+        assertThat(jdbc.queryForObject("SELECT DATABASE()", String.class)).isEqualTo("shipment_test");
+        jdbc.execute("DROP TRIGGER IF EXISTS fallo_historial_prueba");
+        jdbc.update("DELETE FROM historial_estados_envio");
+        if (jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='assignment_operations'", Integer.class) > 0) {
+            if (jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='assignment_inbox'", Integer.class) > 0)
+                jdbc.update("DELETE FROM assignment_inbox");
+            jdbc.update("DELETE FROM amqp_outbox");
+            jdbc.update("DELETE FROM assignment_operations");
+        }
+        jdbc.update("DELETE FROM envios");
+        reset(courierClient);
+        jdbc.update("DELETE FROM clientes");
+    }
+
+    /** Sin @Transactional en las pruebas: cada llamada al servicio debe hacer su commit real. */
+    protected <T> T nuevaTransaccion(Supplier<T> trabajo) {
+        TransactionTemplate transaction = new TransactionTemplate(transactionManager);
+        transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        return transaction.execute(status -> trabajo.get());
+    }
+
+    protected void comprobarBaseVacia() {
+        assertThat(jdbc.queryForObject("""
+                SELECT (SELECT COUNT(*) FROM clientes) + (SELECT COUNT(*) FROM envios)
+                     + (SELECT COUNT(*) FROM historial_estados_envio)
+                """, Long.class)).isZero();
+    }
+
+    /** DDL de inyección de fallos dentro del contenedor; la aplicación sigue usando su usuario normal. */
+    protected void ejecutarDdlComoAdministrador(String ddl) throws IOException, InterruptedException {
+        var result = MYSQL.execInContainer("env", "MYSQL_PWD=" + MYSQL.getPassword(),
+                "mysql", "-uroot", MYSQL.getDatabaseName(), "-e", ddl);
+        assertThat(result.getExitCode()).as("DDL de prueba: %s", result.getStderr()).isZero();
+    }
+
+    protected static SQLException causaSql(Throwable error) {
+        for (Throwable cause = error; cause != null; cause = cause.getCause()) {
+            if (cause instanceof SQLException sql) return sql;
+        }
+        throw new AssertionError("Se esperaba un fallo real de MySQL", error);
+    }
+}

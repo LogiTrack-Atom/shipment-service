@@ -1,0 +1,14 @@
+{
+  "courier": {
+    "repository": "https://github.com/LogiTrack-Atom/courier-service",
+    "commit": "33ffdd06441b7cd0c5d4972a37b565fc20e75a88",
+    "path": "docker/mysql/init/001-schema.sql",
+    "sha256": "d5194952c2098cf8c27847a148725224e05f5ebf20ceb6e3c1affa807b8ddccb"
+  },
+  "security": {
+    "repository": "https://github.com/LogiTrack-Atom/security-service",
+    "commit": "9d29a30ef320536567f3e4621c8b95db2bc05e22",
+    "path": "docker/mysql/init/001-schema.sql",
+    "sha256": "1afdb601ccdd082e2b8f9733b2d2331ff57849a3945813a2f6e988c94e047635"
+  }
+}

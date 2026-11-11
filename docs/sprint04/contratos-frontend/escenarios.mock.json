@@ -1,0 +1,635 @@
+{
+  "estado": "BORRADOR MOCK-ONLY #71; no aceptación con servicios",
+  "allowRealRequests": false,
+  "sources": {
+    "shipment-service": "3b3bb57b9397d8d9c7e49d97351e0f0104cfd77a",
+    "courier-service": "003003d619d0479bc0577d839a580e61e51a8f0b",
+    "security-service": "37bb9e3146010fc4f459fcca8a0ae970b5ce1c64",
+    "api-gateway": "283cbf80423705b3768787b77c8d35f9a0fd6305",
+    "eureka-server": "49f5271e2075fc1c9b5b6192ed1f7cb0da5bf24b",
+    "configserver": "4d7b1fb484e3546a853bbd1dbd2ed04e24e78bd5",
+    "configserver-ms": "a08f95ee8fa0bf412fb30f68776e9a8794f94110"
+  },
+  "actores": {
+    "ADMIN": {
+      "usuarioId": "00000000-0000-4000-8000-000000000001",
+      "roles": [
+        "ADMIN"
+      ]
+    },
+    "CLIENTE": {
+      "usuarioId": "00000000-0000-4000-8000-000000000002",
+      "roles": [
+        "CLIENTE"
+      ]
+    },
+    "REPARTIDOR": {
+      "usuarioId": "00000000-0000-4000-8000-000000000003",
+      "roles": [
+        "REPARTIDOR"
+      ]
+    }
+  },
+  "asociaciones": {
+    "clientes": [
+      {
+        "recursoId": "00000000-0000-4000-8000-000000000101",
+        "usuarioId": "00000000-0000-4000-8000-000000000002"
+      }
+    ],
+    "repartidores": [
+      {
+        "recursoId": "00000000-0000-4000-8000-000000000201",
+        "usuarioId": "00000000-0000-4000-8000-000000000003"
+      }
+    ]
+  },
+  "escenarios": [
+    {
+      "id": "crear-envio",
+      "method": "POST",
+      "path": "/applications/apishipment/api/v1/envios",
+      "actor": "CLIENTE",
+      "status": 201,
+      "body": {
+        "id": "00000000-0000-4000-8000-000000000301",
+        "codigoSeguimiento": "LT-MOCK-0001",
+        "cliente": {
+          "id": "00000000-0000-4000-8000-000000000101",
+          "nombre": "Cliente de ejemplo",
+          "email": "cliente@example.com",
+          "telefono": null
+        },
+        "repartidorId": null,
+        "pesoKg": 1.25,
+        "anchoCm": 25.25,
+        "altoCm": 15.5,
+        "largoCm": 30.75,
+        "estado": "PENDIENTE",
+        "origen": {
+          "calle": "Calle de ejemplo",
+          "numero": "123",
+          "ciudad": "Jujuy",
+          "codigoPostal": "4600"
+        },
+        "destino": {
+          "calle": "Calle de ejemplo",
+          "numero": "456",
+          "ciudad": "Jujuy",
+          "codigoPostal": "4600"
+        },
+        "createdAt": "2026-11-09T12:00:00.000000Z",
+        "updatedAt": "2026-11-09T12:00:00.000000Z"
+      },
+      "responseModel": "EnvioResponse",
+      "requestBody": {
+        "cliente": {
+          "nombre": "Cliente de ejemplo",
+          "email": "cliente@example.com",
+          "telefono": null
+        },
+        "origen": {
+          "calle": "Calle de ejemplo",
+          "numero": "123",
+          "ciudad": "Jujuy",
+          "codigoPostal": "4600"
+        },
+        "destino": {
+          "calle": "Calle de ejemplo",
+          "numero": "456",
+          "ciudad": "Jujuy",
+          "codigoPostal": "4600"
+        },
+        "pesoKg": 1.25,
+        "anchoCm": 25.25,
+        "altoCm": 15.5,
+        "largoCm": 30.75
+      },
+      "requestModel": "EnvioRequest"
+    },
+    {
+      "id": "lista-cliente",
+      "method": "GET",
+      "path": "/applications/apishipment/api/v1/envios",
+      "actor": "CLIENTE",
+      "status": 200,
+      "body": [
+        {
+          "id": "00000000-0000-4000-8000-000000000301",
+          "codigoSeguimiento": "LT-MOCK-0001",
+          "cliente": {
+            "id": "00000000-0000-4000-8000-000000000101",
+            "nombre": "Cliente de ejemplo",
+            "email": "cliente@example.com",
+            "telefono": null
+          },
+          "repartidorId": null,
+          "pesoKg": 1.25,
+          "anchoCm": 25.25,
+          "altoCm": 15.5,
+          "largoCm": 30.75,
+          "estado": "PENDIENTE",
+          "origen": {
+            "calle": "Calle de ejemplo",
+            "numero": "123",
+            "ciudad": "Jujuy",
+            "codigoPostal": "4600"
+          },
+          "destino": {
+            "calle": "Calle de ejemplo",
+            "numero": "456",
+            "ciudad": "Jujuy",
+            "codigoPostal": "4600"
+          },
+          "createdAt": "2026-11-09T12:00:00.000000Z",
+          "updatedAt": "2026-11-09T12:00:00.000000Z"
+        }
+      ],
+      "responseModel": "Envios"
+    },
+    {
+      "id": "lista-admin",
+      "method": "GET",
+      "path": "/applications/apishipment/api/v1/envios",
+      "actor": "ADMIN",
+      "status": 200,
+      "body": [
+        {
+          "id": "00000000-0000-4000-8000-000000000301",
+          "codigoSeguimiento": "LT-MOCK-0001",
+          "cliente": {
+            "id": "00000000-0000-4000-8000-000000000101",
+            "nombre": "Cliente de ejemplo",
+            "email": "cliente@example.com",
+            "telefono": null
+          },
+          "repartidorId": "00000000-0000-4000-8000-000000000201",
+          "pesoKg": 1.25,
+          "anchoCm": 25.25,
+          "altoCm": 15.5,
+          "largoCm": 30.75,
+          "estado": "PENDIENTE",
+          "origen": {
+            "calle": "Calle de ejemplo",
+            "numero": "123",
+            "ciudad": "Jujuy",
+            "codigoPostal": "4600"
+          },
+          "destino": {
+            "calle": "Calle de ejemplo",
+            "numero": "456",
+            "ciudad": "Jujuy",
+            "codigoPostal": "4600"
+          },
+          "createdAt": "2026-11-09T12:00:00.000000Z",
+          "updatedAt": "2026-11-09T12:01:00.000000Z"
+        }
+      ],
+      "responseModel": "Envios"
+    },
+    {
+      "id": "lista-repartidor",
+      "method": "GET",
+      "path": "/applications/apishipment/api/v1/envios",
+      "actor": "REPARTIDOR",
+      "status": 200,
+      "body": [
+        {
+          "id": "00000000-0000-4000-8000-000000000301",
+          "codigoSeguimiento": "LT-MOCK-0001",
+          "cliente": {
+            "id": "00000000-0000-4000-8000-000000000101",
+            "nombre": "Cliente de ejemplo",
+            "email": "cliente@example.com",
+            "telefono": null
+          },
+          "repartidorId": "00000000-0000-4000-8000-000000000201",
+          "pesoKg": 1.25,
+          "anchoCm": 25.25,
+          "altoCm": 15.5,
+          "largoCm": 30.75,
+          "estado": "PENDIENTE",
+          "origen": {
+            "calle": "Calle de ejemplo",
+            "numero": "123",
+            "ciudad": "Jujuy",
+            "codigoPostal": "4600"
+          },
+          "destino": {
+            "calle": "Calle de ejemplo",
+            "numero": "456",
+            "ciudad": "Jujuy",
+            "codigoPostal": "4600"
+          },
+          "createdAt": "2026-11-09T12:00:00.000000Z",
+          "updatedAt": "2026-11-09T12:01:00.000000Z"
+        }
+      ],
+      "responseModel": "Envios"
+    },
+    {
+      "id": "lista-vacia",
+      "method": "GET",
+      "path": "/applications/apishipment/api/v1/envios",
+      "actor": "CLIENTE",
+      "status": 200,
+      "body": [],
+      "responseModel": "Envios"
+    },
+    {
+      "id": "asignar-sin-nuevo-evento",
+      "method": "PUT",
+      "path": "/applications/apishipment/api/v1/envios/00000000-0000-4000-8000-000000000301/repartidor",
+      "actor": "ADMIN",
+      "status": 200,
+      "body": {
+        "id": "00000000-0000-4000-8000-000000000301",
+        "codigoSeguimiento": "LT-MOCK-0001",
+        "cliente": {
+          "id": "00000000-0000-4000-8000-000000000101",
+          "nombre": "Cliente de ejemplo",
+          "email": "cliente@example.com",
+          "telefono": null
+        },
+        "repartidorId": "00000000-0000-4000-8000-000000000201",
+        "pesoKg": 1.25,
+        "anchoCm": 25.25,
+        "altoCm": 15.5,
+        "largoCm": 30.75,
+        "estado": "PENDIENTE",
+        "origen": {
+          "calle": "Calle de ejemplo",
+          "numero": "123",
+          "ciudad": "Jujuy",
+          "codigoPostal": "4600"
+        },
+        "destino": {
+          "calle": "Calle de ejemplo",
+          "numero": "456",
+          "ciudad": "Jujuy",
+          "codigoPostal": "4600"
+        },
+        "createdAt": "2026-11-09T12:00:00.000000Z",
+        "updatedAt": "2026-11-09T12:01:00.000000Z"
+      },
+      "historial": [
+        {
+          "id": "00000000-0000-4000-8000-000000000401",
+          "estadoAnterior": null,
+          "estadoNuevo": "PENDIENTE",
+          "fechaCambio": "2026-11-09T12:00:00.000000Z"
+        }
+      ],
+      "responseModel": "EnvioResponse",
+      "requestBody": {
+        "repartidorId": "00000000-0000-4000-8000-000000000201"
+      },
+      "requestModel": "AsignarRepartidorRequest"
+    },
+    {
+      "id": "avanzar-en-ruta",
+      "method": "PATCH",
+      "path": "/applications/apishipment/api/v1/envios/00000000-0000-4000-8000-000000000301/estado",
+      "actor": "REPARTIDOR",
+      "status": 200,
+      "body": {
+        "id": "00000000-0000-4000-8000-000000000301",
+        "codigoSeguimiento": "LT-MOCK-0001",
+        "cliente": {
+          "id": "00000000-0000-4000-8000-000000000101",
+          "nombre": "Cliente de ejemplo",
+          "email": "cliente@example.com",
+          "telefono": null
+        },
+        "repartidorId": "00000000-0000-4000-8000-000000000201",
+        "pesoKg": 1.25,
+        "anchoCm": 25.25,
+        "altoCm": 15.5,
+        "largoCm": 30.75,
+        "estado": "EN_RUTA",
+        "origen": {
+          "calle": "Calle de ejemplo",
+          "numero": "123",
+          "ciudad": "Jujuy",
+          "codigoPostal": "4600"
+        },
+        "destino": {
+          "calle": "Calle de ejemplo",
+          "numero": "456",
+          "ciudad": "Jujuy",
+          "codigoPostal": "4600"
+        },
+        "createdAt": "2026-11-09T12:00:00.000000Z",
+        "updatedAt": "2026-11-09T12:02:00.000000Z"
+      },
+      "responseModel": "EnvioResponse",
+      "requestBody": {
+        "estado": "EN_RUTA"
+      },
+      "requestModel": "EstadoEnvioRequest"
+    },
+    {
+      "id": "avanzar-entregado",
+      "method": "PATCH",
+      "path": "/applications/apishipment/api/v1/envios/00000000-0000-4000-8000-000000000301/estado",
+      "actor": "REPARTIDOR",
+      "status": 200,
+      "body": {
+        "id": "00000000-0000-4000-8000-000000000301",
+        "codigoSeguimiento": "LT-MOCK-0001",
+        "cliente": {
+          "id": "00000000-0000-4000-8000-000000000101",
+          "nombre": "Cliente de ejemplo",
+          "email": "cliente@example.com",
+          "telefono": null
+        },
+        "repartidorId": "00000000-0000-4000-8000-000000000201",
+        "pesoKg": 1.25,
+        "anchoCm": 25.25,
+        "altoCm": 15.5,
+        "largoCm": 30.75,
+        "estado": "ENTREGADO",
+        "origen": {
+          "calle": "Calle de ejemplo",
+          "numero": "123",
+          "ciudad": "Jujuy",
+          "codigoPostal": "4600"
+        },
+        "destino": {
+          "calle": "Calle de ejemplo",
+          "numero": "456",
+          "ciudad": "Jujuy",
+          "codigoPostal": "4600"
+        },
+        "createdAt": "2026-11-09T12:00:00.000000Z",
+        "updatedAt": "2026-11-09T12:03:00.000000Z"
+      },
+      "responseModel": "EnvioResponse",
+      "requestBody": {
+        "estado": "ENTREGADO"
+      },
+      "requestModel": "EstadoEnvioRequest"
+    },
+    {
+      "id": "historial-tres-eventos",
+      "method": "GET",
+      "path": "/applications/apishipment/api/v1/envios/00000000-0000-4000-8000-000000000301/historial",
+      "actor": "CLIENTE",
+      "status": 200,
+      "body": [
+        {
+          "id": "00000000-0000-4000-8000-000000000401",
+          "estadoAnterior": null,
+          "estadoNuevo": "PENDIENTE",
+          "fechaCambio": "2026-11-09T12:00:00.000000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000402",
+          "estadoAnterior": "PENDIENTE",
+          "estadoNuevo": "EN_RUTA",
+          "fechaCambio": "2026-11-09T12:02:00.000000Z"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000403",
+          "estadoAnterior": "EN_RUTA",
+          "estadoNuevo": "ENTREGADO",
+          "fechaCambio": "2026-11-09T12:03:00.000000Z"
+        }
+      ],
+      "responseModel": "HistorialResponse"
+    },
+    {
+      "id": "courier-lista",
+      "method": "GET",
+      "path": "/applications/apicourier/api/v1/repartidores",
+      "actor": "ADMIN",
+      "status": 200,
+      "body": [
+        {
+          "id": "00000000-0000-4000-8000-000000000201",
+          "nombre": "Repartidor de ejemplo",
+          "tipoVehiculo": "Bicicleta",
+          "estado": "ACTIVO",
+          "createdAt": "2026-11-09T12:00:00.000000Z",
+          "updatedAt": "2026-11-09T12:00:00.000000Z"
+        }
+      ],
+      "responseModel": "Repartidores"
+    },
+    {
+      "id": "courier-disponibilidad",
+      "method": "GET",
+      "path": "/applications/apicourier/api/v1/repartidores/00000000-0000-4000-8000-000000000201/disponibilidad",
+      "actor": "REPARTIDOR",
+      "status": 200,
+      "body": {
+        "repartidorId": "00000000-0000-4000-8000-000000000201",
+        "estado": "ACTIVO",
+        "disponible": true
+      },
+      "responseModel": "DisponibilidadResponse"
+    },
+    {
+      "id": "usuario-actual",
+      "method": "GET",
+      "path": "/applications/apisecurity/api/v1/auth/me",
+      "actor": "CLIENTE",
+      "status": 200,
+      "body": {
+        "id": "00000000-0000-4000-8000-000000000002",
+        "email": "cliente@example.com",
+        "roles": [
+          "CLIENTE"
+        ],
+        "createdAt": "2026-11-09T12:00:00.000000Z",
+        "updatedAt": "2026-11-09T12:00:00.000000Z"
+      },
+      "responseModel": "UsuarioResponse"
+    },
+    {
+      "id": "sin-sesion",
+      "method": "GET",
+      "path": "/applications/apishipment/api/v1/envios",
+      "actor": null,
+      "status": 401,
+      "body": null
+    },
+    {
+      "id": "envio-ajeno",
+      "method": "GET",
+      "path": "/applications/apishipment/api/v1/envios/00000000-0000-4000-8000-000000000302",
+      "actor": "CLIENTE",
+      "status": 403,
+      "body": null,
+      "precondicion": "El envío existe y pertenece a otro usuario, fuera de las listas de este actor."
+    },
+    {
+      "id": "cliente-no-admin",
+      "method": "GET",
+      "path": "/applications/apicourier/api/v1/repartidores",
+      "actor": "CLIENTE",
+      "status": 403,
+      "body": null
+    },
+    {
+      "id": "validacion",
+      "method": "POST",
+      "path": "/applications/apishipment/api/v1/envios",
+      "actor": "ADMIN",
+      "status": 400,
+      "body": {
+        "timestamp": "2026-11-09T12:00:00.000000Z",
+        "status": 400,
+        "error": "validacion",
+        "mensaje": "Revisar los campos indicados.",
+        "detalles": []
+      },
+      "responseModel": "ApiError"
+    },
+    {
+      "id": "no-encontrado",
+      "method": "GET",
+      "path": "/applications/apishipment/api/v1/envios/00000000-0000-4000-8000-000000000999",
+      "actor": "ADMIN",
+      "status": 404,
+      "body": {
+        "timestamp": "2026-11-09T12:00:00.000000Z",
+        "status": 404,
+        "error": "no-encontrado",
+        "mensaje": "Recurso de ejemplo inexistente.",
+        "detalles": []
+      },
+      "responseModel": "ApiError"
+    },
+    {
+      "id": "conflicto",
+      "method": "POST",
+      "path": "/applications/apishipment/api/v1/envios",
+      "actor": "ADMIN",
+      "status": 409,
+      "body": {
+        "timestamp": "2026-11-09T12:00:00.000000Z",
+        "status": 409,
+        "error": "conflicto",
+        "mensaje": "Conflicto de ejemplo; conservar datos del formulario.",
+        "detalles": []
+      },
+      "responseModel": "ApiError"
+    },
+    {
+      "id": "regla-negocio",
+      "method": "PUT",
+      "path": "/applications/apishipment/api/v1/envios/00000000-0000-4000-8000-000000000301/repartidor",
+      "actor": "ADMIN",
+      "status": 422,
+      "body": {
+        "timestamp": "2026-11-09T12:00:00.000000Z",
+        "status": 422,
+        "error": "regla-negocio",
+        "mensaje": "Operación no permitida en el estado actual.",
+        "detalles": []
+      },
+      "responseModel": "ApiError"
+    },
+    {
+      "id": "contrato-remoto",
+      "method": "PUT",
+      "path": "/applications/apishipment/api/v1/envios/00000000-0000-4000-8000-000000000301/repartidor",
+      "actor": "ADMIN",
+      "status": 502,
+      "body": {
+        "timestamp": "2026-11-09T12:00:00.000000Z",
+        "status": 502,
+        "error": "contrato-remoto",
+        "mensaje": "Respuesta del proveedor no válida.",
+        "detalles": []
+      },
+      "responseModel": "ApiError"
+    },
+    {
+      "id": "proveedor-caido",
+      "method": "PUT",
+      "path": "/applications/apishipment/api/v1/envios/00000000-0000-4000-8000-000000000301/repartidor",
+      "actor": "ADMIN",
+      "status": 503,
+      "body": {
+        "timestamp": "2026-11-09T12:00:00.000000Z",
+        "status": 503,
+        "error": "proveedor-caido",
+        "mensaje": "Proveedor temporalmente no disponible.",
+        "detalles": []
+      },
+      "responseModel": "ApiError"
+    },
+    {
+      "id": "error-no-json",
+      "method": "GET",
+      "path": "/applications/apishipment/api/v1/envios",
+      "actor": "ADMIN",
+      "status": 502,
+      "body": "Servicio temporalmente no disponible",
+      "contentType": "text/plain"
+    },
+    {
+      "id": "red-interrumpida",
+      "method": "GET",
+      "path": "/applications/apishipment/api/v1/envios",
+      "actor": "CLIENTE",
+      "status": null,
+      "body": null,
+      "transportError": "network"
+    },
+    {
+      "id": "carga-lenta",
+      "method": "GET",
+      "path": "/applications/apishipment/api/v1/envios",
+      "actor": "CLIENTE",
+      "status": 200,
+      "body": [
+        {
+          "id": "00000000-0000-4000-8000-000000000301",
+          "codigoSeguimiento": "LT-MOCK-0001",
+          "cliente": {
+            "id": "00000000-0000-4000-8000-000000000101",
+            "nombre": "Cliente de ejemplo",
+            "email": "cliente@example.com",
+            "telefono": null
+          },
+          "repartidorId": null,
+          "pesoKg": 1.25,
+          "anchoCm": 25.25,
+          "altoCm": 15.5,
+          "largoCm": 30.75,
+          "estado": "PENDIENTE",
+          "origen": {
+            "calle": "Calle de ejemplo",
+            "numero": "123",
+            "ciudad": "Jujuy",
+            "codigoPostal": "4600"
+          },
+          "destino": {
+            "calle": "Calle de ejemplo",
+            "numero": "456",
+            "ciudad": "Jujuy",
+            "codigoPostal": "4600"
+          },
+          "createdAt": "2026-11-09T12:00:00.000000Z",
+          "updatedAt": "2026-11-09T12:00:00.000000Z"
+        }
+      ],
+      "delayMs": 1500,
+      "responseModel": "Envios"
+    },
+    {
+      "id": "alta-resultado-incierto",
+      "method": "POST",
+      "path": "/applications/apishipment/api/v1/envios",
+      "actor": "CLIENTE",
+      "status": null,
+      "body": null,
+      "transportError": "response-lost",
+      "uiState": "resultado-incierto",
+      "retryAutomatically": false
+    }
+  ]
+}

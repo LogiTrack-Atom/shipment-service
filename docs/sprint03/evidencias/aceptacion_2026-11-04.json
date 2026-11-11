@@ -1,0 +1,98 @@
+{
+  "fecha_utc": "2026-11-04T07:34:32.921449+00:00",
+  "verificador_sha256": "41980965f2be4f895d896ac191386e32ab13c7089701935e7b17a65a213dd560",
+  "alcance": "demo Sprint03 propia; negocio por Gateway, Eureka y Feign reales",
+  "config_label": "1253290ea0063b6873d84f9de80abd7007c4c7b2",
+  "imagenes": {
+    "configserver": "maxdz10/configserver:sprint02-1.0.0",
+    "shipment-service": "logitrack-shipment-service:sprint03-candidate-b2454e91",
+    "courier-service": "logitrack-courier-service:sprint03-candidate-1cd721be",
+    "security-service": "logitrack-security-service:sprint03-candidate-37bb9e31",
+    "eureka-server": "logitrack-eureka-server:sprint03-candidate-b3795f7f",
+    "api-gateway": "logitrack-api-gateway:sprint03-candidate-736e6933"
+  },
+  "aprobado": true,
+  "escenarios": [
+    {
+      "escenario": "prepare repetido conserva las identidades",
+      "aprobado": true
+    },
+    {
+      "escenario": "diagnóstico consumido prod",
+      "aprobado": true
+    },
+    {
+      "escenario": "identidades persistidas en prod",
+      "aprobado": true
+    },
+    {
+      "escenario": "diagnóstico consumido dev",
+      "aprobado": true
+    },
+    {
+      "escenario": "identidades persistidas en dev",
+      "aprobado": true
+    },
+    {
+      "escenario": "cuatro clientes registrados en Eureka",
+      "aprobado": true
+    },
+    {
+      "escenario": "nueve contenedores saludables",
+      "aprobado": true
+    },
+    {
+      "escenario": "courier detenido devuelve ApiError 503",
+      "aprobado": true
+    },
+    {
+      "escenario": "caída no modifica asignación, fechas, estado ni historial",
+      "aprobado": true
+    },
+    {
+      "escenario": "caída también impide EN_RUTA sin mutación",
+      "aprobado": true
+    },
+    {
+      "escenario": "Feign descubre una instancia con otro DNS y puerto",
+      "aprobado": true
+    },
+    {
+      "escenario": "Shipment conserva contenedor, imagen y proceso",
+      "aprobado": true
+    },
+    {
+      "escenario": "asignación persistida sin cambiar PENDIENTE",
+      "aprobado": true
+    },
+    {
+      "escenario": "EN_RUTA vuelve a consultar disponibilidad mediante Feign",
+      "aprobado": true
+    },
+    {
+      "escenario": "flujo completo e historial",
+      "aprobado": true
+    },
+    {
+      "escenario": "recrear contenedores conserva envío e historial",
+      "aprobado": true
+    },
+    {
+      "escenario": "tres bases conservan identidades",
+      "aprobado": true
+    },
+    {
+      "escenario": "seed rechaza reparar datos modificados implícitamente",
+      "aprobado": true
+    },
+    {
+      "escenario": "reset explícito rota claves y credenciales",
+      "aprobado": true
+    },
+    {
+      "escenario": "reset repone catálogo inicial sin duplicados",
+      "aprobado": true
+    }
+  ],
+  "limites": "500, timeout y contratos HTTP malformados se verifican en las suites Java de Feign con HTTP real y MySQL."
+}

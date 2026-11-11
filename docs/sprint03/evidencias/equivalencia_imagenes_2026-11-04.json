@@ -1,0 +1,47 @@
+{
+  "aprobado": true,
+  "resultados": [
+    {
+      "servicio": "configserver",
+      "referencia_aceptacion": "maxdz10/configserver:sprint02-1.0.0",
+      "referencia_final": "maxdz10/configserver:sprint02-1.0.0@sha256:1658bc0e413f5519087ab00ef0e170de31cb20a17b6b84aef08ca17acf19874b",
+      "image_id": "sha256:1658bc0e413f5519087ab00ef0e170de31cb20a17b6b84aef08ca17acf19874b",
+      "contenido_identico": true
+    },
+    {
+      "servicio": "shipment-service",
+      "referencia_aceptacion": "logitrack-shipment-service:sprint03-candidate-b2454e91",
+      "referencia_final": "maxdz10/shipment-service:sprint03-1.0.0@sha256:aa85d72dbb97bf0cc6c1c81d261fa892f312db922cee21e6cee086a8d4f81595",
+      "image_id": "sha256:aa85d72dbb97bf0cc6c1c81d261fa892f312db922cee21e6cee086a8d4f81595",
+      "contenido_identico": true
+    },
+    {
+      "servicio": "courier-service",
+      "referencia_aceptacion": "logitrack-courier-service:sprint03-candidate-1cd721be",
+      "referencia_final": "maxdz10/courier-service:sprint03-1.0.0@sha256:a226ba795cea75de3343db6b5a0a0a053b36262c7b6c1290e485e55c6e4abf3f",
+      "image_id": "sha256:a226ba795cea75de3343db6b5a0a0a053b36262c7b6c1290e485e55c6e4abf3f",
+      "contenido_identico": true
+    },
+    {
+      "servicio": "security-service",
+      "referencia_aceptacion": "logitrack-security-service:sprint03-candidate-37bb9e31",
+      "referencia_final": "maxdz10/security-service:sprint03-1.0.0@sha256:12353ae6ff6cdafc5f3b27de40da66587e5eaee893664a732e1a828e2c8095b8",
+      "image_id": "sha256:12353ae6ff6cdafc5f3b27de40da66587e5eaee893664a732e1a828e2c8095b8",
+      "contenido_identico": true
+    },
+    {
+      "servicio": "eureka-server",
+      "referencia_aceptacion": "logitrack-eureka-server:sprint03-candidate-b3795f7f",
+      "referencia_final": "maxdz10/eureka-server:sprint03-1.0.0@sha256:70a31b326a036de44fcd57238b3bf65f9f1a26e11735108cce1e944fea9dcdcb",
+      "image_id": "sha256:70a31b326a036de44fcd57238b3bf65f9f1a26e11735108cce1e944fea9dcdcb",
+      "contenido_identico": true
+    },
+    {
+      "servicio": "api-gateway",
+      "referencia_aceptacion": "logitrack-api-gateway:sprint03-candidate-736e6933",
+      "referencia_final": "maxdz10/api-gateway:sprint03-1.0.0@sha256:5c9496b6311b60f88382785093175ba92255a405f7a1036b8f1843f4e33663cf",
+      "image_id": "sha256:5c9496b6311b60f88382785093175ba92255a405f7a1036b8f1843f4e33663cf",
+      "contenido_identico": true
+    }
+  ]
+}

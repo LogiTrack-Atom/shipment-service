@@ -1,0 +1,549 @@
+{
+  "info": {
+    "name": "LogiTrack Atom — Sprint02 — Regresión de envíos",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Regresión REST Sprint02 (#27). Ejecutar en orden con shipment, courier y JWT ADMIN vigente. UUID remotos, errores ApiError, disponibilidad, auditoría DATETIME(6) e historial. La API completa exige JWT y pertenencia; los escenarios de dos clientes/dos repartidores y JWT inválidos se ejecutan en ShipmentSecurityIT. Crea datos de prueba, no elimina registros. Usar un entorno privado y separado de los datos del equipo."
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{adminToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "01 - Registrar repartidor activo",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{courierBaseUrl}}/api/v1/repartidores",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"nombre\":\"Demo REST Sprint02\",\"tipoVehiculo\":\"MOTO\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (!pm.environment.get('adminToken')) throw new Error('Configurar adminToken vigente en un entorno local privado');",
+              "pm.environment.set('clienteEmail','s02-'+pm.variables.replaceIn('{{$guid}}')+'@example.test');",
+              "['envioId','tracking','repartidorId','actualizadoAntes'].forEach(k=>pm.environment.unset(k));",
+              "pm.environment.unset('ultimaRespuestaEnvio');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+              "pm.environment.set('repartidorId',pm.response.json().id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Registrar envío sin asignación",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"cliente\": {\n    \"nombre\": \"Ana Demo\",\n    \"email\": \"{{clienteEmail}}\"\n  },\n  \"origen\": {\n    \"calle\": \"Origen\",\n    \"numero\": \"1\",\n    \"ciudad\": \"Jujuy\",\n    \"codigoPostal\": \"4600\"\n  },\n  \"destino\": {\n    \"calle\": \"Destino\",\n    \"numero\": \"2\",\n    \"ciudad\": \"Salta\",\n    \"codigoPostal\": \"4400\"\n  },\n  \"pesoKg\": 1.25,\n  \"anchoCm\": 25.25,\n  \"altoCm\": 15.5,\n  \"largoCm\": 30.75\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+              "const b=pm.response.json();pm.environment.set('envioId',b.id);pm.environment.set('tracking',b.codigoSeguimiento);",
+              "pm.test('Referencia nullable sin objeto remoto',()=>{pm.expect(b).to.have.property('repartidorId',null);pm.expect(b).not.to.have.property('repartidor');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Asignación sin token rechazada",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envioId}}/repartidor",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"repartidorId\":\"{{repartidorId}}\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 401',()=>pm.response.to.have.status(401));",
+              "pm.test('Desafío Bearer',()=>pm.expect(pm.response.headers.get('WWW-Authenticate')).to.equal('Bearer'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Asignar UUID inexistente",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envioId}}/repartidor",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"repartidorId\":\"00000000-0000-0000-0000-000000000001\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 404',()=>pm.response.to.have.status(404));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Asignar repartidor activo",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envioId}}/repartidor",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"repartidorId\":\"{{repartidorId}}\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+              "pm.test('UUID asignado y estado pendiente',()=>{const b=pm.response.json();pm.expect(b.repartidorId).to.equal(pm.environment.get('repartidorId'));pm.expect(b.estado).to.equal('PENDIENTE');pm.expect(b).not.to.have.property('repartidor');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Leer auditoría persistida",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envioId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+              "pm.environment.set('actualizadoAntes',pm.response.json().updatedAt);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 - Desactivar repartidor en courier",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{courierBaseUrl}}/api/v1/repartidores/{{repartidorId}}/estado",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"estado\":\"INACTIVO\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 - Reasignación inactiva rechazada",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envioId}}/repartidor",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"repartidorId\":\"{{repartidorId}}\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 422',()=>pm.response.to.have.status(422));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 - Inicio de ruta inactivo rechazado",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envioId}}/estado",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"estado\":\"EN_RUTA\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 422',()=>pm.response.to.have.status(422));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 - Rechazos sin mutación ni cambio de auditoría",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envioId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+              "pm.test('Sin mutación',()=>{const b=pm.response.json();pm.expect(b.updatedAt).to.equal(pm.environment.get('actualizadoAntes'));pm.expect(b.repartidorId).to.equal(pm.environment.get('repartidorId'));pm.expect(b.estado).to.equal('PENDIENTE');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 - Historial sin eventos de asignación ni rechazo",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envioId}}/historial"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+              "pm.test('Un evento inicial',()=>pm.expect(pm.response.json().map(x=>x.estadoNuevo)).to.eql(['PENDIENTE']));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 - Reactivar repartidor",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{courierBaseUrl}}/api/v1/repartidores/{{repartidorId}}/estado",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"estado\":\"ACTIVO\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 - Transición EN_RUTA",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envioId}}/estado",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"estado\": \"EN_RUTA\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+              "pm.test('Estado EN_RUTA',()=>pm.expect(pm.response.json().estado).to.equal('EN_RUTA'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 - Transición ENTREGADO",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envioId}}/estado",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"estado\": \"ENTREGADO\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+              "pm.test('Estado ENTREGADO',()=>pm.expect(pm.response.json().estado).to.equal('ENTREGADO'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "15 - Tracking y UUID preservados",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/seguimiento/{{tracking}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+              "pm.test('Mismo envío y repartidor',()=>{const b=pm.response.json();pm.expect(b.id).to.equal(pm.environment.get('envioId'));pm.expect(b.repartidorId).to.equal(pm.environment.get('repartidorId'));});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "16 - Historial completo confirmado",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/envios/{{envioId}}/historial"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+              "pm.test('Tres eventos, sin asignaciones',()=>pm.expect(pm.response.json().map(x=>x.estadoNuevo)).to.eql(['PENDIENTE','EN_RUTA','ENTREGADO']));"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const body = pm.response.json();",
+          "if (pm.response.code >= 400) {",
+          "  pm.test('Error uniforme ApiError', () => { pm.expect(body).to.have.all.keys('timestamp','status','error','mensaje','detalles'); pm.expect(body.status).to.equal(pm.response.code); pm.expect(body.detalles).to.be.an('array'); });",
+          "}",
+          "if (body && body.codigoSeguimiento && pm.response.code < 300) {",
+          "  pm.test('Auditoría UTC con precisión DATETIME(6)', () => { ['createdAt','updatedAt'].forEach(k => pm.expect(body[k]).to.match(/^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(?:\\.\\d{1,6})?Z$/)); });",
+          "  const previous = pm.environment.get('ultimaRespuestaEnvio');",
+          "  if (pm.request.method === 'GET' && previous) { const written=JSON.parse(previous); if(written.id === body.id) pm.test('Respuesta de escritura coincide con lectura confirmada', () => { pm.expect(body.createdAt).to.equal(written.createdAt); pm.expect(body.updatedAt).to.equal(written.updatedAt); }); }",
+          "  if (pm.request.method !== 'GET') pm.environment.set('ultimaRespuestaEnvio', JSON.stringify({id:body.id,createdAt:body.createdAt,updatedAt:body.updatedAt}));",
+          "}"
+        ]
+      }
+    }
+  ]
+}

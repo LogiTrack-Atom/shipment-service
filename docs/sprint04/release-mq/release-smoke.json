@@ -1,0 +1,26 @@
+{
+  "ok": true,
+  "date": "2026-11-10",
+  "recreated_from_published_digests": true,
+  "inbox_outbox_counts_preserved": true,
+  "core_prepare": {
+    "ok": true,
+    "phase": "prepare",
+    "requests_http": 17,
+    "aserciones": 38
+  },
+  "core_verify": {
+    "ok": true,
+    "phase": "verify",
+    "requests_http": 7,
+    "aserciones": 18
+  },
+  "mq_smoke": {
+    "http_requests": 27,
+    "assertions": 26
+  },
+  "limits": [
+    "Datos ficticios; no reproducción independiente de otro integrante",
+    "Sin despliegue público ni alta disponibilidad"
+  ]
+}

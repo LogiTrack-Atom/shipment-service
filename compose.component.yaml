@@ -1,0 +1,61 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: shipment-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      TZ: ${TZ:-UTC}
+    ports:
+      - "${MYSQL_HOST_PORT:-3307}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - logitrack-net
+
+  shipment-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: shipment-service
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USERNAME: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      CONFIG_SERVER_URL: ${CONFIG_SERVER_URL:?Definir origen HTTP de Config Server accesible desde Docker}
+      CONFIG_LABEL: ${CONFIG_LABEL:-develop}
+      JWT_PUBLIC_KEY_LOCATION: file:/run/keys/jwt-public.pem
+      SECURITY_SERVICE_URL: ${SECURITY_SERVICE_URL:?Definir el origen HTTP de security para verificar asociaciones administrativas}
+      COURIER_SERVICE_URL: ${COURIER_SERVICE_URL:?Definir el origen HTTP de courier accesible desde el contenedor}
+    volumes:
+      - type: bind
+        source: ${JWT_PUBLIC_KEY_FILE:?Definir la ruta absoluta de la clave publica externa}
+        target: /run/keys/jwt-public.pem
+        read_only: true
+        bind:
+          create_host_path: false
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    networks:
+      - logitrack-net
+
+volumes:
+  mysql_data:
+
+networks:
+  logitrack-net:
