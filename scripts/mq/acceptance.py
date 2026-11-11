@@ -141,7 +141,8 @@ def main():
         # errores de contrato siguen fallando inmediatamente.
         def probe():
             try:
-                return api(path)
+                body, _ = api(path)
+                return body
             except UnexpectedStatus as error:
                 if error.status not in (500, 502, 503, 504):
                     raise
