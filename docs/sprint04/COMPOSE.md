@@ -144,5 +144,7 @@ antes de exp. Ver BROWSER_SESSION.md de Security y docs/SESION_RENOVABLE.md del 
 El ensayo candidato usa diez servicios saludables, backend/Gateway nuevos y navegador
 real: login → recarga autenticada → logout → recarga en login. La regresión Bearer de
 negocio se mantiene: 38 solicitudes / 57 aserciones. Las tres imágenes modificadas ya están publicadas con digests en #73.
-El cierre de G1 requiere además el arranque inmutable y la reproducción independiente;
-consultar [el estado del release](release/README.md).
+El cierre técnico de G1 se registró con el arranque por digest y las pruebas de #73.
+Una reproducción independiente sigue siendo recomendable para preparar la demo.
+La [decisión de cierre de #73](https://github.com/LogiTrack-Atom/shipment-service/issues/73)
+detalla los criterios aplicados. Para RabbitMQ, seguir la [revisión MQ RC2](release-mq-rc2/README.md).
