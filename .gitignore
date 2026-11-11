@@ -51,3 +51,4 @@ __pycache__/
 .logitrack-demo/
 
 !.env.sprint04-mq.example
+!.env.sprint04-mq-rc2.example

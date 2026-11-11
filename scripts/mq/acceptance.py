@@ -25,11 +25,21 @@ class NoRedirect(HTTPRedirectHandler):
         return None
 
 
+class UnexpectedStatus(AssertionError):
+    """Distingue indisponibilidad de Gateway de una respuesta de contrato inesperada."""
+
+    def __init__(self, status, method, path, expected):
+        super().__init__(f'{method} {path}: HTTP {status}, esperado {expected}')
+        self.status = status
+
+
 def main():
     """Ejecuta escenarios sobre servicios reales y emite únicamente un resumen público."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--project', required=True)
     parser.add_argument('--private-dir', type=Path, required=True)
+    parser.add_argument('--check-address-change', action='store_true',
+                        help='Agrega una recreación con IP nuevas en un laboratorio con el overlay DNS.')
     args = parser.parse_args()
     if not args.project.startswith('lt-s04-mq') or not args.project.replace('-', '').isalnum():
         parser.error('El nombre debe identificar el laboratorio descartable lt-s04-mq*.')
@@ -61,6 +71,8 @@ def main():
         compose += ['--env-file', str(private / file)]
     for file in ['compose.sprint04.yaml', 'compose.sprint04-mq.yaml', 'compose.sprint04-assignment.yaml']:
         compose += ['-f', str(root / file)]
+    if args.check_address_change:
+        compose += ['-f', str(root / 'scripts/mq/compose.dns-test.yaml')]
     compose += ['--profile', 'mq']
     opener = build_opener(NoRedirect())
     stats = {'http_requests': 0, 'assertions': 0, 'scenarios': []}
@@ -82,12 +94,14 @@ def main():
         except HTTPError as error:
             response = error
         with response:
-            check(response.code == expected, f'{method} {path}: HTTP {response.code}, esperado {expected}')
+            stats['assertions'] += 1
+            if response.code != expected:
+                raise UnexpectedStatus(response.code, method, path, expected)
             raw = response.read()
             return (json.loads(raw) if raw else None), response.headers
 
-    def control(*command):
-        subprocess.run(compose + list(command), check=True, capture_output=True)
+    def control(*command, env=None):
+        return subprocess.check_output(compose + list(command), text=True, env=env).strip()
 
     def sql(service, statement, admin=False):
         command = ('MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql --user=root' if admin else
@@ -117,6 +131,62 @@ def main():
         if key:
             headers['Idempotency-Key'] = key
         return request(base, path, method, body, headers, expected)
+
+    def gateway_instance():
+        container = control('ps', '-q', 'api-gateway')
+        check(bool(container), 'Gateway debe estar en ejecución')
+        started = subprocess.check_output(
+            ['docker', 'inspect', '--format', '{{.State.StartedAt}}', container], text=True
+        ).strip()
+        return container, started
+
+    def gateway_read_after_restart(path):
+        # Reintentar solo GET ante indisponibilidad temporal. Los 4xx y otros
+        # errores de contrato siguen fallando inmediatamente.
+        def probe():
+            try:
+                body, _ = api(path)
+                return body
+            except UnexpectedStatus as error:
+                if error.status not in (500, 502, 503, 504):
+                    raise
+                return None
+        return eventually(probe, lambda result: result is not None)
+
+    def check_address_change(rider, shipment):
+        services = {'courier-service': '172.30.231.45', 'shipment-service': '172.30.231.46'}
+
+        def address(service):
+            container = control('ps', '-q', service)
+            network = args.project + '_logitrack-net'
+            template = '{{(index .NetworkSettings.Networks "' + network + '").IPAddress}}'
+            return subprocess.check_output(['docker', 'inspect', '--format', template, container],
+                                           text=True).strip()
+
+        before = {service: address(service) for service in services}
+        check(before == {'courier-service': '172.30.231.40', 'shipment-service': '172.30.231.41'},
+              'Levantar un laboratorio nuevo con el overlay DNS y las IP iniciales')
+        gateway = gateway_instance()
+        env = dict(os.environ, S04_DNS_COURIER_IP=services['courier-service'],
+                   S04_DNS_SHIPMENT_IP=services['shipment-service'])
+        started = time.monotonic()
+        control('up', '-d', '--no-deps', '--force-recreate', '--wait', '--wait-timeout', '180',
+                *services, env=env)
+        after = {service: address(service) for service in services}
+        check(after == services, 'Courier y Shipment tienen las IP nuevas')
+        check(gateway_read_after_restart(couriers + '/' + rider)['id'] == rider,
+              'HTTP 200 y mismo repartidor después del cambio de IP')
+        check(gateway_read_after_restart(shipments + '/' + shipment)['repartidorId'] == rider,
+              'HTTP 200 y misma asignación después del cambio de IP')
+        check(gateway_instance() == gateway, 'Gateway conservó su contenedor y hora de inicio')
+        stats['dns_recovery'] = {
+            'before': before,
+            'after': after,
+            'gateway_unchanged': True,
+            'http_after': [200, 200],
+            'seconds_including_recreation': round(time.monotonic() - started, 2),
+        }
+        scenario('Cambio forzado de IP y recuperación de ambas rutas')
 
     def health():
         # GET autenticado verifica el núcleo completo durante la caída AMQP.
@@ -261,12 +331,20 @@ def main():
         for name in ['lt.courier.assignment.v1', 'lt.shipment.assignment.v1']:
             eventually(lambda: queue(name), lambda q: q['messages_ready'] == 0 and q['messages_unacknowledged'] == 0)
         before = sql('shipment', "SELECT COUNT(*), SUM(status='APPLIED') FROM assignment_operations")
+        gateway = gateway_instance()
         control('restart', 'courier-service', 'shipment-service')
         control('up', '-d', '--no-deps', '--wait', '--wait-timeout', '180', 'courier-service', 'shipment-service')
+        courier_after = gateway_read_after_restart(couriers + '/' + rider)
+        shipment_after = gateway_read_after_restart(shipments + '/' + synchronous)
+        check(courier_after['id'] == rider, 'Gateway recupera la lectura de Courier')
+        check(shipment_after['repartidorId'] == rider, 'Gateway recupera Shipment y conserva la asignación')
+        check(gateway_instance() == gateway, 'Gateway se mantuvo en la misma instancia')
         check(sql('shipment', "SELECT COUNT(*), SUM(status='APPLIED') FROM assignment_operations") == before, 'Reinicio posterior al ACK no crea ni reaplica operaciones')
         check(sql('shipment', "SELECT COUNT(*) FROM assignment_inbox WHERE operation_id=UNHEX(REPLACE('" + op['operationId'] + "','-',''))") == '1', 'Reinicio posterior al ACK conserva efecto único')
-        scenario('Feign/PUT y reinicio posterior al ACK')
-        print(json.dumps({'ok': True, **stats, 'limits': ['Sin UI asíncrona frontend#10',
+        scenario('Feign/PUT, reinicio posterior al ACK y recuperación por Gateway')
+        if args.check_address_change:
+            check_address_change(rider, synchronous)
+        print(json.dumps({'ok': True, **stats, 'limits': ['Aceptación de backend; la SPA se verifica por separado',
             'Corte TCP anterior al ACK cubierto por AssignmentDeliveryIT de Courier#21; aquí se prueba reinicio posterior al ACK',
             'At-least-once; sin reserva exclusiva ni alta disponibilidad']}, indent=2))
     finally:

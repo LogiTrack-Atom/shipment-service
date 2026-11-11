@@ -1,0 +1,16 @@
+# Overlay exclusivo para el laboratorio descartable de recuperación DNS.
+services:
+  courier-service:
+    networks:
+      logitrack-net:
+        ipv4_address: ${S04_DNS_COURIER_IP:-172.30.231.40}
+  shipment-service:
+    networks:
+      logitrack-net:
+        ipv4_address: ${S04_DNS_SHIPMENT_IP:-172.30.231.41}
+
+networks:
+  logitrack-net:
+    ipam:
+      config:
+        - subnet: 172.30.231.0/24

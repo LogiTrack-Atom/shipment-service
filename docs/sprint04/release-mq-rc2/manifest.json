@@ -1,0 +1,28 @@
+{
+  "version": "sprint04-mq-rc2",
+  "platform": "linux/amd64",
+  "previous_release": "../release-mq/published.json",
+  "config_label": "a08f95ee8fa0bf412fb30f68776e9a8794f94110",
+  "images": {
+    "shipment-service": "maxdz10/shipment-service:sprint04-mq-rc1@sha256:4e1e2fc42a8699490768a4e4a51d6b54fbc8238266d28fb0cb5c2d36ff391e29",
+    "courier-service": "maxdz10/courier-service:sprint04-mq-rc1@sha256:484e49838a648d76fb55ead8a7b830f111e1f1460f475d3e6e87ba337761daae",
+    "api-gateway": "maxdz10/api-gateway:sprint04-dns-rc2@sha256:c045e1a4242d10487e88c3d5a7223aac174429969cc75b3610ad0910a9a134b1",
+    "logitrack-frontend": "maxdz10/logitrack-frontend:sprint04-mq-rc1@sha256:9649323de09721edc1bd9e638baea88ccaa550c7aaa9c431e391a7114acde58a",
+    "configserver": "maxdz10/configserver:sprint02-1.0.0@sha256:1658bc0e413f5519087ab00ef0e170de31cb20a17b6b84aef08ca17acf19874b",
+    "eureka-server": "maxdz10/eureka-server:sprint03-1.0.0@sha256:70a31b326a036de44fcd57238b3bf65f9f1a26e11735108cce1e944fea9dcdcb",
+    "security-service": "maxdz10/security-service:sprint04-rc1@sha256:c00ed0169db24301fcf048430c1d5bc85f91b7ca22312ba63c74a7d8ba8e2c62",
+    "mysql": "mysql@sha256:0f51e63e537a1f176423fa03ef559aabe6fa4372a53160a44bc7e75da7d15364",
+    "rabbitmq": "rabbitmq:4.4.0-management@sha256:af6f50d38098d8bd52fef7f3fa85015dd8b2bf6def58e995bf584ae9ba0f6407"
+  },
+  "gateway_build_commit": "6f93604f03c945bef4857341ba049006b7909734",
+  "gateway_main_commit": "65479217d8f93c526563c61ca7c793ddfc9efb56",
+  "migrations": {
+    "shipment-service": {
+      "004-assignment-outbox.sql": "49cc5d88417dcf7f035dcff770a5fbfae4848a7d437f51d33ac8bfd252fca980",
+      "005-assignment-results-inbox.sql": "82006f604f16e68f9d4f98b01c6477b8a4532d784a72eba3ab93e4d5e3e2cd2a"
+    },
+    "courier-service": {
+      "004-assignment-inbox-outbox.sql": "4723c37f9d2b58eeb3c9bb97959c3cea426809af0440b26767c90b11a3c00a8f"
+    }
+  }
+}
