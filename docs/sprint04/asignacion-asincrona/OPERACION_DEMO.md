@@ -11,10 +11,26 @@ La [topología](topology.json) fija exchanges, claves de enrutamiento y colas qu
 
 ## Demostración de caída y recuperación
 
+Desde la raíz de Shipment, definir el comando del laboratorio en la misma terminal. Sustituir las dos primeras variables por las usadas al preparar el release.
+
+```sh
+project=lt-s04-mqdemo
+private_dir=/ruta/privada
+mq() {
+    docker compose --project-name "$project" \
+        --env-file "$private_dir/private.env" \
+        --env-file "$private_dir/broker/broker.env" \
+        --env-file "$private_dir/broker/application.env" \
+        -f compose.sprint04.yaml -f compose.sprint04-mq.yaml \
+        -f compose.sprint04-assignment.yaml --profile mq "$@"
+}
+mq ps
+```
+
 1. Con el entorno saludable, entrar al portal como ADMIN y crear un envío y un repartidor activo ficticios. Seleccionar la asignación asíncrona en el detalle del envío.
-2. Antes de solicitarla, detener únicamente `courier-service` con `docker compose … stop courier-service`, usando el mismo proyecto, archivos y env del laboratorio. Enviar la solicitud una vez. Registrar el ID de la operación mostrado por el portal. El 202 deja el seguimiento pendiente.
-3. Consultar en el panel local del broker o ejecutar `docker compose … exec -T rabbitmq rabbitmqctl list_queues -p logitrack-s04 name messages_ready messages_unacknowledged consumers`. La cola de comandos muestra un mensaje listo para entrega y cero consumidores después de detener Courier. Usar una operación nueva y observar el cambio respecto del conteo inicial.
-4. Arrancar Courier con `docker compose … start courier-service` antes del vencimiento de 300 segundos. Esperar que consuma el comando y que Shipment aplique el resultado. Usar «Consultar ahora» si la espera visual terminó. Verificar el estado confirmado y el repartidor del envío. Contrastar la cola drenada y la asignación final.
+2. Antes de solicitarla, detener únicamente `courier-service` con `mq stop courier-service`, usando el mismo proyecto, archivos y env del laboratorio. Enviar la solicitud una vez. Registrar el ID de la operación mostrado por el portal. El 202 deja el seguimiento pendiente.
+3. Consultar en el panel local del broker o ejecutar `mq exec -T rabbitmq rabbitmqctl list_queues -p logitrack-s04 name messages_ready messages_unacknowledged consumers`. La cola de comandos muestra un mensaje listo para entrega y cero consumidores después de detener Courier. Usar una operación nueva y observar el cambio respecto del conteo inicial.
+4. Arrancar Courier con `mq start courier-service` antes del vencimiento de 300 segundos. Esperar que consuma el comando y que Shipment aplique el resultado. Usar «Consultar ahora» si la espera visual terminó. Verificar el estado confirmado y el repartidor del envío. Contrastar la cola drenada y la asignación final.
 5. Si se vence el plazo, registrar el estado terminal. La demostración puede repetirse con un envío ficticio nuevo. Si el POST resulta incierto, reconciliar con la misma clave de idempotencia.
 
 Para ensayar fallas adicionales en un laboratorio descartable, ejecutar `scripts/mq/acceptance.py` siguiendo la guía del release. El escenario de Courier detenido, el de broker detenido y el de retry/DLQ están cubiertos en la [evidencia técnica de #80](../release-mq/backend-evidence.json).
